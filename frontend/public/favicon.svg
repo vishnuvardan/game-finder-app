@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <linearGradient id="neonGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff007f" />
+      <stop offset="100%" stop-color="#00f0ff" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="6" flood-color="#ff007f" flood-opacity="0.4" />
+    </filter>
+  </defs>
+  <!-- Background circular emblem -->
+  <circle cx="256" cy="256" r="230" fill="#070913" stroke="url(#neonGlow)" stroke-width="12" filter="url(#shadow)" />
+  <!-- Game Controller Body -->
+  <path d="M376 192H136c-30 0-56 24-56 54v60c0 36 28 66 64 66 16 0 31-6 42-16l28-22c6-5 14-5 20 0l28 22c11 10 26 16 42 16 36 0 64-30 64-66v-60c0-30-26-54-56-54z" fill="none" stroke="url(#neonGlow)" stroke-width="18" stroke-linecap="round" stroke-linejoin="round" />
+  <!-- D-Pad (Left side controls) -->
+  <path d="M144 282h36m-18-18v36" stroke="#00f0ff" stroke-width="14" stroke-linecap="round" />
+  <!-- Action Buttons (Right side controls) -->
+  <circle cx="348" cy="270" r="12" fill="#ff007f" />
+  <circle cx="320" cy="298" r="12" fill="#ff007f" />
+  <circle cx="376" cy="298" r="12" fill="#ff007f" />
+  <circle cx="348" cy="326" r="12" fill="#ff007f" />
+  <!-- Select/Start Buttons -->
+  <line x1="230" y1="285" x2="246" y2="285" stroke="#ffffff" stroke-width="8" stroke-linecap="round" />
+  <line x1="266" y1="285" x2="282" y2="285" stroke="#ffffff" stroke-width="8" stroke-linecap="round" />
+</svg>

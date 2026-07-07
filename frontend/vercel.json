@@ -1,6 +1,15 @@
 {
   "routes": [
-    { "handle": "filesystem" },
-    { "src": "/.*", "dest": "/index.html" }
+    {
+      "src": "/api/(.*)",
+      "dest": "https://game-finder-app-backend.vercel.app/api/$1"
+    },
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/.*",
+      "dest": "/index.html"
+    }
   ]
 }

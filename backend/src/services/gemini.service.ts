@@ -32,6 +32,74 @@ export interface QuizAnswer {
 
 class GeminiService {
   /**
+   * Helper to execute models.generateContent with automatic model fallback for quota/rate-limit errors.
+   * Leverages 11 different models/aliases to maximize availability on free tier.
+   */
+  private async generateContentWithFallback(
+    contents: string,
+    systemInstruction: string,
+    responseSchema: any
+  ): Promise<string> {
+    const models = [
+      'gemini-2.5-flash',
+      'gemini-3.5-flash',
+      'gemini-flash-latest',
+      'gemini-2.5-flash-lite',
+      'gemini-3.1-flash-lite',
+      'gemini-3.1-pro',
+      'gemini-3.5-pro',
+      'gemini-2.5-pro',
+      'gemini-pro-latest',
+      'gemini-1.5-flash',
+      'gemini-1.5-pro',
+    ];
+
+    let lastError: any = null;
+
+    for (const model of models) {
+      try {
+        console.log(`[GeminiService] Attempting request using model: ${model}`);
+        const response = await ai.models.generateContent({
+          model,
+          contents,
+          config: {
+            systemInstruction,
+            responseMimeType: 'application/json',
+            responseSchema,
+          },
+        });
+
+        if (response.text) {
+          return response.text;
+        }
+        throw new Error(`Empty response text from model ${model}`);
+      } catch (error: any) {
+        lastError = error;
+
+        // Check if error is a rate limit / quota exceeded (e.g., status 429 or containing "quota"/"exhausted")
+        const isQuotaError =
+          error.status === 429 ||
+          (error.message && error.message.toLowerCase().includes('quota')) ||
+          (error.message && error.message.toLowerCase().includes('exhausted')) ||
+          (error.message && error.message.toLowerCase().includes('rate limit'));
+
+        if (isQuotaError) {
+          console.warn(`[GeminiService] Quota or rate limit exceeded for model "${model}". Falling back to next model...`);
+          continue;
+        }
+
+        // If it's another error (such as validation/syntax/schema error), throw it immediately
+        console.error(`[GeminiService] Non-quota error encountered with model "${model}":`, error);
+        throw error;
+      }
+    }
+
+    throw new Error(
+      `All Gemini fallback models exhausted. Last error: ${lastError?.message || lastError}`
+    );
+  }
+
+  /**
    * Generates a 5-question interactive quiz based on the user's favorite games
    */
   public async generateQuiz(favoriteGames: FavoriteGame[]): Promise<QuizResponse> {
@@ -48,47 +116,36 @@ class GeminiService {
       "mechanics, narrative weight, atmospheric pacing, and multiplayer preferences. Avoid generic questions. " +
       "Output MUST strictly match the defined JSON schema.";
 
-    try {
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt,
-        config: {
-          systemInstruction,
-          responseMimeType: 'application/json',
-          responseSchema: {
+    const schema = {
+      type: 'OBJECT',
+      properties: {
+        themeExplanation: {
+          type: 'STRING',
+          description: 'A 1-2 sentence explanation of the theme connecting these 3 favorite games.',
+        },
+        questions: {
+          type: 'ARRAY',
+          items: {
             type: 'OBJECT',
             properties: {
-              themeExplanation: {
-                type: 'STRING',
-                description: 'A 1-2 sentence explanation of the theme connecting these 3 favorite games.',
-              },
-              questions: {
+              id: { type: 'STRING', description: 'A unique ID for the question, e.g. "q1", "q2"...' },
+              questionText: { type: 'STRING', description: 'The text of the question.' },
+              options: {
                 type: 'ARRAY',
-                items: {
-                  type: 'OBJECT',
-                  properties: {
-                    id: { type: 'STRING', description: 'A unique ID for the question, e.g. "q1", "q2"...' },
-                    questionText: { type: 'STRING', description: 'The text of the question.' },
-                    options: {
-                      type: 'ARRAY',
-                      items: { type: 'STRING' },
-                      description: 'Exactly 4 distinct, engaging answer options representing different gaming styles/preferences.',
-                    },
-                  },
-                  required: ['id', 'questionText', 'options'],
-                },
+                items: { type: 'STRING' },
+                description: 'Exactly 4 distinct, engaging answer options representing different gaming styles/preferences.',
               },
             },
-            required: ['themeExplanation', 'questions'],
+            required: ['id', 'questionText', 'options'],
           },
         },
-      });
+      },
+      required: ['themeExplanation', 'questions'],
+    };
 
-      if (!response.text) {
-        throw new Error('Gemini response was empty');
-      }
-
-      const parsed: QuizResponse = JSON.parse(response.text);
+    try {
+      const responseText = await this.generateContentWithFallback(prompt, systemInstruction, schema);
+      const parsed: QuizResponse = JSON.parse(responseText);
       
       // Post-validation
       if (!parsed.questions || !Array.isArray(parsed.questions)) {
@@ -125,35 +182,24 @@ class GeminiService {
       "Return exactly ONE highly tailored game title and a 3-sentence deep analytical reason why it fits their specific profile. " +
       "Exclude the 3 games provided in their favorite list. Output MUST strictly match the defined JSON schema.";
 
-    try {
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt,
-        config: {
-          systemInstruction,
-          responseMimeType: 'application/json',
-          responseSchema: {
-            type: 'OBJECT',
-            properties: {
-              recommendedTitle: {
-                type: 'STRING',
-                description: 'The exact title of the recommended video game.',
-              },
-              reasoning: {
-                type: 'STRING',
-                description: 'Exactly a 3-sentence deep analytical explanation of why this game fits their preferences.',
-              },
-            },
-            required: ['recommendedTitle', 'reasoning'],
-          },
+    const schema = {
+      type: 'OBJECT',
+      properties: {
+        recommendedTitle: {
+          type: 'STRING',
+          description: 'The exact title of the recommended video game.',
         },
-      });
+        reasoning: {
+          type: 'STRING',
+          description: 'Exactly a 3-sentence deep analytical explanation of why this game fits their preferences.',
+        },
+      },
+      required: ['recommendedTitle', 'reasoning'],
+    };
 
-      if (!response.text) {
-        throw new Error('Gemini response was empty');
-      }
-
-      const parsed: RecommendationResponse = JSON.parse(response.text);
+    try {
+      const responseText = await this.generateContentWithFallback(prompt, systemInstruction, schema);
+      const parsed: RecommendationResponse = JSON.parse(responseText);
       return parsed;
     } catch (error: any) {
       console.error('Error generating recommendation from Gemini:', error);
@@ -163,3 +209,4 @@ class GeminiService {
 }
 
 export const geminiService = new GeminiService();
+

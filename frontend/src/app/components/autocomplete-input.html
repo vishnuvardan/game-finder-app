@@ -1,0 +1,59 @@
+<div class="autocomplete-wrapper">
+  <label class="input-label">{{ label }}</label>
+  
+  <div class="input-container" [class.has-selection]="selectedGame()">
+    <input
+      type="text"
+      [formControl]="searchControl"
+      [placeholder]="placeholder"
+      (focus)="onFocus()"
+      (blur)="onBlur()"
+      (keydown)="onKeyDown($event)"
+      class="game-input"
+    />
+    
+    @if (isLoading()) {
+      <div class="spinner-container">
+        <div class="spinner"></div>
+      </div>
+    } @else if (selectedGame()) {
+      <button type="button" class="clear-btn" (click)="clearSelection()" title="Clear selection">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18">
+          <path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+        </svg>
+      </button>
+    }
+  </div>
+
+  @if (showSuggestions() && suggestions().length > 0) {
+    <ul class="suggestions-list">
+      @for (game of suggestions(); track game.id; let i = $index) {
+        <li 
+          class="suggestion-item" 
+          [class.active]="activeSuggestionIndex() === i"
+          (mouseenter)="activeSuggestionIndex.set(i)"
+          (mousedown)="selectGame(game)">
+          <img [src]="game.coverUrl" alt="{{ game.name }} Cover" class="suggestion-cover" />
+          <div class="suggestion-info">
+            <span class="suggestion-title">{{ game.name }}</span>
+            <span class="suggestion-details">
+              @if (game.platforms.length > 0) {
+                {{ game.platforms.slice(0, 2).join(', ') }}
+              }
+              @if (game.genres.length > 0 && game.platforms.length > 0) {
+                •
+              }
+              @if (game.genres.length > 0) {
+                {{ game.genres.slice(0, 2).join(', ') }}
+              }
+            </span>
+          </div>
+        </li>
+      }
+    </ul>
+  } @else if (showSuggestions() && searchControl.value && searchControl.value.trim().length >= 2 && !isLoading() && suggestions().length === 0) {
+    <div class="no-results">
+      No games found
+    </div>
+  }
+</div>

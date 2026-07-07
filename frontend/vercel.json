@@ -1,4 +1,5 @@
 {
+  "outputDirectory": "dist/game-finder-frontend/browser",
   "routes": [
     {
       "src": "/api/(.*)",

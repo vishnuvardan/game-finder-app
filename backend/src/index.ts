@@ -19,9 +19,13 @@ app.get('/health', (req, res) => {
   res.json({ status: 'healthy', timestamp: new Date().toISOString() });
 });
 
-// Start the Express server
-app.listen(config.port, () => {
-  console.log(`==================================================`);
-  console.log(` Game Finder BFF running at http://localhost:${config.port}`);
-  console.log(`==================================================`);
-});
+// Start the Express server only if running locally
+if (!process.env.VERCEL) {
+  app.listen(config.port, () => {
+    console.log(`==================================================`);
+    console.log(` Game Finder BFF running at http://localhost:${config.port}`);
+    console.log(`==================================================`);
+  });
+}
+
+export default app;

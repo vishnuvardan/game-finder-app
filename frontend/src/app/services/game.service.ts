@@ -41,7 +41,15 @@ export interface QuizAnswer {
   providedIn: 'root',
 })
 export class GameService {
-  private apiUrl = 'http://localhost:3000/api';
+  private apiUrl = this.getApiUrl();
+
+  private getApiUrl(): string {
+    const host = window.location.hostname;
+    if (host === 'localhost' || host === '127.0.0.1') {
+      return 'http://localhost:3000/api';
+    }
+    return '/api';
+  }
 
   constructor(private http: HttpClient) {}
 

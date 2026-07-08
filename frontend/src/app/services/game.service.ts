@@ -92,4 +92,29 @@ export class GameService {
       quizAnswers,
     });
   }
+
+  /**
+   * Generate retrospective departments based on finished game name and genres
+   */
+  generateRetrospectiveDepartments(gameName: string, genres: string[]): Observable<{ departments: string[] }> {
+    return this.http.post<{ departments: string[] }>(`${this.apiUrl}/retrospective/departments`, {
+      gameName,
+      genres,
+    });
+  }
+
+  /**
+   * Finalize retrospective review and generate AI first-person review draft
+   */
+  finalizeRetrospective(
+    reviewerName: string,
+    gameName: string,
+    ratings: { department: string; stars: number; label: string }[]
+  ): Observable<{ reviewDraft: string }> {
+    return this.http.post<{ reviewDraft: string }>(`${this.apiUrl}/retrospective/finalize`, {
+      reviewerName,
+      gameName,
+      ratings,
+    });
+  }
 }

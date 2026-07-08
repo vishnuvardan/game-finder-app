@@ -1,0 +1,235 @@
+<!-- Error notification toast -->
+@if (errorMessage()) {
+<div class="error-toast">
+  <div class="error-icon">⚠️</div>
+  <div class="error-text">{{ errorMessage() }}</div>
+  <button class="error-close" (click)="errorMessage.set(null)">×</button>
+</div>
+}
+
+<main class="content-wrapper">
+
+  <!-- State 1: Intake Form -->
+  @if (state() === 'intake') {
+  <section class="intake-section glass-panel">
+    <h2 class="section-title">Game Retrospective</h2>
+    <p class="section-desc">
+      Finished a game recently? Enter your name and search for the game below.
+      AI will analyze the game's genre and identity to generate custom evaluation dimensions for your retrospective
+      share card.
+    </p>
+
+    <div class="form-group">
+      <label class="form-label" for="reviewer-name-input">Reviewer Name</label>
+      <input id="reviewer-name-input" type="text" class="text-input" placeholder="e.g. MasterChief_99"
+        [ngModel]="reviewerName()" (ngModelChange)="reviewerName.set($event)" />
+    </div>
+
+    <div class="form-group">
+      <app-autocomplete-input label="Select Finished Game" placeholder="e.g. Batman: Arkham Asylum"
+        [selectedValue]="selectedGame()" (gameSelected)="onGameSelected($event)" />
+    </div>
+
+    <div class="action-bar">
+      <button class="glow-btn" [disabled]="!isGenerateEnabled()" (click)="generateReviewSheet()">
+        <span>Generate Review Sheet</span>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20">
+          <path fill="currentColor"
+            d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z" />
+        </svg>
+      </button>
+    </div>
+  </section>
+  }
+
+  <!-- State 2: Generating Departments Loading -->
+  @if (state() === 'generating') {
+  <div class="loading-state glass-panel pulsate-glow">
+    <div class="loader-art">
+      <div class="glow-orb"></div>
+      <div class="scanner-line"></div>
+    </div>
+    <h3 class="loading-title">Customizing Metrics for {{ selectedGame()?.name }}...</h3>
+    <p class="loading-text">Gemini is brainstorming 6 to 10 evaluation metrics tailored exactly to this game's genre and
+      identity.</p>
+  </div>
+  }
+
+  <!-- State 2B: Finalizing Review Draft Loading -->
+  @else if (state() === 'finalizing') {
+  <div class="loading-state glass-panel pulsate-glow">
+    <div class="loader-art">
+      <div class="glow-orb"></div>
+      <div class="scanner-line"></div>
+    </div>
+    <h3 class="loading-title">Synthesizing Playthrough Review...</h3>
+    <p class="loading-text">Gemini is analyzing your scores to compile a witty, first-person social media retrospective
+      post.</p>
+  </div>
+  }
+
+  <!-- State 3: Dynamic Star Rating Form -->
+  @else if (state() === 'rating') {
+  <section class="rating-section glass-panel">
+    <div class="rating-header">
+      <div class="game-meta-row">
+        <img [src]="selectedGame()?.coverUrl" class="rating-thumb" alt="Cover" />
+        <div>
+          <h2 class="section-title" style="margin-bottom: 0.25rem;">Rate: {{ selectedGame()?.name }}</h2>
+          <p class="section-desc" style="margin-bottom: 0;">Review by: <strong>{{ reviewerName() }}</strong></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="rating-grid">
+      @for (dept of departments(); track dept) {
+      <div class="rating-card">
+        <h4 class="dept-name">{{ dept }}</h4>
+
+        <div class="star-rating-row">
+          <!-- Interactive Stars (1 to 5) -->
+          <div class="stars-container" (mouseleave)="clearHover(dept)">
+            @for (star of [1, 2, 3, 4, 5]; track star) {
+            <button type="button" class="star-button" [class.filled]="(hoveredStars()[dept] || ratings()[dept]) >= star"
+              (mouseenter)="setHover(dept, star)" (click)="selectRating(dept, star)" aria-label="Rate {{ star }} stars">
+              ★
+            </button>
+            }
+          </div>
+
+          <!-- Description Tooltip/Label -->
+          <span class="active-label-tooltip" [class.visible]="getActiveLabel(dept)">
+            {{ getActiveLabel(dept) }}
+          </span>
+        </div>
+      </div>
+      }
+    </div>
+
+    <div class="wizard-footer">
+      <button type="button" class="glow-btn-secondary" (click)="startOver()">
+        Cancel
+      </button>
+
+      <button type="button" class="glow-btn" [disabled]="!isFinalizeEnabled()" (click)="finalizeCard()">
+        <span>Finalize Card</span>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20">
+          <path fill="currentColor" d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z" />
+        </svg>
+      </button>
+    </div>
+  </section>
+  }
+
+  <!-- State 4: Preview and Export -->
+  @else if (state() === 'preview') {
+  <section class="preview-section">
+    <div class="preview-grid-split">
+
+      <!-- LHS Column: The vertical share card -->
+      <div class="preview-card-column">
+        <div class="card-export-wrapper">
+          <div id="review-share-card" class="share-card-container">
+            <!-- Full-bleed background of the game cover image -->
+            <div class="card-bg-cover" [style.background-image]="'url(' + selectedGame()?.coverUrl + ')'"></div>
+            <div class="card-overlay"></div>
+
+            <div class="card-content">
+              <!-- Header -->
+              <div class="card-header">
+                <div class="card-header-badge">GAME RETROSPECTIVE</div>
+                <h2 class="card-game-title">{{ selectedGame()?.name }}</h2>
+                <div class="card-reviewer-name">Reviewed by: {{ reviewerName() }}</div>
+              </div>
+
+              <!-- Ratings Grid inside card -->
+              <div class="card-ratings-list">
+                @for (dept of departments(); track dept) {
+                <div class="card-rating-row">
+                  <div class="card-dept-name">{{ dept }}</div>
+                  <div class="card-rating-right">
+                    <div class="card-stars-wrapper">
+                      <span class="card-stars-line">
+                        @for (star of [1, 2, 3, 4, 5]; track star) {
+                        <span class="card-star" [class.filled]="ratings()[dept] >= star">★</span>
+                        }
+                      </span>
+                      <span class="card-stars-text-desc">({{ ratings()[dept] }}/5)</span>
+                    </div>
+                    <div class="card-star-label-tiny">{{ getStarLabel(ratings()[dept]) }}</div>
+                  </div>
+                </div>
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <button type="button" class="glow-btn download-btn" (click)="downloadShareCard()"
+          style="margin-top: 1.25rem; width: 100%;">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20">
+            <path fill="currentColor"
+              d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2v9.67z" />
+          </svg>
+          <span>Download Share Card</span>
+        </button>
+      </div>
+
+      <!-- RHS Column: Review Text & Copy utility -->
+      <div class="preview-draft-column glass-panel">
+        <h3 class="controls-title">AI Playthrough Analysis</h3>
+
+        @if (isFinalizingDraft()) {
+        <div class="loading-state" style="padding: 2rem 0; width: 100%;">
+          <div class="loader-art" style="width: 60px; height: 60px; margin: 0 auto;">
+            <div class="glow-orb" style="width: 30px; height: 30px; box-shadow: 0 0 20px 10px rgba(255, 0, 127, 0.5);">
+            </div>
+            <div class="scanner-line"></div>
+          </div>
+          <p style="margin-top: 1rem; color: var(--text-muted); font-size: 0.9rem; text-align: center;">Generating
+            review draft...</p>
+        </div>
+        } @else {
+        @if (reviewDraft()) {
+        <p class="controls-desc">Here is the witty, first-person social media summary generated based on your scores.
+        </p>
+
+        <div class="preview-review-draft-box">
+          <span class="quote-icon">“</span>
+          <p class="quote-text">{{ reviewDraft() }}</p>
+        </div>
+
+        <button type="button" class="glow-btn copy-btn" (click)="copyReviewText()"
+          style="width: 100%; margin-top: 1.25rem;">
+          <span>{{ isCopied() ? '📋 Copied!' : '📋 Copy Review Text' }}</span>
+        </button>
+        } @else if (reviewDraftError()) {
+        <p class="controls-desc" style="color: var(--primary-glow); font-weight: 600;">⚠️ Generation Failed</p>
+
+        <div class="preview-review-draft-box"
+          style="border-left-color: var(--primary-glow); background: rgba(239, 68, 68, 0.05); margin-top: 1rem;">
+          <p class="quote-text" style="color: #f1f5f9; font-style: normal; padding-left: 0;">
+            {{ reviewDraftError() }}
+          </p>
+        </div>
+
+        <button type="button" class="glow-btn" (click)="retryFinalizeReview()"
+          style="width: 100%; margin-top: 1.25rem;">
+          <span>🔄 Try Again</span>
+        </button>
+        }
+        }
+
+        <div
+          style="margin-top: 2rem; border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 1.5rem; width: 100%;">
+          <button type="button" class="glow-btn-secondary" (click)="startOver()" style="width: 100%;">
+            <span>Create New Review</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </section>
+  }
+
+</main>

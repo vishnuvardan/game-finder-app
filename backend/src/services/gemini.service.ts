@@ -206,6 +206,100 @@ class GeminiService {
       throw new Error(`Failed to recommend game: ${error.message}`);
     }
   }
+
+  /**
+   * Generates between 6 and 10 game-specific evaluation criteria ('departments')
+   */
+  public async generateRetrospectiveDepartments(
+    gameName: string,
+    genres: string[]
+  ): Promise<string[]> {
+    const prompt = `The user has just finished the game: "${gameName}" within genres: ${genres.join(', ')}.`;
+
+    const systemInstruction = 
+      `You are a critical video game reviewer and taxonomist. The user has just finished the game: "${gameName}" within genres: ${genres.join(', ')}. ` +
+      `Dynamically generate between 6 and 10 highly distinct, game-specific review dimensions (minimum 6, maximum 10). ` +
+      `Ensure they remain hyper-tailored to the specific mechanics, pacing, and identity of the selected title. ` +
+      `For example, do NOT ask about 'Platforming' for a Batman game—instead generate metrics like 'Superhero Power Fantasy Integration' or 'Combat Build Variety'. ` +
+      `Do NOT ask about 'Guns' for Mario—instead ask about 'Level/Platforming Momentum'. ` +
+      `Keep names short, clear, and phrase them as distinct dimensions (e.g., 'Atmospheric Depth', 'Narrative Resolution Consistency', 'Replayability Value').`;
+
+    const schema = {
+      type: 'OBJECT',
+      properties: {
+        departments: {
+          type: 'ARRAY',
+          items: { type: 'STRING' },
+          description: 'List of 6 to 10 game-specific evaluation criteria.',
+        },
+      },
+      required: ['departments'],
+    };
+
+    try {
+      const responseText = await this.generateContentWithFallback(prompt, systemInstruction, schema);
+      const parsed = JSON.parse(responseText);
+      if (!parsed.departments || !Array.isArray(parsed.departments)) {
+        throw new Error('Invalid response structure: missing departments array');
+      }
+      return parsed.departments;
+    } catch (error: any) {
+      console.error('Error generating retrospective departments from Gemini:', error);
+      throw new Error(`Failed to generate departments: ${error.message}`);
+    }
+  }
+
+  /**
+   * Generates a witty, first-person social media review draft based on the user's ratings
+   */
+  public async generateReviewDraft(
+    reviewerName: string,
+    gameName: string,
+    ratings: { department: string; stars: number; label: string }[]
+  ): Promise<string> {
+    const ratingsSummary = ratings
+      .map((r) => `- ${r.department}: ${r.stars} Stars (${r.label})`)
+      .join('\n');
+
+    const prompt = `
+      Reviewer Name: ${reviewerName}
+      Game: ${gameName}
+      Ratings Details:
+      ${ratingsSummary}
+    `;
+
+    const systemInstruction = 
+      `You are a witty, highly articulate gamer writing a short retrospective review post for social media (Reddit/X). ` +
+      `Analyze the reviewer's name, the game, and their star selections. ` +
+      `Generate a short, 3-to-4 sentence review written strictly from a First-Person Perspective ('I felt', 'My experience'). ` +
+      `Synthesize the ratings: if they gave 5 stars to a category, praise that element heavily using gamer-centric terminology. ` +
+      `If they gave 1 or 2 stars, address that flaw with casual humor or critique. ` +
+      `The tone must be engaging, authentic, informal, and perfectly capture the emotional stance reflected in their ratings. ` +
+      `Do not include hashtags or emojis in the core block. Output MUST strictly match the defined JSON schema.`;
+
+    const schema = {
+      type: 'OBJECT',
+      properties: {
+        reviewDraft: {
+          type: 'STRING',
+          description: 'The custom first-person written summary review block.',
+        },
+      },
+      required: ['reviewDraft'],
+    };
+
+    try {
+      const responseText = await this.generateContentWithFallback(prompt, systemInstruction, schema);
+      const parsed = JSON.parse(responseText);
+      if (!parsed.reviewDraft || typeof parsed.reviewDraft !== 'string') {
+        throw new Error('Invalid response structure: missing reviewDraft string');
+      }
+      return parsed.reviewDraft;
+    } catch (error: any) {
+      console.error('Error generating review draft from Gemini:', error);
+      throw new Error(`Failed to generate review draft: ${error.message}`);
+    }
+  }
 }
 
 export const geminiService = new GeminiService();

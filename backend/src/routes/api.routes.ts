@@ -107,4 +107,58 @@ router.post('/quiz/recommend', async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * POST /api/retrospective/departments
+ * Payload: { gameName: string, genres: string[] }
+ * Returns dynamic departments (metrics) for the specified game.
+ */
+router.post('/retrospective/departments', async (req: Request, res: Response) => {
+  const { gameName, genres } = req.body;
+
+  if (!gameName || typeof gameName !== 'string') {
+    return res.status(400).json({ error: 'gameName must be a string' });
+  }
+
+  if (!genres || !Array.isArray(genres)) {
+    return res.status(400).json({ error: 'genres must be an array of strings' });
+  }
+
+  try {
+    const departments = await geminiService.generateRetrospectiveDepartments(gameName, genres);
+    return res.json({ departments });
+  } catch (error: any) {
+    console.error('Retrospective departments generation router error:', error.message);
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * POST /api/retrospective/finalize
+ * Payload: { reviewerName: string, gameName: string, ratings: Array<{ department: string, stars: number, label: string }> }
+ * Returns a witty, first-person social media review draft based on the ratings.
+ */
+router.post('/retrospective/finalize', async (req: Request, res: Response) => {
+  const { reviewerName, gameName, ratings } = req.body;
+
+  if (!reviewerName || typeof reviewerName !== 'string') {
+    return res.status(400).json({ error: 'reviewerName must be a string' });
+  }
+
+  if (!gameName || typeof gameName !== 'string') {
+    return res.status(400).json({ error: 'gameName must be a string' });
+  }
+
+  if (!ratings || !Array.isArray(ratings)) {
+    return res.status(400).json({ error: 'ratings must be an array' });
+  }
+
+  try {
+    const reviewDraft = await geminiService.generateReviewDraft(reviewerName, gameName, ratings);
+    return res.json({ reviewDraft });
+  } catch (error: any) {
+    console.error('Retrospective review draft generation router error:', error.message);
+    return res.status(500).json({ error: error.message });
+  }
+});
+
 export default router;

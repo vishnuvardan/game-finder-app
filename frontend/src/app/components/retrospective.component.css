@@ -1,0 +1,468 @@
+.intake-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.form-label {
+  color: var(--text-muted, #94a3b8);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.text-input {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  color: #f8fafc;
+  font-family: inherit;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(8px);
+}
+
+.text-input:focus {
+  outline: none;
+  border-color: var(--primary-glow, #ff007f);
+  box-shadow: 0 0 15px rgba(255, 0, 127, 0.25);
+  background: rgba(15, 23, 42, 0.8);
+}
+
+/* Rating Form Styles */
+.rating-section {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.rating-header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 1.25rem;
+}
+
+.game-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.rating-thumb {
+  width: 70px;
+  height: 93px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.rating-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.rating-card {
+  background: rgba(15, 23, 42, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.rating-card:hover {
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.dept-name {
+  color: #fff;
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.star-rating-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+}
+
+.stars-container {
+  display: inline-flex;
+  gap: 0.25rem;
+}
+
+.star-button {
+  background: none;
+  border: none;
+  font-size: 1.75rem;
+  color: rgba(255, 255, 255, 0.15);
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275), color 0.15s ease;
+  line-height: 1;
+}
+
+.star-button:hover {
+  transform: scale(1.2);
+}
+
+.star-button.filled {
+  color: #ffb700;
+  text-shadow: 0 0 10px rgba(255, 183, 0, 0.4);
+}
+
+.active-label-tooltip {
+  font-size: 0.85rem;
+  color: var(--secondary-glow);
+  font-weight: 500;
+  padding: 0.3rem 0.8rem;
+  background: rgba(0, 240, 255, 0.08);
+  border: 1px solid rgba(0, 240, 255, 0.2);
+  border-radius: 8px;
+  opacity: 0;
+  transform: translateY(3px);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.active-label-tooltip.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Card Preview Section */
+.preview-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2.5rem;
+}
+
+.card-export-wrapper {
+  background: rgba(0, 0, 0, 0.5);
+  padding: 1.5rem;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.8);
+}
+
+/* Social Share Card Container (Vertical Phone Screen Aspect) */
+.share-card-container {
+  position: relative;
+  width: 400px;
+  height: 711px; /* 9:16 aspect ratio */
+  border-radius: 16px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-sizing: border-box;
+}
+
+.card-bg-cover {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  filter: blur(2px) brightness(0.8);
+  z-index: 1;
+  transform: scale(1.05);
+}
+
+.card-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(7, 9, 19, 0.45) 0%,
+    rgba(7, 9, 19, 0.85) 45%,
+    rgba(7, 9, 19, 0.98) 100%
+  );
+  z-index: 2;
+}
+
+.card-content {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 2.5rem 1.75rem;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  box-sizing: border-box;
+  gap: 2rem;
+}
+
+/* Card Header (Centered) */
+.card-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.card-header-badge {
+  color: var(--primary-glow);
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  text-shadow: 0 0 8px rgba(255, 0, 127, 0.4);
+}
+
+.card-game-title {
+  color: #fff;
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1.25;
+  margin: 0;
+}
+
+.card-reviewer-name {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-top: 0.15rem;
+}
+
+/* Card Ratings Grid */
+.card-ratings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  width: 100%;
+}
+
+.card-rating-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 0.45rem;
+  width: 100%;
+  gap: 0.75rem;
+}
+
+.card-dept-name {
+  color: #f1f5f9;
+  font-size: 0.85rem;
+  font-weight: 700;
+  max-width: 50%;
+  text-align: left;
+  word-wrap: break-word;
+  line-height: 1.25;
+}
+
+.card-rating-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
+  max-width: 50%;
+}
+
+.card-stars-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.35rem;
+}
+
+.card-stars-line {
+  display: inline-flex;
+  gap: 0.1rem;
+}
+
+.card-star {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.1);
+  line-height: 1;
+}
+
+.card-star.filled {
+  color: #ffb700;
+  text-shadow: 0 0 6px rgba(255, 183, 0, 0.35);
+}
+
+.card-stars-text-desc {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.card-star-label-tiny {
+  font-size: 0.65rem;
+  color: var(--secondary-glow);
+  font-weight: 500;
+  text-align: right;
+  font-style: italic;
+  opacity: 0.95;
+  letter-spacing: 0.02em;
+  width: 100%;
+  word-wrap: break-word;
+  line-height: 1.2;
+  margin-top: 0.05rem;
+}
+
+/* Preview Section Grid Layout */
+.preview-section {
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 1rem 0;
+}
+
+.preview-grid-split {
+  display: flex;
+  flex-direction: row;
+  gap: 2.5rem;
+  align-items: stretch;
+  justify-content: center;
+  width: 100%;
+}
+
+.preview-card-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 400px;
+  flex-shrink: 0;
+}
+
+.preview-draft-column {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  flex-grow: 1;
+  min-width: 320px;
+  box-sizing: border-box;
+}
+
+.preview-review-draft-box {
+  background: rgba(15, 23, 42, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-left: 4px solid var(--secondary-glow);
+  border-radius: 12px;
+  padding: 1.5rem 1.75rem;
+  width: 100%;
+  position: relative;
+  text-align: left;
+  box-sizing: border-box;
+  backdrop-filter: blur(8px);
+  margin-top: 1.5rem;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+}
+
+.quote-icon {
+  color: var(--secondary-glow);
+  font-size: 2.25rem;
+  font-weight: bold;
+  line-height: 1;
+  position: absolute;
+  top: 0.25rem;
+  left: 0.5rem;
+  opacity: 0.15;
+  font-family: serif;
+}
+
+.quote-text {
+  font-size: 0.95rem;
+  color: #f1f5f9;
+  line-height: 1.6;
+  margin: 0;
+  padding-left: 0.25rem;
+  font-style: italic;
+  font-family: inherit;
+}
+
+.controls-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #ffffff, var(--secondary-glow));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 0.5rem;
+}
+
+.controls-desc {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin-bottom: 0;
+}
+
+/* Responsive configurations */
+@media (max-width: 860px) {
+  .preview-grid-split {
+    flex-direction: column;
+    align-items: center;
+    gap: 2.5rem;
+  }
+
+  .preview-card-column {
+    width: 100%;
+    max-width: 400px;
+  }
+
+  .preview-draft-column {
+    width: 100%;
+    max-width: 400px;
+  }
+}
+
+@media (max-width: 540px) {
+  .share-card-container {
+    width: 290px;
+    height: 516px;
+  }
+  
+  .card-content {
+    padding: 1.75rem 1.25rem;
+    gap: 1.5rem;
+  }
+
+  .card-game-title {
+    font-size: 1.4rem;
+  }
+
+  .card-ratings-list {
+    gap: 0.5rem;
+  }
+
+  .card-dept-name {
+    font-size: 0.8rem;
+  }
+
+  .card-star {
+    font-size: 0.85rem;
+  }
+  
+  .card-star-label-tiny {
+    font-size: 0.6rem;
+  }
+
+  .card-rating-row {
+    padding-bottom: 0.35rem;
+  }
+}

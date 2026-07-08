@@ -58,7 +58,12 @@ class GeminiService {
 
     for (const model of models) {
       try {
-        console.log(`[GeminiService] Attempting request using model: ${model}`);
+        console.log(`\n================== [Gemini Request] ==================`);
+        console.log(`[Model]               : ${model}`);
+        console.log(`[System Instruction]  : ${systemInstruction}`);
+        console.log(`[User Prompt/Content] : ${contents}`);
+        console.log(`======================================================\n`);
+
         const response = await ai.models.generateContent({
           model,
           contents,
@@ -70,6 +75,10 @@ class GeminiService {
         });
 
         if (response.text) {
+          console.log(`\n================== [Gemini Response] ==================`);
+          console.log(`[Model]               : ${model}`);
+          console.log(`[Response JSON]       :\n${response.text}`);
+          console.log(`=======================================================\n`);
           return response.text;
         }
         throw new Error(`Empty response text from model ${model}`);

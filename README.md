@@ -1,116 +1,192 @@
-# SYSTEM SPECIFICATION & IMPLEMENTATION PROMPT: "GAME FINDER"
+# 🎮 My Next Game
+### *AI-Driven Video Game Matchmaker & Retrospective Share-Card Creator*
 
-## 1. PROJECT OBJECTIVE & ARCHITECTURE
-You are an expert full-stack engineer and architect building "Game Finder", an AI-driven, interactive video game discovery application. The workspace is bifurcated into two root folders:
-- `/frontend`: An Angular application.
-- `/backend`: A Node.js Express server acting as a Backend-for-Frontend (BFF).
-
-You must generate clean, production-grade, modular code for both directories, handle all installation steps, and ensure zero TypeScript errors.
+[![Angular](https://img.shields.io/badge/Angular%2022-DD0031?style=for-the-badge&logo=angular&logoColor=white)](https://angular.io/)
+[![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)](https://nodejs.org/)
+[![Express](https://img.shields.io/badge/Express-000000?style=for-the-badge&logo=express&logoColor=white)](https://expressjs.com/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Google Gemini](https://img.shields.io/badge/Google%20Gemini-8E75C2?style=for-the-badge&logo=googlegemini&logoColor=white)](https://deepmind.google/technologies/gemini/)
+[![IGDB API](https://img.shields.io/badge/IGDB%20API-6441A5?style=for-the-badge&logo=twitch&logoColor=white)](https://api-docs.igdb.com/)
+[![Deployed on Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://vercel.com/)
 
 ---
 
-## 2. BACKEND LAYER SPECIFICATION (`/backend`)
-Create a robust Node.js Express server with the following endpoints and design patterns:
+### 🚀 **Hosted URL: [https://my-next-game.vercel.app/](https://my-next-game.vercel.app/)**
 
-### A. Core Configurations & Middlewares
-- Enable CORS, JSON body parsers, and configure `dotenv` to pull `IGDB_CLIENT_ID`, `IGDB_CLIENT_SECRET`, and `GEMINI_API_KEY` from the environment.
-- Implement an automated memory-caching mechanism for the IGDB App Access Token (OAuth2 Client Credentials grant flow via `https://id.twitch.tv/oauth2/token`). Automatically refresh the token if it expires.
+**My Next Game** is a modern, full-stack web application designed for gaming enthusiasts. It leverages advanced Artificial Intelligence to solve the age-old problem: *"What should I play next?"* Additionally, it provides an interactive platform for creating, rating, and exporting personalized gaming retrospectives and reviews as beautiful, shareable image cards.
 
-### B. Endpoint 1: `GET /api/games/search?q=...`
-- **Purpose:** Acts as the typeahead autocomplete source.
-- **Action:** Query the IGDB API `https://api.igdb.com/v4/games` endpoint using the Apex query language. 
-- **Query Structure:** Search by the user string, limit to 8 results, and select fields: `name`, `cover.url`, `summary`, `genres.name`, `platforms.name`.
-- **Response:** Return a clean JSON array mapping the raw IGDB results to a standardized array format.
+---
 
-### C. Endpoint 2: `POST /api/quiz/generate`
-- **Payload:** `{ favoriteGames: Array<{ name: string, genres: string[] }> }` (exactly 3 games).
-- **AI Action:** Send the payload to the Google Gen AI SDK (`gemini-2.5-flash`). Use Structured Outputs (`responseSchema`) to guarantee a non-breaking UI payload.
-- **System Prompt Constraint:** 
-  "You are an elite, veteran video game recommendation engine. Analyze the 3 provided favorite games. Generate exactly 5 unique, highly specific multiple-choice questions to drill down into the user's specific mechanics, narrative weight, atmospheric pacing, and multiplayer preferences. Avoid generic questions. Output MUST strictly match the defined JSON schema."
-- **Expected Output JSON Schema:**
-  ```json
-  {
-    "type": "OBJECT",
-    "properties": {
-      "themeExplanation": { "type": "STRING" },
-      "questions": {
-        "type": "ARRAY",
-        "items": {
-          "type": "OBJECT",
-          "properties": {
-            "id": { "type": "STRING" },
-            "questionText": { "type": "STRING" },
-            "options": { "type": "ARRAY", "items": { "type": "STRING" } }
-          },
-          "required": ["id", "questionText", "options"]
-        }
-      }
-    },
-    "required": ["themeExplanation", "questions"]
-  }
+## 🧭 Table of Contents
+1. [App Overview & Features](#-app-overview--features)
+2. [Application Architecture](#%EF%B8%8F-application-architecture)
+3. [Technologies Used](#-technologies-used)
+4. [Public APIs Utilized](#-public-apis-utilized)
+5. [Local Setup & Development](#%EF%B8%8F-local-setup--development)
+6. [Deployment](#%EF%B8%8F-deployment)
 
-D. Endpoint 3: POST /api/quiz/recommend
-Payload: { favoriteGames: Array, quizAnswers: Array<{ questionId: string, answer: string }> }
+---
 
-AI Action: Pass everything to gemini-2.5-flash with a strict prompt forcing it to return exactly ONE highly tailored game title and a 3-sentence deep analytical reason why it fits their specific profile. Exclude the 3 games provided in their favorite list.
+## 🌟 App Overview & Features
 
-Expected Output JSON Schema:
-{
-  "type": "OBJECT",
-  "properties": {
-    "recommendedTitle": { "type": "STRING" },
-    "reasoning": { "type": "STRING" }
-  },
-  "required": ["recommendedTitle", "reasoning"]
-}
+The application is structured into two main, feature-rich gaming tools:
 
-3. FRONTEND LAYER SPECIFICATION (/frontend)
-Initialize an Angular application using modern structural paradigms (prefer Angular v17+ features like @if, @for, and signals where applicable for state tracking).
+### 1. 🎯 AI-Powered Game Matchmaker
+Struggling to find a game that matches your specific preferences? The Matchmaker has you covered:
+*   **Real-time Game Selector:** Search and choose exactly three games you love. Powered by an RxJS-debounced autocomplete search connecting to the IGDB database.
+*   **Themed Interest Exploration:** The backend submits your three games to Gemini 2.5 Flash, which determines their connecting themes and generates a highly tailored, custom 5-question personality/preference quiz.
+*   **Interactive Multi-Step Quiz:** A sleek, step-by-step form wizard tracking progress with a visual stepper.
+*   **Tailored Recommendation & Reveal:** Submits your quiz answers to Gemini to receive exactly one highly specific game recommendation along with a deep 3-sentence analytical reasoning.
+*   **Metadata Hydration:** Automatically retrieves the recommended game's metadata (high-res box art cover, release platforms, summary, and genres) from IGDB to present a gorgeous, premium final recommendation card.
 
-A. Layout 1: Landing & Autocomplete Selector
-Header: Title text: "Find game based on my interest" accompanied by a sleek description block.
+### 2. 📝 Retro Review Card Maker (Retrospective)
+Finished a game recently? Create a unique review sheet to share on social media:
+*   **Dynamic Evaluation Criteria:** Search for a game you played. Gemini generates 6 to 10 highly distinct, game-specific review dimensions (e.g., *Boss Design*, *Storytelling Pace*, *Combat Fun*, or critiques like *Too Much Grinding?*, *Lag & Bugs*).
+*   **Custom Themed Rating Labels:** The star rating levels (1 to 5) are dynamically named based on the game's specific lore, theme, and mood (e.g., *5 Stars* might become *"Absolute Cinema"*).
+*   **Witty AI Review Generation:** Once you rate the categories, Gemini synthesizes your ratings into a casual, authentic first-person social media review draft.
+*   **High-Res Shareable Cards:** Render a beautiful, glassmorphic card on the frontend and copy the text or download it instantly as a high-quality PNG image card using CORS-compliant `html2canvas` rendering.
 
-Form Component: Render exactly 3 individual text inputs.
+---
 
-Autocomplete Mechanism: Wire an RxJS-driven pipeline on each input using debounceTime(300), distinctUntilChanged(), and switchMap() targeting your backend search endpoint. Display matching names in an accessible overlay dropdown list.
+## 🏗️ Application Architecture
 
-Action: A "Surprise Me" submission button that remains disabled until exactly 3 valid games are selected. Clicking it fires the backend api/quiz/generate request.
+The application is designed using a **BFF (Backend-for-Frontend)** architecture patterns. The frontend (Angular) communicates solely with our backend BFF (Express server), which acts as a secure aggregator and proxy for external APIs (Google Gemini and Twitch/IGDB).
 
-B. Layout 2: Step-by-Step Interactive Quiz Form
-Switch the view once the 5 questions are received.
+### System Interaction Diagram
 
-Progress Bar Component: Place a prominent, stylized progress indicator at the top tracking current progress (e.g., "Step 2 of 5").
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as 🎮 Gamer
+    participant FE as 🖥️ Angular Frontend (v22)
+    participant BE as ⚙️ Express BFF Backend
+    participant Gemini as 🤖 Google Gemini API (2.5 Flash)
+    participant IGDB as 👾 Twitch / IGDB API
 
-Multi-Step Form Flow: Present the 5 AI-generated multiple-choice questions sequentially (one question view at a time).
+    rect rgb(30, 30, 40)
+        Note over User, FE: Phase 1: Game Selection & Autocomplete
+        User->>FE: Types game name (debounced input)
+        FE->>BE: GET /api/games/search?q=...
+        BE->>IGDB: Query games (OAuth2 token cache proxy)
+        IGDB-->>BE: Game matches (cover, genres, etc.)
+        BE-->>FE: Standardized list of games
+        FE-->>User: Display autocomplete dropdown
+    end
 
-Navigation Controls: Include clear interaction elements to step forward or view previous selections. On the final question, the button changes to "Discover My Game". Clicking it submits the selections to the backend api/quiz/recommend endpoint.
+    rect rgb(40, 30, 40)
+        Note over User, Gemini: Phase 2: AI Quiz Generation
+        User->>FE: Selects 3 favorite games & clicks "Surprise Me"
+        FE->>BE: POST /api/quiz/generate
+        BE->>Gemini: gemini-2.5-flash (Structured JSON Schema)
+        Gemini-->>BE: 5 Tailored Questions + Theme Connection
+        BE-->>FE: Return Quiz JSON
+        FE-->>User: Display interactive multi-step quiz
+    end
 
-C. Layout 3: The Big Reveal Screen
-Show a clean loading skeleton state while fetching the response.
+    rect rgb(30, 40, 30)
+        Note over User, IGDB: Phase 3: Recommendation Reveal
+        User->>FE: Answers questions & submits
+        FE->>BE: POST /api/quiz/recommend
+        BE->>Gemini: gemini-2.5-flash (Structured Recommendation)
+        Gemini-->>BE: Game Title + Deep Reasoning
+        BE-->>FE: Recommendation Response
+        FE->>BE: GET /api/games/by-title?title=...
+        BE->>IGDB: Retrieve precise game metadata
+        IGDB-->>BE: Game details (high-res cover art, platforms)
+        BE-->>FE: Complete metadata
+        FE-->>User: Display Game Reveal Card & AI Reasoning
+    end
 
-Once the title is returned, execute a background call to your IGDB proxy search on the backend using the precise title string to extract the real game metadata.
+    rect rgb(30, 40, 40)
+        Note over User, Gemini: Phase 4: Retro Review Card Maker
+        User->>FE: Inputs name, selects game, requests review sheet
+        FE->>BE: POST /api/retrospective/departments
+        BE->>Gemini: Generate custom categories & themed star labels
+        Gemini-->>BE: Dynamic criteria + 1-5 star ratings
+        BE-->>FE: Return criteria list
+        User->>FE: Rates game & clicks "Finalize"
+        FE->>BE: POST /api/retrospective/finalize
+        BE->>Gemini: Generate 1st-person social review
+        Gemini-->>BE: Witty review text draft
+        BE-->>FE: Return review text
+        FE-->>User: Present Share Card (Copy Text / Download PNG)
+    end
+```
 
-Render Card: Show a prominent hero layout containing:
+---
 
-High-resolution Box Art / Thumbnail image.
+## 🛠️ Technologies Used
 
-Title, Released Platforms, Genres, and Summary description text from IGDB.
+### Frontend (`/frontend`)
+*   **Framework:** Angular (v22) utilising Standalone Components, Signal state tracking, and reactive structures.
+*   **Reactive Programming:** RxJS (`debounceTime`, `distinctUntilChanged`, `switchMap`) for handling search autocomplete streams without spamming APIs.
+*   **Canvas Export:** `html2canvas` for screenshotting reviews into local PNG downloads.
+*   **Styling:** Custom Vanilla CSS with modern Glassmorphism, linear gradients, neon box shadows, keyframe animations, and a responsive flexbox/grid layout.
 
-A highlighted callout box containing the AI agent's custom text detailing exactly why this game fits their vibe.
+### Backend BFF (`/backend`)
+*   **Runtime & Language:** Node.js, Express, and TypeScript.
+*   **HTTP Client:** `axios` for fast communication with Twitch and IGDB.
+*   **Security & Helpers:** `cors` middleware, `dotenv` for environment configurations.
 
-A "Start Over" button to clear state and reinitialize the app workflow.
+---
 
-4. AGENT EXECUTION TASK LIST
-Execute the implementation incrementally across these concrete phases:
+## 🔌 Public APIs Utilized
 
-Phase 1: Initialize the Node.js project inside /backend, create standard scripts, configure dependencies (express, axios, dotenv, @google/genai), and write the IGDB authentication client.
+The backend connects to two core external platforms:
 
-Phase 2: Build out the Express routing controllers for the 3 target endpoints using mock data arrays initially to prove endpoint connectivity.
+### 1. Twitch / IGDB API v4
+Used for looking up games and fetching official covers, release platforms, descriptions, and genres.
+*   **Authentication:** Utilizes the OAuth2 Client Credentials flow (`https://id.twitch.tv/oauth2/token`).
+*   **Token Caching:** The backend implements an **automated memory-caching system** for Twitch App Access tokens. It caches tokens internally and automatically performs a background refresh check when they near expiration, preventing latency spikes on user queries.
+*   **Querying:** Accesses `https://api.igdb.com/v4/games` using the IGDB Apex Query Language.
 
-Phase 3: Integrate the real Google Gen AI SDK configurations and schema enforcements. Validate parsing consistency.
+### 2. Google Gemini API (`gemini-2.5-flash`)
+The heart of our AI-driven systems, implemented via the official `@google/genai` SDK.
+*   **Structured Output Engine:** Uses Gemini's `responseMimeType: 'application/json'` along with strict `responseSchema` parameters to enforce type safety. This ensures that the generated quiz objects, recommendations, and evaluation criteria never break the frontend parser.
+*   **Highly Redundant Fallback Engine:** Features a fallback algorithm across **11 different model configurations and aliases** (from `gemini-2.5-flash` to `gemini-3.1-pro` and legacy versions). If Gemini encounters 429 Rate Limits or Quota Exceeded errors on the free-tier service, it instantly fallbacks to the next available alias, guaranteeing near 100% uptime.
 
-Phase 4: Scaffold the Angular boilerplate in /frontend. Configure routing modules/components and the global HTTP Client.
+---
 
-Phase 5: Build out the RxJS autocomplete search hooks, standard styling frameworks, the 5-step form wizard layout, and state mapping.
+## ⚙️ Local Setup & Development
 
-Phase 6: Conduct an E2E test run to ensure full connectivity, verifying that data flows seamlessly from input selection to the final AI recommendation layout.
+### Prerequisites
+Make sure you have [Node.js](https://nodejs.org/) (v18+ recommended) and `npm` installed.
+
+### 1. Clone & Set Environment Variables
+Go to `backend/` and create a file named `.env`:
+```env
+PORT=3000
+IGDB_CLIENT_ID=your_twitch_client_id
+IGDB_CLIENT_SECRET=your_twitch_client_secret
+GEMINI_API_KEY=your_gemini_api_key
+```
+
+### 2. Start Backend BFF
+Open your terminal:
+```bash
+cd backend
+npm install
+npm run dev
+```
+The backend server will spin up on [http://localhost:3000](http://localhost:3000) using `ts-node` and `nodemon` for hot-reloads.
+
+### 3. Start Frontend
+Open a new terminal window:
+```bash
+cd frontend
+npm install
+npm start
+```
+The Angular dev server will launch on [http://localhost:4200](http://localhost:4200) with hot-reloading active.
+
+---
+
+## 🏳️‍🌈 Deployment
+
+Both the frontend and backend are configured for simple deployment to **Vercel** via the respective `vercel.json` configurations:
+*   **Frontend Vercel Proxy:** Configured to direct `/api/*` endpoints to the deployed serverless backend.
+*   **Backend Vercel Config:** Bundles TypeScript files on Vercel deployment using standard configurations to run Express routes inside serverless environments.
+
+---
+
+*Enjoy finding your next game and sharing reviews!* 🚀🎮

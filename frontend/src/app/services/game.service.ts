@@ -96,8 +96,8 @@ export class GameService {
   /**
    * Generate retrospective departments based on finished game name and genres
    */
-  generateRetrospectiveDepartments(gameName: string, genres: string[]): Observable<{ departments: string[] }> {
-    return this.http.post<{ departments: string[] }>(`${this.apiUrl}/retrospective/departments`, {
+  generateRetrospectiveDepartments(gameName: string, genres: string[]): Observable<{ departments: string[]; starLabels: { [key: number]: string } }> {
+    return this.http.post<{ departments: string[]; starLabels: { [key: number]: string } }>(`${this.apiUrl}/retrospective/departments`, {
       gameName,
       genres,
     });

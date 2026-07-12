@@ -11,7 +11,7 @@ interface StarLabelMap {
   [key: number]: string;
 }
 
-const STAR_LABELS: StarLabelMap = {
+const DEFAULT_STAR_LABELS: StarLabelMap = {
   1: 'Frustratingly bad design.',
   2: 'Skill issue? Nah, but the game is to blame.',
   3: 'Good for some, boring for me.',
@@ -37,6 +37,7 @@ export class RetrospectiveComponent {
 
   // AI-generated metrics & user reviews
   protected readonly departments = signal<string[]>([]);
+  protected readonly starLabels = signal<StarLabelMap>({ ...DEFAULT_STAR_LABELS });
   protected readonly ratings = signal<{ [dept: string]: number }>({});
   protected readonly hoveredStars = signal<{ [dept: string]: number }>({});
   protected readonly reviewDraft = signal<string>('');
@@ -77,6 +78,9 @@ export class RetrospectiveComponent {
           return;
         }
         this.departments.set(res.departments);
+        if (res.starLabels) {
+          this.starLabels.set(res.starLabels);
+        }
 
         // Initialize ratings and hover values
         const initialRatings: { [dept: string]: number } = {};
@@ -100,7 +104,7 @@ export class RetrospectiveComponent {
 
   // Star Rating helpers
   protected getStarLabel(ratingValue: number): string {
-    return STAR_LABELS[ratingValue] || '';
+    return this.starLabels()[ratingValue] || '';
   }
 
   protected getActiveLabel(dept: string): string {
@@ -239,6 +243,7 @@ export class RetrospectiveComponent {
     this.reviewerName.set('');
     this.selectedGame.set(null);
     this.departments.set([]);
+    this.starLabels.set({ ...DEFAULT_STAR_LABELS });
     this.ratings.set({});
     this.hoveredStars.set({});
     this.reviewDraft.set('');

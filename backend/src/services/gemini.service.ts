@@ -222,27 +222,63 @@ class GeminiService {
   public async generateRetrospectiveDepartments(
     gameName: string,
     genres: string[]
-  ): Promise<string[]> {
+  ): Promise<{
+    departments: string[];
+    starLabels: {
+      1: string;
+      2: string;
+      3: string;
+      4: string;
+      5: string;
+    };
+  }> {
     const prompt = `The user has just finished the game: "${gameName}" within genres: ${genres.join(', ')}.`;
 
     const systemInstruction = 
-      `You are a critical video game reviewer and taxonomist. The user has just finished the game: "${gameName}" within genres: ${genres.join(', ')}. ` +
-      `Dynamically generate between 6 and 10 highly distinct, game-specific review dimensions (minimum 6, maximum 10). ` +
-      `Ensure they remain hyper-tailored to the specific mechanics, pacing, and identity of the selected title. ` +
-      `For example, do NOT ask about 'Platforming' for a Batman game—instead generate metrics like 'Superhero Power Fantasy Integration' or 'Combat Build Variety'. ` +
-      `Do NOT ask about 'Guns' for Mario—instead ask about 'Level/Platforming Momentum'. ` +
-      `Keep names short, clear, and phrase them as distinct dimensions (e.g., 'Atmospheric Depth', 'Narrative Resolution Consistency', 'Replayability Value').`;
+      `You are a critical video game reviewer. The user has just finished the game: "${gameName}" within genres: ${genres.join(', ')}. ` +
+      `Your task is two-fold: \n` +
+      `1. Dynamically generate between 6 and 10 highly distinct, game-specific review dimensions/questions (minimum 6, maximum 10). ` +
+      `You MUST follow these rules strictly: \n` +
+      `   a. Use extremely simple, easy-to-understand English (suitable for an average gamer whose primary language is not English). ` +
+      `Avoid complex, academic, flowery, or jargon-heavy terms (like 'Labyrinthine', 'Ecclesiastical', 'Grotesque', 'Iconography', 'Tactile Feedback', 'Narrative Resolution', 'Soundscape'). ` +
+      `Use simple terms (e.g., 'scary art style' instead of 'grotesque design'). \n` +
+      `   b. Make it balanced by ensuring 30% to 50% of the items focus on criticism, negative aspects, disadvantages, or common frustrations of the game ` +
+      `(e.g., game optimization/bugs, boring grinding, clunky controls, repetitive missions, excessive difficulty). \n` +
+      `   c. Exactly 30% to 50% of the items must be framed as short, direct, challenging questions (e.g., 'Too much grinding?', 'Need guides to finish?', 'Bugs or lag?', 'Is story boring?'). \n` +
+      `   d. The remaining items must be short 2-to-3 word simple labels (e.g., 'Combat fun', 'Boss designs', 'Music and sound'). \n` +
+      `   e. Crucially, all items (both labels and questions) MUST be very short (under 30 characters) so they do not break or overflow the card layout. \n\n` +
+      `2. Generate exactly 5 game-themed star rating labels (from 1 to 5 stars) specifically customized for "${gameName}". ` +
+      `You MUST follow these rules strictly: \n` +
+      `   a. Use extremely simple, easy-to-understand English. \n` +
+      `   b. Tailor the labels to the specific theme, mood, difficulty, and lore of "${gameName}". \n` +
+      `   c. Ensure a clear progression of quality (1 star is worst/most disappointing, 5 stars is best/absolute masterpiece). \n` +
+      `   d. Keep each label short and punchy (under 40 characters).`;
 
     const schema = {
       type: 'OBJECT',
       properties: {
         departments: {
           type: 'ARRAY',
-          items: { type: 'STRING' },
-          description: 'List of 6 to 10 game-specific evaluation criteria.',
+          items: { 
+            type: 'STRING',
+            description: 'A very short game-specific evaluation label or question, under 30 characters, in simple English.'
+          },
+          description: 'List of 6 to 10 game-specific evaluation criteria (30% to 50% questions, 30% to 50% critique).',
+        },
+        starLabels: {
+          type: 'OBJECT',
+          properties: {
+            1: { type: 'STRING', description: 'Game-themed rating label for 1 star (worst).' },
+            2: { type: 'STRING', description: 'Game-themed rating label for 2 stars.' },
+            3: { type: 'STRING', description: 'Game-themed rating label for 3 stars.' },
+            4: { type: 'STRING', description: 'Game-themed rating label for 4 stars.' },
+            5: { type: 'STRING', description: 'Game-themed rating label for 5 stars (best).' },
+          },
+          required: ['1', '2', '3', '4', '5'],
+          description: 'Custom, game-themed star rating labels from 1 to 5, in simple English.',
         },
       },
-      required: ['departments'],
+      required: ['departments', 'starLabels'],
     };
 
     try {
@@ -251,7 +287,19 @@ class GeminiService {
       if (!parsed.departments || !Array.isArray(parsed.departments)) {
         throw new Error('Invalid response structure: missing departments array');
       }
-      return parsed.departments;
+      if (!parsed.starLabels || typeof parsed.starLabels !== 'object') {
+        throw new Error('Invalid response structure: missing starLabels object');
+      }
+      return {
+        departments: parsed.departments,
+        starLabels: {
+          1: parsed.starLabels['1'] || parsed.starLabels[1] || 'Terrible',
+          2: parsed.starLabels['2'] || parsed.starLabels[2] || 'Bad',
+          3: parsed.starLabels['3'] || parsed.starLabels[3] || 'Average',
+          4: parsed.starLabels['4'] || parsed.starLabels[4] || 'Good',
+          5: parsed.starLabels['5'] || parsed.starLabels[5] || 'Masterpiece',
+        }
+      };
     } catch (error: any) {
       console.error('Error generating retrospective departments from Gemini:', error);
       throw new Error(`Failed to generate departments: ${error.message}`);
@@ -278,13 +326,14 @@ class GeminiService {
     `;
 
     const systemInstruction = 
-      `You are a witty, highly articulate gamer writing a short retrospective review post for social media (Reddit/X). ` +
-      `Analyze the reviewer's name, the game, and their star selections. ` +
-      `Generate a short, 3-to-4 sentence review written strictly from a First-Person Perspective ('I felt', 'My experience'). ` +
-      `Synthesize the ratings: if they gave 5 stars to a category, praise that element heavily using gamer-centric terminology. ` +
-      `If they gave 1 or 2 stars, address that flaw with casual humor or critique. ` +
-      `The tone must be engaging, authentic, informal, and perfectly capture the emotional stance reflected in their ratings. ` +
-      `Do not include hashtags or emojis in the core block. Output MUST strictly match the defined JSON schema.`;
+      `You are a casual gamer writing a short retrospective review post for social media. ` +
+      `Analyze the reviewer's name, the game, and their rating details. ` +
+      `Generate a short, 3-to-4 sentence review written strictly from a First-Person Perspective ('I liked', 'I felt', 'In my play-through'). \n` +
+      `You MUST follow these rules strictly: \n` +
+      `1. Use extremely simple, easy-to-understand English. A person who only knows basic English must easily understand the review. \n` +
+      `2. Avoid complex, flowery, academic, or heavy game-lore words (e.g., do NOT use words like 'penitent perfection', 'High Wills-tier', 'cryptic Metroidvania', 'Miracle trolling me', 'cohesive integration'). \n` +
+      `3. Keep the tone engaging, casual, and authentic. Synthesize the ratings: praise the high-rated areas simply (e.g. 'art style was beautiful', 'music was awesome') and critique the low-rated areas simply (e.g. 'combat was too hard', 'driving felt clunky'). \n` +
+      `4. Do not include hashtags or emojis. Output MUST strictly match the defined JSON schema.`;
 
     const schema = {
       type: 'OBJECT',

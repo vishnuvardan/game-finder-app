@@ -124,8 +124,8 @@ router.post('/retrospective/departments', async (req: Request, res: Response) =>
   }
 
   try {
-    const departments = await geminiService.generateRetrospectiveDepartments(gameName, genres);
-    return res.json({ departments });
+    const result = await geminiService.generateRetrospectiveDepartments(gameName, genres);
+    return res.json(result);
   } catch (error: any) {
     console.error('Retrospective departments generation router error:', error.message);
     return res.status(500).json({ error: error.message });

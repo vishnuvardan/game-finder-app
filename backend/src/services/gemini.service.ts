@@ -30,6 +30,15 @@ export interface QuizAnswer {
   answer: string;
 }
 
+export interface TrophyGuideResponse {
+  estimatedDifficulty: string;
+  isMissable: boolean;
+  timeCommitment?: string;
+  prerequisites?: string[];
+  walkthroughSteps: string[];
+  proTip?: string;
+}
+
 class GeminiService {
   /**
    * Helper to execute models.generateContent with automatic model fallback for quota/rate-limit errors.
@@ -356,6 +365,74 @@ class GeminiService {
     } catch (error: any) {
       console.error('Error generating review draft from Gemini:', error);
       throw new Error(`Failed to generate review draft: ${error.message}`);
+    }
+  }
+
+  /**
+   * Generates a step-by-step walkthrough guide for a specific trophy/achievement
+   */
+  public async generateTrophyGuide(
+    gameName: string,
+    trophyName: string,
+    trophyDescription: string
+  ): Promise<TrophyGuideResponse> {
+    const prompt = `
+      Game: "${gameName}"
+      Trophy Name: "${trophyName}"
+      Trophy Description: "${trophyDescription}"
+    `;
+
+    const systemInstruction = 
+      "You are an elite, highly efficient video game guide writer specializing in trophy and achievement completionism. " +
+      "Provide an optimized, spoiler-free (where possible), tactical guide to unlock the specified trophy. " +
+      "Break down the mechanical steps linearly. Be concise, accurate, and direct.";
+
+    const schema = {
+      type: "OBJECT",
+      properties: {
+        estimatedDifficulty: { 
+          type: "STRING", 
+          description: "Difficulty rating (e.g., 2/10 Easy, 7/10 Hard)." 
+        },
+        isMissable: { 
+          type: "BOOLEAN", 
+          description: "True if the player can lock themselves out of getting this achievement in a single playthrough." 
+        },
+        timeCommitment: { 
+          type: "STRING", 
+          description: "Estimated time needed specifically for this achievement (e.g., '15 minutes', 'Requires full playthrough')." 
+        },
+        prerequisites: { 
+          type: "ARRAY", 
+          items: { "type": "STRING" },
+          description: "Any specific items, levels, skills, or story progression required before attempting."
+        },
+        walkthroughSteps: { 
+          type: "ARRAY", 
+          items: { "type": "STRING" },
+          description: "Chronological, actionable steps to physically unlock the trophy."
+        },
+        proTip: { 
+          type: "STRING", 
+          description: "Glitch warnings, shortcuts, or combat strategies to make the achievement trivial." 
+        }
+      },
+      required: ["estimatedDifficulty", "isMissable", "walkthroughSteps"]
+    };
+
+    try {
+      const responseText = await this.generateContentWithFallback(prompt, systemInstruction, schema);
+      const parsed: TrophyGuideResponse = JSON.parse(responseText);
+
+      // Simple validation
+      if (!parsed.estimatedDifficulty || typeof parsed.isMissable !== 'boolean' || !Array.isArray(parsed.walkthroughSteps)) {
+        throw new Error('Response is missing required schema fields');
+      }
+
+      return parsed;
+    } catch (error: any) {
+      console.error('Error generating trophy guide from Gemini:', error);
+      throw new Error(`Failed to generate trophy guide: ${error.message}`);
     }
   }
 }

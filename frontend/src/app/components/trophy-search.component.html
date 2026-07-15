@@ -1,0 +1,45 @@
+<div class="content-wrapper search-page">
+  <div class="glass-panel search-card pulsate-glow">
+    <div class="search-header">
+      <h2 class="section-title">🏆 Trophy & Achievement Guide</h2>
+      <p class="section-desc">Search for any game to view its complete list of achievements and generate tactical walkthroughs powered by Google Gemini AI.</p>
+    </div>
+
+    <!-- Search Input & Suggestions container -->
+    <div class="search-input-container">
+      <div class="search-input-wrapper">
+        <span class="search-icon">🔍</span>
+        <input
+          type="text"
+          [formControl]="searchControl"
+          placeholder="Type game title (e.g. Elden Ring, God of War)..."
+          class="search-input"
+          autocomplete="off"
+        />
+        <div *ngIf="isLoading()" class="search-spinner"></div>
+      </div>
+
+      <!-- Floating Suggestions List -->
+      <div *ngIf="suggestions().length > 0" class="suggestions-container">
+        <div 
+          *ngFor="let game of suggestions()" 
+          class="suggestion-item" 
+          (click)="selectGame(game)"
+        >
+          <img [src]="game.background_image" [alt]="game.name" class="suggestion-thumb" />
+          <span class="suggestion-title">{{ game.name }}</span>
+          <span class="suggestion-arrow">➔</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Error message -->
+    <div *ngIf="errorMessage()" class="error-msg">
+      <span>⚠️</span> {{ errorMessage() }}
+    </div>
+
+    <div *ngIf="!isLoading() && suggestions().length === 0 && searchControl.value && searchControl.value.trim().length >= 3" class="no-results">
+      No games found for "{{ searchControl.value }}". Try another title.
+    </div>
+  </div>
+</div>

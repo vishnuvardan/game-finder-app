@@ -1,0 +1,573 @@
+.detail-page {
+  animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.back-nav {
+  margin-bottom: 1.5rem;
+}
+
+.back-btn {
+  font-size: 0.9rem;
+  padding: 0.5rem 1.25rem;
+  border-radius: 10px;
+}
+
+/* Game Title Card */
+.game-header-card {
+  position: relative;
+  height: 200px;
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 2.5rem;
+  margin-bottom: 2.5rem;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+.header-overlay-glow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 10% 50%, rgba(255, 0, 127, 0.15), transparent 60%);
+  pointer-events: none;
+}
+
+.game-name {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 0.25rem;
+  text-shadow: 0 4px 15px rgba(0, 0, 0, 0.9), 0 0 30px rgba(255, 0, 127, 0.2);
+  z-index: 2;
+}
+
+.trophy-count {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--secondary-glow);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  text-shadow: 0 2px 5px rgba(0,0,0,0.8);
+  z-index: 2;
+}
+
+/* Page errors */
+.page-error-card {
+  text-align: center;
+  padding: 3rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+.error-warn-icon-large {
+  font-size: 3rem;
+}
+.page-error-text {
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  max-width: 400px;
+}
+
+/* Achievements Grid */
+.achievements-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 4rem;
+}
+
+.achievement-card {
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem;
+  border-radius: 16px;
+  cursor: pointer;
+  background: rgba(15, 23, 42, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.achievement-card:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 0, 127, 0.3);
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4), 0 0 15px rgba(255, 0, 127, 0.1);
+}
+
+.ach-icon-wrapper {
+  position: relative;
+  width: 54px;
+  height: 54px;
+  margin-bottom: 1.25rem;
+}
+
+.ach-icon {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(7, 9, 19, 0.8);
+}
+
+.ach-hover-glow {
+  position: absolute;
+  inset: -4px;
+  border-radius: 16px;
+  background: radial-gradient(circle, var(--primary-glow) 0%, transparent 70%);
+  opacity: 0;
+  z-index: -1;
+  transition: opacity 0.3s ease;
+}
+
+.achievement-card:hover .ach-hover-glow {
+  opacity: 0.3;
+}
+
+.ach-details {
+  flex-grow: 1;
+}
+
+.ach-name {
+  font-size: 1.1rem;
+  font-weight: 750;
+  color: #fff;
+  margin-bottom: 0.5rem;
+  line-height: 1.3;
+}
+
+.ach-desc {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  line-height: 1.4;
+  /* limit description length in grid */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ach-action {
+  margin-top: 1.25rem;
+  display: flex;
+}
+
+.view-guide-pill {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--secondary-glow);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: transform 0.25s ease;
+}
+
+.achievement-card:hover .view-guide-pill {
+  transform: translateX(4px);
+}
+
+.no-achievements {
+  text-align: center;
+  padding: 4rem 2rem;
+}
+
+.empty-icon {
+  font-size: 3rem;
+  display: block;
+  margin-bottom: 1rem;
+}
+
+/* Sliding Drawer Overlay */
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease-out;
+}
+
+.drawer-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.drawer-content {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  max-width: 520px;
+  background: rgba(10, 15, 30, 0.96);
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: -15px 0 35px rgba(0, 0, 0, 0.8);
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.drawer-overlay.open .drawer-content {
+  transform: translateX(0);
+}
+
+.drawer-header {
+  padding: 2.25rem 2rem 1.75rem 2rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  position: relative;
+}
+
+.close-btn {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.25s ease;
+}
+
+.close-btn:hover {
+  background: rgba(255, 0, 127, 0.15);
+  color: #fff;
+  border-color: rgba(255, 0, 127, 0.3);
+}
+
+.drawer-trophy-identity {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  margin-top: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.drawer-trophy-icon {
+  width: 58px;
+  height: 58px;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 0 15px rgba(255, 0, 127, 0.15);
+}
+
+.drawer-badge-subtitle {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  letter-spacing: 0.1em;
+}
+
+.drawer-trophy-title {
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.2;
+}
+
+.drawer-trophy-description {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.drawer-body {
+  flex-grow: 1;
+  padding: 2rem;
+  overflow-y: auto;
+}
+
+/* Guide Content Area */
+.guide-content-area {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out;
+}
+
+/* Badges Grid */
+.guide-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding-bottom: 1.5rem;
+}
+
+.meta-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 0.75rem 0.5rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 10px;
+}
+
+.meta-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-bottom: 0.4rem;
+}
+
+.meta-value {
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.difficulty-badge {
+  color: var(--secondary-glow);
+}
+
+.missable-badge {
+  color: var(--success-glow);
+}
+
+.missable-badge.is-missable {
+  color: #f87171;
+}
+
+.time-badge {
+  color: var(--purple-glow);
+}
+
+/* Guide Sections */
+.guide-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.guide-section-title {
+  font-size: 1rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #fff;
+  letter-spacing: 0.05em;
+  border-left: 3px solid var(--primary-glow);
+  padding-left: 0.6rem;
+}
+
+/* Prerequisites */
+.prereq-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.prereq-list li {
+  font-size: 0.925rem;
+  color: var(--text-main);
+  line-height: 1.4;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.bullet-dot {
+  color: var(--primary-glow);
+  font-weight: bold;
+}
+
+/* Walkthrough steps */
+.walkthrough-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.step-card {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 12px;
+  align-items: flex-start;
+  transition: border-color 0.25s ease;
+}
+
+.step-card:hover {
+  border-color: rgba(0, 240, 255, 0.2);
+}
+
+.step-num {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--secondary-glow);
+  color: #070913;
+  font-size: 0.8rem;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.step-text {
+  color: #e2e8f0;
+  font-size: 0.925rem;
+  line-height: 1.5;
+}
+
+/* Pro tip */
+.pro-tip-card {
+  background: rgba(189, 0, 255, 0.05);
+  border: 1px solid rgba(189, 0, 255, 0.25);
+  border-left: 4px solid var(--purple-glow);
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+
+.tip-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.tip-icon {
+  font-size: 1.2rem;
+}
+
+.tip-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #fff;
+}
+
+.tip-text {
+  color: #e2e8f0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+/* Guide Errors */
+.guide-error-card {
+  text-align: center;
+  padding: 2rem 1rem;
+  background: rgba(239, 68, 68, 0.05);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.error-warn-icon {
+  font-size: 2.2rem;
+}
+
+.error-desc-text {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  line-height: 1.4;
+  margin-bottom: 0.5rem;
+}
+
+.retry-btn {
+  font-size: 0.85rem;
+  padding: 0.65rem 1.5rem;
+  border-radius: 10px;
+}
+
+/* Skeleton Loading Guide Drawer */
+.skeleton-wrapper-guide {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.skeleton-header {
+  height: 20px;
+  width: 40%;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 4px;
+}
+
+.skeleton-badges {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+.skeleton-badge-item {
+  height: 48px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 8px;
+}
+
+.skeleton-section-title {
+  height: 18px;
+  width: 30%;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 4px;
+}
+
+.skeleton-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.skeleton-list-item {
+  height: 52px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 10px;
+}
+
+.skeleton-callout {
+  height: 80px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 10px;
+}
+
+@media (max-width: 768px) {
+  .game-header-card {
+    padding: 1.5rem;
+    height: 150px;
+  }
+  .game-name {
+    font-size: 1.75rem;
+  }
+  .drawer-content {
+    max-width: 100%;
+  }
+  .guide-meta-grid {
+    grid-template-columns: 1fr;
+  }
+}

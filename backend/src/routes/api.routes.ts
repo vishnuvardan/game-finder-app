@@ -1,6 +1,8 @@
 import { Router, Request, Response } from 'express';
 import { igdbService } from '../services/igdb.service';
 import { geminiService } from '../services/gemini.service';
+import { rawgService } from '../services/rawg.service';
+import { cacheService } from '../services/cache.service';
 
 const router = Router();
 
@@ -10,14 +12,20 @@ const router = Router();
  */
 router.get('/games/search', async (req: Request, res: Response) => {
   const query = req.query.q as string;
+  const source = req.query.source as string;
 
   if (!query || query.trim() === '') {
     return res.status(400).json({ error: 'Search query parameter "q" is required' });
   }
 
   try {
-    const results = await igdbService.searchGames(query);
-    return res.json(results);
+    if (source === 'igdb') {
+      const results = await igdbService.searchGames(query);
+      return res.json(results);
+    } else {
+      const results = await rawgService.searchGames(query);
+      return res.json(results);
+    }
   } catch (error: any) {
     console.error('Search router error:', error.message);
     return res.status(500).json({ error: error.message });
@@ -157,6 +165,72 @@ router.post('/retrospective/finalize', async (req: Request, res: Response) => {
     return res.json({ reviewDraft });
   } catch (error: any) {
     console.error('Retrospective review draft generation router error:', error.message);
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /api/games/:id
+ * Retrieve game details from RAWG API
+ */
+router.get('/games/:id', async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  try {
+    const details = await rawgService.getGameDetails(id);
+    return res.json(details);
+  } catch (error: any) {
+    console.error('Game details fetch router error:', error.message);
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /api/games/:id/achievements
+ * Retrieve achievements from RAWG API
+ */
+router.get('/games/:id/achievements', async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  try {
+    const achievements = await rawgService.getAchievements(id);
+    return res.json(achievements);
+  } catch (error: any) {
+    console.error('Achievements fetch router error:', error.message);
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * POST /api/trophies/guide
+ * Generate structured Gemini walkthrough for the given trophy, utilizing a local file-based cache.
+ */
+router.post('/trophies/guide', async (req: Request, res: Response) => {
+  const { gameName, trophyName, trophyDescription } = req.body;
+
+  if (!gameName || typeof gameName !== 'string') {
+    return res.status(400).json({ error: 'gameName must be a string' });
+  }
+  if (!trophyName || typeof trophyName !== 'string') {
+    return res.status(400).json({ error: 'trophyName must be a string' });
+  }
+
+  try {
+    // 1. Check local cache first
+    const cached = cacheService.get(gameName, trophyName);
+    if (cached) {
+      return res.json(cached);
+    }
+
+    // 2. Generate new guide
+    const guide = await geminiService.generateTrophyGuide(gameName, trophyName, trophyDescription || '');
+
+    // 3. Save to cache
+    cacheService.set(gameName, trophyName, guide);
+
+    return res.json(guide);
+  } catch (error: any) {
+    console.error('Trophy guide generation router error:', error.message);
     return res.status(500).json({ error: error.message });
   }
 });

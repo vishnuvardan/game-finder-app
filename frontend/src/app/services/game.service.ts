@@ -37,6 +37,28 @@ export interface QuizAnswer {
   answer: string;
 }
 
+export interface RAWGGame {
+  id: number;
+  name: string;
+  background_image: string;
+}
+
+export interface RAWGAchievement {
+  id: number;
+  name: string;
+  description: string;
+  image: string;
+}
+
+export interface TrophyGuide {
+  estimatedDifficulty: string;
+  isMissable: boolean;
+  timeCommitment?: string;
+  prerequisites?: string[];
+  walkthroughSteps: string[];
+  proTip?: string;
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -58,7 +80,41 @@ export class GameService {
    */
   searchGames(query: string): Observable<IGDBGame[]> {
     return this.http.get<IGDBGame[]>(`${this.apiUrl}/games/search`, {
+      params: { q: query, source: 'igdb' },
+    });
+  }
+
+  /**
+   * Search for games matching query string using RAWG API
+   */
+  searchGamesRawg(query: string): Observable<RAWGGame[]> {
+    return this.http.get<RAWGGame[]>(`${this.apiUrl}/games/search`, {
       params: { q: query },
+    });
+  }
+
+  /**
+   * Fetch achievements list for a game using backend RAWG proxy
+   */
+  getGameAchievements(id: string | number): Observable<RAWGAchievement[]> {
+    return this.http.get<RAWGAchievement[]>(`${this.apiUrl}/games/${id}/achievements`);
+  }
+
+  /**
+   * Fetch game details from RAWG
+   */
+  getGameDetailsRawg(id: string | number): Observable<{ name: string; background_image: string }> {
+    return this.http.get<{ name: string; background_image: string }>(`${this.apiUrl}/games/${id}`);
+  }
+
+  /**
+   * Generate walkthrough guide for a specific trophy via backend Gemini proxy
+   */
+  generateTrophyGuide(gameName: string, trophyName: string, trophyDescription: string): Observable<TrophyGuide> {
+    return this.http.post<TrophyGuide>(`${this.apiUrl}/trophies/guide`, {
+      gameName,
+      trophyName,
+      trophyDescription,
     });
   }
 

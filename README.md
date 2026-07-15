@@ -29,7 +29,7 @@
 
 ## 🌟 App Overview & Features
 
-The application is structured into two main, feature-rich gaming tools:
+The application is structured into three main, feature-rich gaming tools:
 
 ### 1. 🎯 AI-Powered Game Matchmaker
 Struggling to find a game that matches your specific preferences? The Matchmaker has you covered:
@@ -45,6 +45,14 @@ Finished a game recently? Create a unique review sheet to share on social media:
 *   **Custom Themed Rating Labels:** The star rating levels (1 to 5) are dynamically named based on the game's specific lore, theme, and mood (e.g., *5 Stars* might become *"Absolute Cinema"*).
 *   **Witty AI Review Generation:** Once you rate the categories, Gemini synthesizes your ratings into a casual, authentic first-person social media review draft.
 *   **High-Res Shareable Cards:** Render a beautiful, glassmorphic card on the frontend and copy the text or download it instantly as a high-quality PNG image card using CORS-compliant `html2canvas` rendering.
+
+### 3. 🏆 AI-Powered Achievements & Trophy Guide
+Want to complete everything in your favorite games? The AI Trophy Guide will help you unlock every achievement:
+*   **Reactive Autocomplete Search:** Search for any multi-platform game via an RxJS-debounced autocomplete search connecting to the RAWG API proxy.
+*   **Comprehensive Trophy Grid:** Displays a list of official game achievements (supporting large lists up to 150 items to fit open-world RPGs) with official icons, titles, and descriptions.
+*   **Tactical Gemini Walkthroughs:** Click any trophy to open a sliding side drawer. Gemini generates a linear, step-by-step walkthrough guide detailing estimated difficulty, missable status, time commitment, prerequisites, and a strategic pro-tip.
+*   **Local Persistent Caching:** Employs a quick file-backed cache database on the Node.js BFF server. Previously generated walkthroughs load instantly, avoiding Gemini API latency and token fees.
+*   **Interactive Micro-Animations & Error Boundaries:** Uses modern skeleton loading states during generation and offers a graceful "Retry generating guide" CTA on API failures.
 
 ---
 
@@ -111,6 +119,32 @@ sequenceDiagram
         BE-->>FE: Return review text
         FE-->>User: Present Share Card (Copy Text / Download PNG)
     end
+
+    rect rgb(40, 40, 30)
+        Note over User, Gemini: Phase 5: Achievements & Trophy Guide
+        User->>FE: Types game name (debounced input >= 3 chars)
+        FE->>BE: GET /api/games/search?q=...
+        BE->>RAWG: Search games (page_size=6)
+        RAWG-->>BE: Game matches (id, name, background_image)
+        BE-->>FE: Return game options
+        User->>FE: Selects game & views achievements list
+        FE->>BE: GET /api/games/:id/achievements
+        BE->>RAWG: Get achievements (page_size=150)
+        RAWG-->>BE: Official trophies array
+        BE-->>FE: Return trophies list
+        User->>FE: Clicks a trophy
+        FE->>BE: POST /api/trophies/guide
+        Note over BE: Check local JSON/file-backed cache
+        alt Cache HIT
+            BE-->>FE: Return cached guide instantly
+        else Cache MISS
+            BE->>Gemini: Generate guide (application/json schema)
+            Gemini-->>BE: Walkthrough steps, difficulty, missable alert, pro-tip
+            BE->>BE: Save to data/guides-cache.json
+            BE-->>FE: Return walkthrough guide
+        end
+        FE-->>User: Display step-by-step walkthrough details in slide drawer
+    end
 ```
 
 ---
@@ -132,7 +166,7 @@ sequenceDiagram
 
 ## 🔌 Public APIs Utilized
 
-The backend connects to two core external platforms:
+The backend connects to three core external platforms:
 
 ### 1. Twitch / IGDB API v4
 Used for looking up games and fetching official covers, release platforms, descriptions, and genres.
@@ -140,10 +174,15 @@ Used for looking up games and fetching official covers, release platforms, descr
 *   **Token Caching:** The backend implements an **automated memory-caching system** for Twitch App Access tokens. It caches tokens internally and automatically performs a background refresh check when they near expiration, preventing latency spikes on user queries.
 *   **Querying:** Accesses `https://api.igdb.com/v4/games` using the IGDB Apex Query Language.
 
-### 2. Google Gemini API (`gemini-2.5-flash`)
+### 2. Google Gemini API
 The heart of our AI-driven systems, implemented via the official `@google/genai` SDK.
 *   **Structured Output Engine:** Uses Gemini's `responseMimeType: 'application/json'` along with strict `responseSchema` parameters to enforce type safety. This ensures that the generated quiz objects, recommendations, and evaluation criteria never break the frontend parser.
 *   **Highly Redundant Fallback Engine:** Features a fallback algorithm across **11 different model configurations and aliases** (from `gemini-2.5-flash` to `gemini-3.1-pro` and legacy versions). If Gemini encounters 429 Rate Limits or Quota Exceeded errors on the free-tier service, it instantly fallbacks to the next available alias, guaranteeing near 100% uptime.
+
+### 3. RAWG Video Games Database API
+Used for autocomplete searches, retrieving game details, and fetching official achievements lists.
+*   **Secure Backend Proxying:** The RAWG API key is configured exclusively on the backend environment variables layer and is never exposed directly to the Angular client.
+*   **Targeted Pagination:** Achievement lists are fetched with explicitly high page size parameter settings (`&page_size=150`) to ensure large games do not drop trophies due to API limits.
 
 ---
 
@@ -159,6 +198,7 @@ PORT=3000
 IGDB_CLIENT_ID=your_twitch_client_id
 IGDB_CLIENT_SECRET=your_twitch_client_secret
 GEMINI_API_KEY=your_gemini_api_key
+RAWG_API_KEY=your_rawg_api_key
 ```
 
 ### 2. Start Backend BFF

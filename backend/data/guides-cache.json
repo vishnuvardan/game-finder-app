@@ -1,0 +1,41 @@
+{
+  "nine sols_gimme gimme": {
+    "estimatedDifficulty": "2/10 Easy",
+    "isMissable": false,
+    "walkthroughSteps": [
+      "Locate Shuanshuan in Shinshen Village after obtaining the \"Tribute of Earth\" main story item.",
+      "Speak with Shuanshuan to accept her first request: find her \"Shining Crystal\".",
+      "Travel to the Golden City, Sunken Temple area. The Shining Crystal can be found there.",
+      "Return the Shining Crystal to Shuanshuan in Shinshen Village.",
+      "Progress the main story until you obtain the \"Tribute of Human\" main story item, then return to Shuanshuan.",
+      "Speak with Shuanshuan to accept her second request: find her \"Music Box\".",
+      "Travel to the Reeds of Mourning, Reed Sea area. The Music Box can be found there.",
+      "Return the Music Box to Shuanshuan in Shinshen Village.",
+      "Progress the main story until you obtain the \"Tribute of Heaven\" main story item, then return to Shuanshuan.",
+      "Speak with Shuanshuan to accept her final request: find her \"Lucky Charm\".",
+      "Travel to the Nine Sol Sanctuary, Ancestral Hall area. The Lucky Charm can be found there.",
+      "Return the Lucky Charm to Shuanshuan in Shinshen Village and complete the final dialogue sequence to unlock the trophy."
+    ],
+    "prerequisites": [
+      "Story progression up to obtaining the \"Tribute of Earth\", \"Tribute of Human\", and \"Tribute of Heaven\"."
+    ],
+    "proTip": "Always check back with Shuanshuan in Shinshen Village after collecting each of the three main story 'Tributes'. Her requests unlock sequentially with main story progression.",
+    "timeCommitment": "30-60 minutes (spread across playthrough)"
+  },
+  "blasphemous_the path of the unworthy": {
+    "estimatedDifficulty": "5/10 Medium",
+    "isMissable": true,
+    "walkthroughSteps": [
+      "Progress through the main storyline, defeating all required bosses.",
+      "Crucially, do NOT fully complete the Cleofás side quest (do not administer three Tears of Atonement).",
+      "Do NOT interact with Crisanta of the Wrapped Agony in the Convent of Our Lady of the Charred Visage to give her the 'Holy Wound of Abnegation'.",
+      "Defeat the final boss of the main game, His Holiness Escribar.",
+      "Ending B will play automatically after the boss fight."
+    ],
+    "prerequisites": [
+      "Reach the final boss of the game."
+    ],
+    "proTip": "To guarantee Ending B, simply avoid starting or progressing the Cleofás side quest, and do not interact with Crisanta in the final area with any unique items. Ending B is the default 'good' ending if you avoid the specific requirements for Endings A and C.",
+    "timeCommitment": "Requires a full playthrough to reach the end."
+  }
+}

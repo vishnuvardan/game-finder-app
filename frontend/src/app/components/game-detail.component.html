@@ -1,0 +1,161 @@
+<div class="content-wrapper detail-page">
+  <!-- Back navigation and Game Title Card -->
+  <div class="back-nav">
+    <a routerLink="/search" class="glow-btn-secondary back-btn">
+      <span>←</span> Back to Search
+    </a>
+  </div>
+
+  <div *ngIf="isLoading()" class="loading-state">
+    <div class="loader-art">
+      <div class="glow-orb"></div>
+      <div class="scanner-line"></div>
+    </div>
+    <h3 class="loading-title">Loading Achievements</h3>
+    <p class="loading-text">Fetching official trophies and stats from RAWG database...</p>
+  </div>
+
+  <!-- Page Error state -->
+  <div *ngIf="pageError()" class="page-error-card glass-panel">
+    <span class="error-warn-icon-large">⚠️</span>
+    <p class="page-error-text">{{ pageError() }}</p>
+    <button (click)="ngOnInit()" class="glow-btn">Retry Loading</button>
+  </div>
+
+  <!-- Content Section -->
+  <div *ngIf="!isLoading() && !pageError()">
+    <div class="game-header-card glass-panel" [style.background-image]="'linear-gradient(to bottom, rgba(7, 9, 19, 0.7), rgba(7, 9, 19, 0.95)), url(' + gameImage() + ')'">
+      <div class="header-overlay-glow"></div>
+      <h2 class="game-name">{{ gameName() }}</h2>
+      <p class="trophy-count">{{ achievements().length }} Official Achievements Available</p>
+    </div>
+
+    <!-- Achievements Grid -->
+    <div *ngIf="achievements().length > 0; else noAchievements" class="achievements-grid">
+      <div 
+        *ngFor="let ach of achievements()" 
+        class="achievement-card glass-panel" 
+        (click)="selectAchievement(ach)"
+      >
+        <div class="ach-icon-wrapper">
+          <img [src]="ach.image" [alt]="ach.name" class="ach-icon" />
+          <div class="ach-hover-glow"></div>
+        </div>
+        <div class="ach-details">
+          <h3 class="ach-name">{{ ach.name }}</h3>
+          <p class="ach-desc">{{ ach.description }}</p>
+        </div>
+        <div class="ach-action">
+          <span class="view-guide-pill">View Guide ➔</span>
+        </div>
+      </div>
+    </div>
+
+    <ng-template #noAchievements>
+      <div class="no-achievements glass-panel">
+        <span class="empty-icon">🏆</span>
+        <h3>No Achievements Found</h3>
+        <p>RAWG API did not return any official achievements or trophies for this game.</p>
+      </div>
+    </ng-template>
+  </div>
+
+  <!-- Sliding Drawer Overlay for Trophy Guide -->
+  <div class="drawer-overlay" [class.open]="isDrawerOpen()" (click)="closeDrawer()">
+    <div class="drawer-content" (click)="$event.stopPropagation()">
+      <div class="drawer-header">
+        <button class="close-btn" (click)="closeDrawer()">✕</button>
+        <div class="drawer-trophy-identity" *ngIf="selectedAchievement()">
+          <img [src]="selectedAchievement()?.image" [alt]="selectedAchievement()?.name" class="drawer-trophy-icon" />
+          <div class="drawer-trophy-meta">
+            <span class="drawer-badge-subtitle">Trophy / Achievement</span>
+            <h3 class="drawer-trophy-title">{{ selectedAchievement()?.name }}</h3>
+          </div>
+        </div>
+        <p class="drawer-trophy-description" *ngIf="selectedAchievement()">
+          {{ selectedAchievement()?.description }}
+        </p>
+      </div>
+
+      <div class="drawer-body">
+        <!-- Skeleton Loading State -->
+        <div *ngIf="isLoadingGuide()" class="skeleton-wrapper-guide">
+          <div class="skeleton-header pulse"></div>
+          <div class="skeleton-badges">
+            <div class="skeleton-badge-item pulse"></div>
+            <div class="skeleton-badge-item pulse"></div>
+            <div class="skeleton-badge-item pulse"></div>
+          </div>
+          <div class="skeleton-section-title pulse"></div>
+          <div class="skeleton-list">
+            <div class="skeleton-list-item pulse"></div>
+            <div class="skeleton-list-item pulse"></div>
+            <div class="skeleton-list-item pulse"></div>
+          </div>
+          <div class="skeleton-callout pulse"></div>
+        </div>
+
+        <!-- Error State / Retry Guide CTA -->
+        <div *ngIf="guideError() && !isLoadingGuide()" class="guide-error-card">
+          <span class="error-warn-icon">⚠️</span>
+          <h4>Walkthrough Generation Failed</h4>
+          <p class="error-desc-text">{{ guideError() }}</p>
+          <button (click)="retryGuideGeneration()" class="glow-btn retry-btn">
+            🔄 Retry Generating Guide
+          </button>
+        </div>
+
+        <!-- Active Trophy Guide Content -->
+        <div *ngIf="activeGuide() && !isLoadingGuide()" class="guide-content-area animate-fade-in">
+          <!-- Guide Badges Grid -->
+          <div class="guide-meta-grid">
+            <div class="meta-item">
+              <span class="meta-label">Difficulty</span>
+              <span class="meta-value difficulty-badge">{{ activeGuide()?.estimatedDifficulty }}</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Missable</span>
+              <span class="meta-value missable-badge" [class.is-missable]="activeGuide()?.isMissable">
+                {{ activeGuide()?.isMissable ? '⚠️ Missable' : '✅ Playthrough Safe' }}
+              </span>
+            </div>
+            <div class="meta-item" *ngIf="activeGuide()?.timeCommitment">
+              <span class="meta-label">Est. Time</span>
+              <span class="meta-value time-badge">{{ activeGuide()?.timeCommitment }}</span>
+            </div>
+          </div>
+
+          <!-- Prerequisites (Optional) -->
+          <div class="guide-section" *ngIf="activeGuide()?.prerequisites && activeGuide()!.prerequisites!.length > 0">
+            <h4 class="guide-section-title">Prerequisites & Requirements</h4>
+            <ul class="prereq-list">
+              <li *ngFor="let pre of activeGuide()?.prerequisites">
+                <span class="bullet-dot">•</span> {{ pre }}
+              </li>
+            </ul>
+          </div>
+
+          <!-- Walkthrough Steps -->
+          <div class="guide-section">
+            <h4 class="guide-section-title">Tactical Step-by-Step Walkthrough</h4>
+            <div class="walkthrough-steps">
+              <div *ngFor="let step of activeGuide()?.walkthroughSteps; let idx = index" class="step-card">
+                <div class="step-num">{{ idx + 1 }}</div>
+                <p class="step-text">{{ step }}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pro Tip (Optional) -->
+          <div class="pro-tip-card" *ngIf="activeGuide()?.proTip">
+            <div class="tip-header">
+              <span class="tip-icon">💡</span>
+              <h5 class="tip-title">PRO TIP & COMBAT STRATEGY</h5>
+            </div>
+            <p class="tip-text">{{ activeGuide()?.proTip }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

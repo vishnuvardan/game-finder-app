@@ -1,0 +1,1278 @@
+{
+  "70": {
+    "gameName": "Unknown Game"
+  },
+  "774361": {
+    "gameName": "Blasphemous",
+    "achievements": [
+      {
+        "name": "AC01",
+        "displayName": "A Long Path Ahead",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/774361/4f8a760711889db41b77da1ff85834a7312258c7.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "AC02",
+        "displayName": "No Mercy",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/774361/c08bdedb382358ee623905b90c5db137bc6c9806.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "AC03",
+        "displayName": "Look Her In The Eye",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/774361/ceba96a24ae388d7342b377a4b495a73a7fb2e0e.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "AC04",
+        "displayName": "Danse Macabre",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/774361/30250121326d0d56924a5eab27293c766d4c32c6.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "AC05",
+        "displayName": "The Brother",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/774361/6c287dff74c665b8e768aa85f91947f218b3c5f3.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "AC06",
+        "displayName": "The Bejeweled Saint",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/774361/cf34fc80fe99f366756fb262c198512e087b5614.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "AC07",
+        "displayName": "Blind Innocence",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/774361/8ad27eba7672b2a2d71094bb545cc9cf141d6352.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "AC08",
+        "displayName": "Ashes to Ashes",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/774361/b4c07dba7cd0d1d446316514031d98e570ca2a5b.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "AC09",
+        "displayName": "Duel of Faith",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/774361/380ba5535497db3aa43e8d56887d6116e668d7aa.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "AC10",
+        "displayName": "Summa Blasphemia",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/774361/40a2a700e7d7e172ea2adeaa2829cea02aea1f0a.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "AC11",
+        "displayName": "The Path of the Believer",
+        "description": "Unlock ending A.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/774361/65157f2475e91899ee72b7bb5431cb8586f27e98.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "AC12",
+        "displayName": "The Path of the Unworthy",
+        "description": "Unlock ending B.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/774361/725daf106d87759b865d8accca88d11af068c558.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "AC13",
+        "displayName": "The Bull and the Moon",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/774361/cb13e7a6b1d7c7a87826aa1643e077594d5b345c.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "AC14",
+        "displayName": "Last Words",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/774361/7a0055fdaee1245737b24947dae1ea5ddbe69d8c.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "AC15",
+        "displayName": "Detestatio Sacrorum",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/774361/92d423671bf23503638a6362e1aef93acfadc8d3.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "AC16",
+        "displayName": "Unwavering Devotion",
+        "description": "Get the 13 original prayers.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/774361/7967ccb8d05d7daececbd9c47aad759ed489e721.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "AC17",
+        "displayName": "Skin and Bones",
+        "description": "Get the 7 original relics.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/774361/09e1553f03e53a2fe9b2532f1f224e2ca3b0b2f1.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "AC18",
+        "displayName": "Mysteria Lucis",
+        "description": "Get the 30 original rosary beads.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/774361/d0af29e3a3a3c43babad6ad18cb6bf8f8778f511.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "AC19",
+        "displayName": "Warden of the Ossuary",
+        "description": "Get the 44 original collectibles.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/774361/3052b8f8c1a5504892faf037884e0a2abe07c96d.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "AC20",
+        "displayName": "Heartbreaker",
+        "description": "Get the 9 original sword hearts.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/774361/ab6f72fe003e0851a86e99bcf7e4161654001efb.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "AC21",
+        "displayName": "Cvstodia's Pilgrim",
+        "description": "Discover the main areas of Cvstodia.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/774361/ae2e25503b048aa0028e3fbc9c2f73e5b1d4b9de.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "AC22",
+        "displayName": "Six Stinging Pains",
+        "description": "Achieve maximum health.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/774361/746bbd4db86a6cad4c6fbf29290a327e64e5e460.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "AC23",
+        "displayName": "Baptism of Faith",
+        "description": "Achieve maximum fervor.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/774361/0d102f1ad3cc661c0c2b6d9102f3bd746f9deeae.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "AC24",
+        "displayName": "Mea Culpa",
+        "description": "Achieve the maximum level of the sword Mea Culpa.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/774361/4d58ed931cb55363a87aa91b38060c450bd01eb1.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "AC25",
+        "displayName": "The Fountain of Life",
+        "description": "Achieve maximum flask capacity.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/774361/c6c48a21f2aec597b3006168f2f9681aace3ec97.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "AC26",
+        "displayName": "Engracia",
+        "description": "Achieve the maximum number of rosary bead slots.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/774361/9cbe8a5c0b37ea78466801d386e87041b3b577bf.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "AC27",
+        "displayName": "Inquisition",
+        "description": "Execute 5 different enemies.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/774361/9bf014ecd9f5b7d060e901408c8f9fde21ce6952.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "AC28",
+        "displayName": "Power Unleashed",
+        "description": "Use a Righteous Riposte 5 times.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/774361/b5cbb94e1aa5cbadbe0577589af1861a37b64f8c.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "AC29",
+        "displayName": "The Desire of the Corrupted",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/774361/2c18f2db7e414afd08b1389659f335d379971b96.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "AC30",
+        "displayName": "True Shrine",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/774361/2270740cedecba762524b6c5994b025905850bb2.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "AC31",
+        "displayName": "Dying Breath",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/774361/1258e07d07999ddeab55451e28144da9f758d687.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "AC32",
+        "displayName": "Rebirth",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/774361/93d30b61aaac3e2284178a186845367c8cb66f9c.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "AC33",
+        "displayName": "Ultreia Et Suseia",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/774361/9eb72453f1012e9fc2cbb248aedfe99b0c8a18ad.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "AC34",
+        "displayName": "In the name of the High Wills",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/774361/c5b65a41322c1c4269d7d23c957c3a27ddc48da9.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "AC35",
+        "displayName": "Mediterranean Diet",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/774361/9511fb8bebbb5781ca73451a9125bb2b3b258176.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "AC36",
+        "displayName": "Flea Market",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/774361/50212a0118550b63cfd3c6418ca3d9b98b5d0839.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "AC37",
+        "displayName": "Warm and Soft",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/774361/121f942d43b322cf31998cae4280c0b7d14fbbb7.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "AC38",
+        "displayName": "The Sister",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/774361/b28620d0f61b2185a38793166d4629d7ebf78a50.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "AC39",
+        "displayName": "Bestiary",
+        "description": "Defeat the 51 original types of enemies.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/774361/fcba65eb9ab213c40f892afb2383a9180bca5758.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "AC40",
+        "displayName": "Blood and Tears",
+        "description": "Unlock all the abilities on the Mea Culpa altars.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/774361/ca85dd7ae4f2276d11dba8578628ec8997b958c4.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "AC41",
+        "displayName": "The Number of the Beasts",
+        "description": "Kill 666 enemies.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/774361/18f383cdd486911405b6758b8338abc3ff256312.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "AC42",
+        "displayName": "Crossing Souls",
+        "description": "Provoke the meeting between Redento and Cleofás.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/774361/a8380358effd81b07cd4f53f9a6f2c002d93daee.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "AC43",
+        "displayName": "Requiem Aeternam",
+        "description": "Defeat the original bosses without consuming any bile flasks.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/774361/0bb04e937fc52c9916009c3df448b738a562bc77.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "AC44",
+        "displayName": "Bronze Medal",
+        "description": "Pass through the bronze door on the Bridge of Calvary in less than 3 hours.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/774361/a65429eda0a782129592af0d6884d9920ae09b9e.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "AC46",
+        "displayName": "Witness of The Miracle",
+        "description": "Beat 100% of the game.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/774361/d435fa45129740751dc0f57c2136d50194ec30a2.jpg",
+        "hidden": 0
+      }
+    ]
+  },
+  "1091500": {
+    "gameName": "Cyberpunk 2077",
+    "achievements": [
+      {
+        "name": "TheFool",
+        "displayName": "The Fool",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1091500/7975d6e5d790b88f030195e3b1a38e49a5de1c8d.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "TheLovers",
+        "displayName": "The Lovers",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1091500/25bab7e2288262ad801664e62f241e2839edb457.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "TheHermit",
+        "displayName": "The Hermit",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1091500/d1e79618b612be87bff4f5c70b1e825e37b05540.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "TheWheelOfFortune",
+        "displayName": "The Wheel of Fortune",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1091500/61c7ccea74b66ef3f5d51c078d900d930346e74a.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "TheHightPriestess",
+        "displayName": "The High Priestess",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1091500/8f5eacf50eb2ad11fe9dbd1d3a98c306d54ff545.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "TheWorld",
+        "displayName": "The World",
+        "description": "Complete the main storyline.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1091500/25c57ecea783efc3f9d04eec43401264ed5eb9b2.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "TheDevil",
+        "displayName": "The Devil",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1091500/e63819b5dc0e127a2535e4fd76f726b1ba442afa.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "TheStar",
+        "displayName": "The Star",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1091500/96506dab554565fd3dc78446a6df17040b353f16.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "TheSun",
+        "displayName": "The Sun",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1091500/8bf8ad71b62614b329eab2bac069724d34d69b27.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "Temperance",
+        "displayName": "Temperance",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1091500/c81713b7813e1675add335a1ce778588b70d09f9.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "FollowingTheRiver",
+        "displayName": "To Protect and Serve",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1091500/a51caf46e315b285be58a7d6cf7013a7b0c44a41.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "BornToBeWild",
+        "displayName": "To Bad Decisions!",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1091500/3ac542374888a4a57a2ef35fb2bf3a5546daaaca.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "UnderPressure",
+        "displayName": "Judy vs Night City",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1091500/0a1df4318c75f42845fc3a1a28739d8acea3b7e7.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "QueenOfTheHighway",
+        "displayName": "Life of the Road",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1091500/ce6eab1ce0ee6621350749c53e4bace6518e3056.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "BushidoAndChill",
+        "displayName": "Bushido and Chill",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1091500/ddedbfc44a125a864027e504de48fde92751c7b1.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "NeverFadeAway",
+        "displayName": "Breathtaking",
+        "description": "Collect all items that once belonged to Johnny Silverhand.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1091500/27664ed21cfe3db65108a6ed1b25e383a6aafdb8.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "YipMan",
+        "displayName": "It's Elementary",
+        "description": "Complete all gigs and NCPD Scanner Hustles in Watson.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1091500/b7512099ad421258b91b49ab12d46ffd2bb948da.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "IAmMaxTac",
+        "displayName": "I Am The Law",
+        "description": "Complete all Cyberpsycho Sightings.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1091500/0b89d8dacb03eabb93041f02e623729ca3e4c41b.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "ThisIsPacifica",
+        "displayName": "Greetings from Pacifica!",
+        "description": "Complete all gigs and NCPD Scanner Hustles in Pacifica.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1091500/c2294767a5ee7ef08429307a739f99e51e453a97.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "NoMansLand",
+        "displayName": "The Wasteland",
+        "description": "Complete all gigs and NCPD Scanner Hustles in the Badlands.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1091500/58f6286727bb4a5a43a373149ff1ede77345b1a8.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "LittleTokyo",
+        "displayName": "Little Tokyo",
+        "description": "Complete all gigs and NCPD Scanner Hustles in Westbrook.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1091500/96ca1665384409e4a0ea76cc7271021da58cc896.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "LikeFatherLikeSon",
+        "displayName": "Mean Streets",
+        "description": "Complete all gigs and NCPD Scanner Hustles in Heywood.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1091500/f95b51e241c93e045c9adea4e199d2980b972b6f.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "TradeUnion",
+        "displayName": "The Jungle",
+        "description": "Complete all gigs and NCPD Scanner Hustles in Santo Domingo.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1091500/3162cccaaaa83b1f5b3fe50af30a74d6a1541298.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "Bladerunner",
+        "displayName": "City Lights",
+        "description": "Complete all gigs and NCPD Scanner Hustles in City Center.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1091500/31d389c6630c86434f193e7645cc78d22a790bff.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "Cyberjunkie",
+        "displayName": "Full Body Conversion",
+        "description": "Install at least one implant in each system and body part.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1091500/a3acd634e21dea672bb35c0d6a9707ff5079aed1.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "GunKata",
+        "displayName": "Gun Fu",
+        "description": "Kill or incapacitate 3 enemies in quick succession with a revolver or pistol in close combat.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1091500/96b9d0c95bc80867a61a2870c6ddec9ab424f728.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "MasterRunner",
+        "displayName": "Christmas Tree Attack",
+        "description": "Complete a Breach Protocol with a minimum of 3 daemons uploaded.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1091500/8af08786073d0d2ba2374f00eb6bd876c593891e.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "Specialist",
+        "displayName": "Ten out of Ten",
+        "description": "Reach the max level in any skill.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1091500/a9109d1262f0121dd2c4369a5cbbdde0b7c347bb.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "Gunslinger",
+        "displayName": "Gunslinger",
+        "description": "Shoot an enemy grenade in midair with a revolver.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1091500/d13a7170dd835e73cf30a7ee6da0ebf3670c23a1.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "TwoHeadsOneBullet",
+        "displayName": "Two Heads, One Bullet",
+        "description": "Kill or incapacitate 2 enemies with the same sniper rifle shot.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1091500/26d6c25c2ca7e5877b26347fc05f5eb2dd504bbf.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "ThatIsSoHardForTheKnees",
+        "displayName": "Rough Landing",
+        "description": "While Berserk cyberware is active, perform a Superhero Landing to kill or incapacitate 2 enemies.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1091500/514ebb07bb23ed93234a4f299761db840d06bbbb.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "Roleplayer",
+        "displayName": "Stanislavski's Method",
+        "description": "Use a dialogue option related to V's life path 10 times.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1091500/943a38cb96238b7b020672cf360d9e763dcf6feb.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "Gearhead",
+        "displayName": "Autojock",
+        "description": "Buy all vehicles available for purchase.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1091500/7ae50754d5cf0c37a73c2e0d4e88410cd51dd5b9.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "HandyMan",
+        "displayName": "Master Crafter",
+        "description": "Craft 3 Legendary items.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1091500/0b30a85424064ad230d3d0b0101fb2f4c731366d.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "NotTheMobile",
+        "displayName": "Daemon In The Shell",
+        "description": "Kill or incapacitate 3 enemies with one \"Detonate Grenade\" quickhack.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1091500/b3d81a567599dacdbf32fa024e4d9baafc19599b.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "MaxPain",
+        "displayName": "The Quick and the Dead",
+        "description": "Kill or incapacitate 50 enemies while time is slowed.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1091500/7d368314167adc79672ac5ccb090704352f7f733.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "MustBeTheRats",
+        "displayName": "Must Be Rats",
+        "description": "Perform the Distract Enemies quickhack 30 times without drawing attention to yourself.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1091500/9f6b540aa3fa924f3600afdff35a763e75454c8c.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "VForVendetta",
+        "displayName": "V for Vendetta",
+        "description": "After reviving with Second Heart, kill or incapacitate the enemy who killed you within 5 seconds.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1091500/5d34ce9108d8ac3018a1de3a2a485956bb7a9109.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "TrueSoldier",
+        "displayName": "True Soldier",
+        "description": "Kill or incapacitate 300 enemies using ranged weapons.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1091500/2f63e6b9c0774f8f63b9f053ba9ec145e90c678c.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "TrueWarrior",
+        "displayName": "True Warrior",
+        "description": "Kill or incapacitate 100 enemies using melee weapons.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1091500/714db842d4bbf426994d8cc7450769e75c47da8b.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "Denied",
+        "displayName": "Right Back At Ya",
+        "description": "Kill or incapacitate an enemy who threw a grenade at you.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1091500/33a8a122a08532ec727598142e6b5689ae7eed8b.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "Fortuneteller",
+        "displayName": "The Wandering Fool",
+        "description": "Find all the tarot graffiti for the job Fool on the Hill.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1091500/5fe10094d667c5f6da21589aad5c8ebd07f0e78b.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "GetMeThereScottie",
+        "displayName": "Frequent Flyer",
+        "description": "Find all fast travel dataterms.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1091500/f5aa6c12eef1c0e2a3d102ebf01b3a1048bd6b20.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "YouKnowWhoIAm",
+        "displayName": "Legend of The Afterlife",
+        "description": "Reach max Street Cred.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1091500/997859e0c89dda10f11a091a566999e68e6f9ce3.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "KingOfTheCups",
+        "displayName": "King of Cups",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1091500/51413a8a5e4f2e9de1c2d76b87d5c7980c9f7344.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "KingOfThePentacles",
+        "displayName": "King of Pentacles",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1091500/172f9e9e8e3b8eaeae2bb84feb87127b58353dba.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "KingOfTheWands",
+        "displayName": "King of Wands",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1091500/ad8075ab98162f93a200fc6a8c55cccf4c8d1b1d.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "KingOfTheSwords",
+        "displayName": "King of Swords",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1091500/c6e7c9cc51fde9a554fcf07e5f1114edcc4090c0.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "TheTower",
+        "displayName": "The Tower",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1091500/c3c3b1235ae0dde8783ea38bf696c7269a63b3cb.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "Kingmaker",
+        "displayName": "Spin Doctor",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1091500/b2c92946b6ac64d267e486616ad9a55d7364b4eb.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "AllThePresidentsMen",
+        "displayName": "All the President's Men",
+        "description": "Save President Myers.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1091500/3945a4e6479605ab55c7dae52857e040d118d5c7.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "DirtyWork",
+        "displayName": "Dirty Deeds",
+        "description": "Complete every Gig in Dogtown.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1091500/d02f68667532c5497561799ccb2dae4692cad14d.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "HydraIsDead",
+        "displayName": "Judgement Day",
+        "description": "Eliminate three bosses from the \"Increased criminal activity\" category.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1091500/dffa26250fa32ba85772c75eec4fd7d8765fe157.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "EasyComeEasyGo",
+        "displayName": "Easy Come, Easy Go",
+        "description": "Steal the Arasaka medical truck or deliver 10 vehicles to El Capitan.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1091500/594432b0da5af1d3cc01394cc853c04abb5baf4b.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "IHateSpider",
+        "displayName": "Arachnophobia",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1091500/cf77d0555d0222cdcbe7fb19a7e38871c820f230.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "RelicMaster",
+        "displayName": "Relic Ruler",
+        "description": "Unlock all Perks in the Relic Perk tree.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1091500/79b4c15ba2ec5fa27e4cac0a19cb740cbb53b5ff.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "DogtownLaw",
+        "displayName": "The APB is Not Enough",
+        "description": "Become Dogtown's most wanted criminal.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1091500/6d73d22167309783b6128282dbd00154df5fb0ae.jpg",
+        "hidden": 0
+      }
+    ]
+  },
+  "1245620": {
+    "gameName": "ELDEN RING",
+    "achievements": [
+      {
+        "name": "ACH00",
+        "displayName": "Elden Ring",
+        "description": "Obtained all achievements",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1245620/1cb1fe89084e822bd7d9ad4df66bc7f917995b38.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "ACH01",
+        "displayName": "Elden Lord",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1245620/e50726be4aca4d2b1f5f14d36859fc8e6f710097.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "ACH02",
+        "displayName": "Age of the Stars",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1245620/7e7369bceba13739025766a72560fe9ce7ac56c9.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "ACH03",
+        "displayName": "Lord of Frenzied Flame",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1245620/230fc53f4bc2d9bf39be031cc198be81508a9c47.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "ACH04",
+        "displayName": "Shardbearer Godrick",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1245620/1e230f1a87d7139e854c47e52337f9d50856ac64.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "ACH05",
+        "displayName": "Shardbearer Radahn",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1245620/f5f1f41ef749459d9ac45750cd1f069d05fe1dd8.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "ACH06",
+        "displayName": "Shardbearer Morgott",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1245620/1ffc295a2cd48b88487d410025d081549d932b27.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "ACH07",
+        "displayName": "Shardbearer Rykard",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1245620/cb0aec39fcc664c4e586750177178b6814a52e0d.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "ACH08",
+        "displayName": "Shardbearer Malenia",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1245620/f704fcd82daf933dd3ce81c4d8ffea3ec65f26f4.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "ACH09",
+        "displayName": "Shardbearer Mohg",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1245620/a00f99e4944d09603d64996c5ade85264bcba22d.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "ACH10",
+        "displayName": "Maliketh the Black Blade",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1245620/5148ee8ae04ed50667bcb39484ff2b716b07f4ff.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "ACH11",
+        "displayName": "Hoarah Loux, Warrior",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1245620/f263ff23c384043efcb2932cc82e6fc395f57014.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "ACH12",
+        "displayName": "Dragonlord Placidusax",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1245620/8f4f24760a906b21cf2ed65fa5fbcd2039c2f1ff.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "ACH13",
+        "displayName": "God-Slaying Armament",
+        "description": "Upgraded any armament to its highest stage",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1245620/5525911000c82f6b8c540c9e65e89382449c1b0f.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "ACH14",
+        "displayName": "Legendary Armaments",
+        "description": "Acquired all legendary armaments",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1245620/212ba99b5c0bf79aca54dfc0a9767a108adc8f40.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "ACH15",
+        "displayName": "Legendary Ashen Remains",
+        "description": "Acquired all legendary ashen remains",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1245620/5cba78ad7605d07fd096859b1f35715a9ac6218b.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "ACH16",
+        "displayName": "Legendary Sorceries and Incantations",
+        "description": "Acquired all legendary sorceries and incantations",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1245620/4cef1927bcb6fadbc7aeb703d40fa195cf78375a.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "ACH17",
+        "displayName": "Legendary Talismans",
+        "description": "Acquired all legendary talismans",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1245620/717b3e0b44ad16b2e31a958edcaa3b4cd61de82b.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "ACH18",
+        "displayName": "Rennala, Queen of the Full Moon",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1245620/95a6c1398d842a3fdea1b43a14b33bef92dca09e.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "ACH19",
+        "displayName": "Lichdragon Fortissax",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1245620/b0a0e29fb88941a9e81c937a22ce77f4e020b83e.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "ACH20",
+        "displayName": "Godskin Duo",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1245620/17c6959cb3785bc29bf45cba5281485c1b1a6b94.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "ACH21",
+        "displayName": "Fire Giant",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1245620/943a8178f6fdd3f336caa1138d63bcf4985ab639.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "ACH22",
+        "displayName": "Dragonkin Soldier of Nokstella",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1245620/8e6a8ac9aa06923f2139f3308170f384989d5a82.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "ACH23",
+        "displayName": "Regal Ancestor Spirit",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1245620/49f02aee6962bf67151cb1b04d402ce33535db0b.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "ACH24",
+        "displayName": "Valiant Gargoyles",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1245620/b9255b2325bff7b02b289fb8899d305cc04a18bc.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "ACH25",
+        "displayName": "Margit, the Fell Omen",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1245620/9844ceb487fa8702ef9fddf8cf09b3767d985a14.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "ACH26",
+        "displayName": "Red Wolf of Radagon",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1245620/06bce66d7738ddd537a1c1d77a438df1e8c17b17.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "ACH27",
+        "displayName": "Godskin Noble",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1245620/c9624c5c976674a86d6e55a65f18203407acb4b4.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "ACH28",
+        "displayName": "Magma Wyrm Makar",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1245620/4e39a0ef22f4d9a5a926708eeeecb7ec3c304591.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "ACH29",
+        "displayName": "Godfrey, First Elden Lord",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1245620/a6d7519e52b8d5d76afa7fa0b6224a2d4e8dc678.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "ACH30",
+        "displayName": "Mohg, the Omen",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1245620/1e69cda29e26389f87aef965ee21619aa92d859b.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "ACH31",
+        "displayName": "Mimic Tear",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1245620/a991cf641f22feecca00c96ae773e31740535b2b.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "ACH32",
+        "displayName": "Loretta, Knight of the Haligtree",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1245620/3204ffe67225f7e88207563ae204505c5eb1ca54.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "ACH33",
+        "displayName": "Astel, Naturalborn of the Void",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1245620/0433665a5dcab392aa2cf08a4e8c8eeb1d4d871a.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "ACH34",
+        "displayName": "Leonine Misbegotten",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1245620/41d6608783265cf28e2fa112bb51adbe90ad2086.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "ACH35",
+        "displayName": "Royal Knight Loretta",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1245620/82008e9c90e7dce12eaf5b50571dc9511055d5f8.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "ACH36",
+        "displayName": "Elemer of the Briar",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1245620/d34621523f32eee14947c698bb43ef92b09f0f59.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "ACH37",
+        "displayName": "Ancestor Spirit",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1245620/8aa5c2120ca0ec1abd63fc4ab5afea919acadfc5.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "ACH38",
+        "displayName": "Commander Niall",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1245620/3c7586bd5b56c262aa837c4307eba8fc2ea2ad7f.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "ACH39",
+        "displayName": "Roundtable Hold",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1245620/f4e5fd19d3410470709632cd02b3136b5baca33d.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "ACH40",
+        "displayName": "Great Rune",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1245620/3881b1c355ffcc122655c134f988d6c1265cd8c9.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "ACH41",
+        "displayName": "Erdtree Aflame",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1245620/ee980470a382cd7e1ac70fca82d5e46e2c328c21.jpg",
+        "hidden": 1
+      }
+    ]
+  },
+  "1809540": {
+    "gameName": "Nine Sols",
+    "achievements": [
+      {
+        "name": "Ach_Main_A1_Finished",
+        "displayName": "My Revenge Starts Here",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1809540/ca9a9a14d38e544a2edb077827f195baae480558.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "Ach_Main_A2_Finished",
+        "displayName": "I'm Coming for You, Old Friend",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1809540/034d35829e92d3ebd7743eff871e3111999aa2f9.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "Ach_Main_A3_Finished",
+        "displayName": "Reap What You Sow",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1809540/89d3cbeb3a107e3e488bdc78219da8ce6eb9a082.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "Ach_Main_A4_Finished",
+        "displayName": "You Should Respect Your Elders",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1809540/bcd642a3c2a613b656f01c4f042baae22f680d7d.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "Ach_Main_Jail_Finished",
+        "displayName": "Jail Break",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1809540/d256a46c9049a1eea695db86606cc3e505774c5f.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "Ach_Main_A5_Finished",
+        "displayName": "No Pain, No Gain",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1809540/c3d36e1c1715bcbd77c9e4fb1e98f521e42978d2.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "Ach_Main_A7_Finished",
+        "displayName": "Wake Up From My Sin",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1809540/87aa2f838ec7cb792b967b3ded0980b965316887.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "Ach_Main_A10_Finished",
+        "displayName": "Come, Sweet Death",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1809540/ca3f8f8f9ecc72db1cc854b3abd1299e47953db4.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "Ach_Main_A9_Finished",
+        "displayName": "We Have Each Other",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1809540/c4d702717dfe619d9ca20a816291414d319c9c04.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "Ach_Main_A11_Finished",
+        "displayName": "Learned From the Best",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1809540/80f4716fb36902334af8a7de9220f80b3da67aa9.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "Ach_Main_Good_End",
+        "displayName": "Shooting Star",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1809540/1152c43b6b112fd6a299a749e167a60b7968515f.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "Ach_Main_Bad_End",
+        "displayName": "Home Sweet Home",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1809540/b47897c987c6b29d5d2d6b4a5ca532bc972346ee.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "Ach_Main_NormalMode_Finished",
+        "displayName": "Fight Through Hardship",
+        "description": "Finish Nine Sols on Standard Mode.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1809540/e68a8dd16bc885c8b115f8d04345e2799f4ca80f.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "Ach_Op_Poison_Jie",
+        "displayName": "Fight Dirty",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1809540/705d15a243086bc1ffb862ae42b534a114699350.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "Ach_Op_Save_Village",
+        "displayName": "The Cavalry's Here",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1809540/37cf93a2edc424c308d84f747226c96d6d15f879.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "Ach_Op_Shennong_Finished",
+        "displayName": "Passing on the Torch",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1809540/6635561c64a57cb0ce2622a09bccabc2f8481a2c.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "Ach_Op_ChiYou_Finished",
+        "displayName": "Rest for the Wicked",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1809540/d31c7edac94e010c0210ef9e4f93083923f88531.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "Ach_Op_9000_Finished",
+        "displayName": "Found You",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1809540/2887d936d3452c242e7688ba62f02017ecb7d0ed.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "Ach_Op_Cat_Founded",
+        "displayName": "Evolution",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1809540/4d0c2dff315458066dd9a9e2f02f753c92d3f04c.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "Ach_Op_MagicalBean_Finished",
+        "displayName": "Magical Bean",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1809540/40caeef25eae1c683590b53e5fd0369d95a14457.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "Ach_Op_AllFish_Saved",
+        "displayName": "Repurposed",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1809540/5bf3a0a016eb5ba7aa0a7ec44c21194257316422.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "Ach_Op_Lear_Finished",
+        "displayName": "Across Time and Space",
+        "description": "",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1809540/7ba7fd821974a725da770cad967ac29f5953c3f6.jpg",
+        "hidden": 1
+      },
+      {
+        "name": "Ach_Op_A9MusicBell_Finished",
+        "displayName": "Blessed Messages",
+        "description": "Discover the message board for blessings upon the Departure of New Kunlun's Voyage.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1809540/3f36dd7c7b20838778dabb862d17f2b767c3bc37.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "Ach_Op_A3MusicBell_Finished",
+        "displayName": "Do Re Mi So La",
+        "description": "Unravel the mystery of the Daybreak Tower's music sheet.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1809540/22feefd612ad43337049eba795fa2af6b36c54b6.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "Ach_Col_Skill_Finished",
+        "displayName": "The Warrior Within",
+        "description": "Master all skills in the skill tree.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1809540/6d0778a060c22d09f31649be892d6b654ec71d08.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "Ach_Col_All_Item",
+        "displayName": "Treasure Hunter",
+        "description": "Find all resources and information marked by Shanhai 9000.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1809540/2700b700feef741ed0cbb61f9e81f8785d456359.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "Ach_Col_All_Jade",
+        "displayName": "Well Prepared",
+        "description": "Collect every Jade.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1809540/64c49acfc5996a7f52ceec04cb6c864f83e4804b.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "Ach_Col_All_Arrow",
+        "displayName": "My Most Trusted Friend",
+        "description": "Max out the ammo capacity of the Azure Bow and obtain Cloud Piercer X, Thunder Buster X, and Shadow Hunter X.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1809540/62ddafb87b2ad8ae53507628e20d81840dbd1ab8.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "Ach_Col_All_Health",
+        "displayName": "I'm Yi, I Have a Drinking Problem",
+        "description": "Drink all the wine brewed by Shennong.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1809540/d2cec28aa88d1c6705432aa73e3185a028589326.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "Ach_Col_All_Miniboss",
+        "displayName": "One Man Army",
+        "description": "Defeat every optional miniboss.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1809540/4c2e50dc3f8a5f6bfe8fcdd0164b4136b8bee085.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "Ach_Misc_Pot_Breaked",
+        "displayName": "What Have You Done?!",
+        "description": "Break the clay pot made by Shuanshuan",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1809540/55413679ae7bcac573d48851c85fabdec0ef902b.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "Ach_Misc_RoboFight",
+        "displayName": "Robo Fight!",
+        "description": "Defeat Tianshou while driving a robot.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1809540/a997760a527fab08f697dcc31357cd25283901f1.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "Ach_Misc_Coin_Sold",
+        "displayName": "Stonks!",
+        "description": "Recycle Shuanshuan's coin.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1809540/44d23a3c6d9866783996b2106d227e2de2b41432.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "Ach_Misc_Fish_Killed",
+        "displayName": "You Bastard...",
+        "description": "Obtain map data from Shanhai 9000 by force.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1809540/cd364a12bedd06603944d11e7822ac108481d53e.jpg",
+        "hidden": 0
+      },
+      {
+        "name": "Ach_Op_XuanXuan_Finished",
+        "displayName": "Gimme Gimme",
+        "description": "Establish a deep relationship with Shuanshuan.",
+        "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1809540/3b0e1f18c44c049d90a32f0f851084418ca474d6.jpg",
+        "hidden": 0
+      }
+    ]
+  }
+}

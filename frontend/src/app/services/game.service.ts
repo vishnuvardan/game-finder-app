@@ -37,17 +37,18 @@ export interface QuizAnswer {
   answer: string;
 }
 
-export interface RAWGGame {
-  id: number;
+export interface SteamGame {
+  appid: string;
   name: string;
-  background_image: string;
+  icon: string;
 }
 
-export interface RAWGAchievement {
-  id: number;
+export interface SteamAchievement {
   name: string;
+  displayName: string;
   description: string;
-  image: string;
+  icon: string;
+  hidden: number;
 }
 
 export interface TrophyGuide {
@@ -85,26 +86,26 @@ export class GameService {
   }
 
   /**
-   * Search for games matching query string using RAWG API
+   * Search for games matching query string using Steam API
    */
-  searchGamesRawg(query: string): Observable<RAWGGame[]> {
-    return this.http.get<RAWGGame[]>(`${this.apiUrl}/games/search`, {
+  searchGamesSteam(query: string): Observable<SteamGame[]> {
+    return this.http.get<SteamGame[]>(`${this.apiUrl}/games/search`, {
       params: { q: query },
     });
   }
 
   /**
-   * Fetch achievements list for a game using backend RAWG proxy
+   * Fetch achievements list for a game using backend Steam proxy
    */
-  getGameAchievements(id: string | number): Observable<RAWGAchievement[]> {
-    return this.http.get<RAWGAchievement[]>(`${this.apiUrl}/games/${id}/achievements`);
+  getGameAchievements(appid: string | number): Observable<SteamAchievement[]> {
+    return this.http.get<SteamAchievement[]>(`${this.apiUrl}/games/${appid}/achievements`);
   }
 
   /**
-   * Fetch game details from RAWG
+   * Fetch game details from Steam
    */
-  getGameDetailsRawg(id: string | number): Observable<{ name: string; background_image: string }> {
-    return this.http.get<{ name: string; background_image: string }>(`${this.apiUrl}/games/${id}`);
+  getGameDetailsSteam(appid: string | number): Observable<{ name: string; background_image: string }> {
+    return this.http.get<{ name: string; background_image: string }>(`${this.apiUrl}/games/${appid}`);
   }
 
   /**

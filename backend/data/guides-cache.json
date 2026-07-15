@@ -37,5 +37,127 @@
     ],
     "proTip": "To guarantee Ending B, simply avoid starting or progressing the Cleofás side quest, and do not interact with Crisanta in the final area with any unique items. Ending B is the default 'good' ending if you avoid the specific requirements for Endings A and C.",
     "timeCommitment": "Requires a full playthrough to reach the end."
+  },
+  "elden ring_god-slaying armament": {
+    "estimatedDifficulty": "2/10 Easy",
+    "isMissable": false,
+    "walkthroughSteps": [
+      "Acquire any special armament (weapon or shield) that upgrades using Somber Smithing Stones.",
+      "Collect one of each Somber Smithing Stone [1] through [9]. These are found throughout the game world or purchased after giving Bell Bearings to the Twin Maiden Husks.",
+      "Collect one Ancient Dragon Somber Smithing Stone. These are typically found in late-game areas or as boss drops.",
+      "Travel to Smithing Master Hewg at the Roundtable Hold (or any other smithing table).",
+      "Select the 'Strengthen Armament' option and upgrade your chosen special armament to its maximum level (+10)."
+    ],
+    "prerequisites": [
+      "Access to the Roundtable Hold (required for Smithing Master Hewg, though other smithing tables exist).",
+      "Sufficient Runes to pay for each upgrade stage."
+    ],
+    "proTip": "Focus on a weapon that uses Somber Smithing Stones. They require far fewer individual stones (10 total, 1 of each tier) compared to standard weapons (+25, requiring 125 total standard Smithing Stones). Ancient Dragon Somber Smithing Stones are rare, so plan carefully which weapon you want to max.",
+    "timeCommitment": "Variable, depends on stone acquisition. Can be 2 minutes if stones are already acquired, or several hours for exploration to find late-game stones."
+  },
+  "cyberpunk 2077_the world": {
+    "estimatedDifficulty": "4/10 Moderate",
+    "isMissable": false,
+    "walkthroughSteps": [
+      "Progress through all main story quests, following the objectives marked on your map and in your journal.",
+      "Complete the final main story mission, regardless of the chosen ending path."
+    ],
+    "prerequisites": [
+      "Access to the main storyline."
+    ],
+    "proTip": "This achievement unlocks upon completing any of the main story endings. There are multiple outcomes based on your choices and side quest completions, but 'The World' will trigger with any of them.",
+    "timeCommitment": "Requires full playthrough"
+  },
+  "elden ring_red wolf of radagon": {
+    "estimatedDifficulty": "4/10 Medium",
+    "isMissable": false,
+    "walkthroughSteps": [
+      "Progress through the main story until you gain access to the Academy of Raya Lucarian in Liurnia of the Lakes.",
+      "Navigate through the Academy, past the initial courtyard and up the main stairs.",
+      "Proceed through the building until you reach the 'Debate Parlor' Site of Grace.",
+      "Exit the Debate Parlor through the archway to the west and proceed to the fog gate at the end of the hall.",
+      "Enter the fog gate and defeat the Red Wolf of Radagon."
+    ],
+    "prerequisites": [
+      "Access to Liurnia of the Lakes",
+      "Acquisition of the 'Glintstone Key' to enter the Academy of Raya Lucarian"
+    ],
+    "proTip": "The Red Wolf is highly agile and uses both melee and ranged Glintstone sorceries. Stay close to avoid its magic projectiles and punish its attack recovery. Utilize Spirit Ashes to draw its aggro, creating openings for free damage.",
+    "timeCommitment": "5-15 minutes (once boss arena is reached)"
+  },
+  "nine sols_well prepared": {
+    "estimatedDifficulty": "7/10 Hard",
+    "isMissable": false,
+    "walkthroughSteps": [
+      "Progress through the main story, actively exploring all accessible areas thoroughly.",
+      "Fully clear each zone of enemies; Jades can be dropped or awarded for combat encounters.",
+      "Interact with all NPCs and environmental elements; Jades may be quest rewards, hidden behind puzzles, or found in chests.",
+      "Utilize all unlocked traversal abilities (e.g., double jump, dash, wall climb) to access previously unreachable sections in earlier zones.",
+      "Thoroughly check the edges and corners of every room and platform for hidden passages, breakable walls, or secret chests.",
+      "Consult the in-game map frequently to identify any unexplored pathways or areas marked with question marks or unrevealed sections.",
+      "After completing the main story, re-visit all areas to sweep for any remaining Jades that may have become accessible with late-game abilities or story progression.",
+      "If still missing Jades, refer to a comprehensive 100% collectible guide for specific locations."
+    ],
+    "prerequisites": [
+      "Full progression through the main story to unlock all traversal abilities."
+    ],
+    "proTip": "Be meticulous with exploration. Utilize the in-game map to identify any unvisited or incompletely explored sections. Pay close attention to environmental cues hinting at hidden areas. Some Jades may be locked behind optional bosses or difficult platforming challenges.",
+    "timeCommitment": "Requires a full playthrough and significant post-game exploration for 100% completion."
+  },
+  "nine sols_rest for the wicked": {
+    "estimatedDifficulty": "3/10 Easy-Moderate",
+    "isMissable": false,
+    "walkthroughSteps": [
+      "Progress through the main story and explore all optional areas.",
+      "Locate every unique 'Save Shrine' (altar) found throughout all regions of the game.",
+      "Interact with each Save Shrine to rest and save your game.",
+      "Ensure you have rested at ALL distinct Save Shrines. The achievement will unlock once the final shrine is used."
+    ],
+    "prerequisites": [
+      "Access to all major game areas and their hidden pathways."
+    ],
+    "proTip": "Thoroughly explore every path, dead-end, and hidden room. Some Save Shrines are cleverly hidden off the main progression path. There are 22 total Save Shrines in the game.",
+    "timeCommitment": "Requires a full playthrough with dedicated exploration."
+  },
+  "nine sols_one man army": {
+    "estimatedDifficulty": "6/10 Moderate",
+    "isMissable": false,
+    "walkthroughSteps": [
+      "Progress through the main story to unlock access to all major regions: Peach Blossom Village, Sunken Shrine, Withered Ruins, and Jade Serpent's Den.",
+      "Thoroughly explore Peach Blossom Village. Jump into the well to find and defeat the optional miniboss 'Corrupted Mimic'.",
+      "In Peach Blossom Village, after acquiring necessary abilities or story progression, locate and defeat the optional miniboss 'Shadow Shaman'. (Often found in the upper-right section of the village, or after a specific main story event.)",
+      "Thoroughly explore Sunken Shrine. Locate and defeat the optional miniboss 'Spirit Guard'.",
+      "In Sunken Shrine, after defeating the Spirit Guard and potentially acquiring a specific relic or key from further game progression, locate and defeat the optional miniboss 'Yin-Yang Fish' duo.",
+      "Obtain the 'Sunken Shrine Key' (usually found after defeating other optional bosses or a main story boss). Use it to unlock the deepest part of the Sunken Shrine and defeat the optional miniboss 'The Forgotten Lord'.",
+      "Thoroughly explore Withered Ruins. Locate and defeat the optional miniboss 'Grave Keeper'.",
+      "In Withered Ruins, after defeating the Grave Keeper, proceed deeper into the ruins to locate and defeat the optional miniboss 'Master of the Abyss'.",
+      "Obtain the 'Withered Ruins Key' (usually found after defeating other optional bosses or a main story boss). Use it to unlock the deepest part of the Withered Ruins and defeat the optional miniboss 'The Unnamed Guardian'.",
+      "Thoroughly explore Jade Serpent's Den. Locate and defeat the optional miniboss 'Jade Serpent Spirit'.",
+      "In Jade Serpent's Den, after defeating the Jade Serpent Spirit, locate and defeat the optional miniboss 'Ancient Golem'."
+    ],
+    "prerequisites": [
+      "Access to all four major regions: Peach Blossom Village, Sunken Shrine, Withered Ruins, Jade Serpent's Den.",
+      "Key abilities (e.g., dash, double jump) to navigate areas.",
+      "Sunken Shrine Key and Withered Ruins Key for the final optional bosses in those regions."
+    ],
+    "proTip": "Focus on learning each boss's attack patterns and tells. Utilize Soul Links effectively for damage and parry opportunities. Stock up on food and healing items. Many optional bosses can be fought out of order, but it's generally best to tackle them as you naturally progress and gain more strength and abilities.",
+    "timeCommitment": "Several hours (includes exploration and multiple boss attempts)"
+  },
+  "blasphemous_the path of the believer": {
+    "estimatedDifficulty": "3/10 Easy",
+    "isMissable": false,
+    "walkthroughSteps": [
+      "Play through the game normally, progressing through the main story areas.",
+      "Defeat all mandatory bosses up to the final boss.",
+      "Do NOT fully upgrade the Mea Culpa weapon with the 'Hearts of Mea Culpa' received from defeating the Amanecidas of the Golden Linen (this is for Ending B).",
+      "Do NOT complete the 'Stir of Dawn' DLC content, specifically Jocinero's questline and the true final boss (this is for Ending C).",
+      "Defeat the final boss of the main story, His Holiness Escribar.",
+      "Approach and interact with the altar in the arena after defeating the final boss."
+    ],
+    "prerequisites": [
+      "Reach the final boss encounter."
+    ],
+    "proTip": "Ending A is the default ending. Simply complete the game without fulfilling the specific, extensive requirements for Ending B or Ending C. If you are pursuing all achievements, ensure you make a backup save before the final boss if you plan to attempt other endings on the same playthrough.",
+    "timeCommitment": "Requires full playthrough"
   }
 }

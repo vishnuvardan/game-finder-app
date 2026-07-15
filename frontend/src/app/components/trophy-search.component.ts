@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { debounceTime, distinctUntilChanged, filter, switchMap, tap, catchError, of, Subscription } from 'rxjs';
-import { GameService, RAWGGame } from '../services/game.service';
+import { GameService, SteamGame } from '../services/game.service';
 
 @Component({
   selector: 'app-trophy-search',
@@ -14,7 +14,7 @@ import { GameService, RAWGGame } from '../services/game.service';
 })
 export class TrophySearchComponent implements OnInit, OnDestroy {
   protected readonly searchControl = new FormControl('');
-  protected readonly suggestions = signal<RAWGGame[]>([]);
+  protected readonly suggestions = signal<SteamGame[]>([]);
   protected readonly isLoading = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
 
@@ -41,7 +41,7 @@ export class TrophySearchComponent implements OnInit, OnDestroy {
         distinctUntilChanged(),
         filter((value): value is string => value !== null && value.trim().length >= 3),
         switchMap((value) => {
-          return this.gameService.searchGamesRawg(value).pipe(
+          return this.gameService.searchGamesSteam(value).pipe(
             catchError((error) => {
               console.error('Search error:', error);
               this.errorMessage.set('Failed to retrieve games. Please try again.');
@@ -64,7 +64,7 @@ export class TrophySearchComponent implements OnInit, OnDestroy {
     }
   }
 
-  protected selectGame(game: RAWGGame) {
-    this.router.navigate(['/game', game.id]);
+  protected selectGame(game: SteamGame) {
+    this.router.navigate(['/game', game.appid]);
   }
 }

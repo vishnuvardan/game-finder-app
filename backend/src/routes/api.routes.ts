@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { igdbService } from '../services/igdb.service';
 import { geminiService } from '../services/gemini.service';
-import { rawgService } from '../services/rawg.service';
+import { steamService } from '../services/steam.service';
 import { cacheService } from '../services/cache.service';
 
 const router = Router();
@@ -23,7 +23,7 @@ router.get('/games/search', async (req: Request, res: Response) => {
       const results = await igdbService.searchGames(query);
       return res.json(results);
     } else {
-      const results = await rawgService.searchGames(query);
+      const results = await steamService.searchGames(query);
       return res.json(results);
     }
   } catch (error: any) {
@@ -170,33 +170,63 @@ router.post('/retrospective/finalize', async (req: Request, res: Response) => {
 });
 
 /**
- * GET /api/games/:id
- * Retrieve game details from RAWG API
+ * GET /api/games/:appid
+ * Retrieve game details (name, background image) from Steam
  */
-router.get('/games/:id', async (req: Request, res: Response) => {
-  const { id } = req.params;
+router.get('/games/:appid', async (req: Request, res: Response) => {
+  const { appid } = req.params;
 
   try {
-    const details = await rawgService.getGameDetails(id);
-    return res.json(details);
+    // Check achievements cache first, which also stores the gameName
+    let cached = cacheService.getAchievements(appid);
+    if (!cached) {
+      // If cache miss, fetch schema from Steam and cache it
+      const schema = await steamService.getGameSchema(appid);
+      cacheService.setAchievements(appid, schema);
+      cached = schema;
+    }
+
+    return res.json({
+      name: cached.gameName || 'Unknown Game',
+      background_image: `https://cdn.cloudflare.steamstatic.com/steam/apps/${appid}/header.jpg`
+    });
   } catch (error: any) {
     console.error('Game details fetch router error:', error.message);
-    return res.status(500).json({ error: error.message });
+    return res.json({
+      name: 'Steam Game ' + appid,
+      background_image: `https://cdn.cloudflare.steamstatic.com/steam/apps/${appid}/header.jpg`
+    });
   }
 });
 
 /**
- * GET /api/games/:id/achievements
- * Retrieve achievements from RAWG API
+ * GET /api/games/:appid/achievements
+ * Retrieve achievements from Steam API
  */
-router.get('/games/:id/achievements', async (req: Request, res: Response) => {
-  const { id } = req.params;
+router.get('/games/:appid/achievements', async (req: Request, res: Response) => {
+  const { appid } = req.params;
 
   try {
-    const achievements = await rawgService.getAchievements(id);
-    return res.json(achievements);
+    // Check cache first
+    let cached = cacheService.getAchievements(appid);
+    if (!cached) {
+      // Cache miss, fetch and cache
+      const schema = await steamService.getGameSchema(appid);
+      cacheService.setAchievements(appid, schema);
+      cached = schema;
+    }
+
+    if (!cached.achievements) {
+      // "availableGameStats" is undefined -> return 404 with specific message
+      return res.status(404).json({ error: 'This game does not feature Steam achievements' });
+    }
+
+    return res.json(cached.achievements);
   } catch (error: any) {
     console.error('Achievements fetch router error:', error.message);
+    if (error.message.includes('No game data returned') || error.message.includes('404')) {
+      return res.status(404).json({ error: 'This game does not feature Steam achievements' });
+    }
     return res.status(500).json({ error: error.message });
   }
 });

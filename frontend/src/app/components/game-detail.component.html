@@ -12,7 +12,7 @@
       <div class="scanner-line"></div>
     </div>
     <h3 class="loading-title">Loading Achievements</h3>
-    <p class="loading-text">Fetching official trophies and stats from RAWG database...</p>
+    <p class="loading-text">Fetching official achievements and stats from Steam database...</p>
   </div>
 
   <!-- Page Error state -->
@@ -35,15 +35,21 @@
       <div 
         *ngFor="let ach of achievements()" 
         class="achievement-card glass-panel" 
+        [class.is-hidden]="ach.hidden === 1"
         (click)="selectAchievement(ach)"
       >
         <div class="ach-icon-wrapper">
-          <img [src]="ach.image" [alt]="ach.name" class="ach-icon" />
+          <img [src]="ach.icon" [alt]="ach.displayName" class="ach-icon" />
           <div class="ach-hover-glow"></div>
         </div>
         <div class="ach-details">
-          <h3 class="ach-name">{{ ach.name }}</h3>
-          <p class="ach-desc">{{ ach.description }}</p>
+          <h3 class="ach-name">
+            {{ ach.displayName }}
+            <span *ngIf="ach.hidden === 1" class="hidden-badge">Hidden</span>
+          </h3>
+          <p class="ach-desc" [class.spoiler-text]="ach.hidden === 1">
+            {{ ach.hidden === 1 ? 'Unlock this hidden story achievement to reveal its description.' : ach.description }}
+          </p>
         </div>
         <div class="ach-action">
           <span class="view-guide-pill">View Guide ➔</span>
@@ -55,7 +61,7 @@
       <div class="no-achievements glass-panel">
         <span class="empty-icon">🏆</span>
         <h3>No Achievements Found</h3>
-        <p>RAWG API did not return any official achievements or trophies for this game.</p>
+        <p>This game does not feature Steam achievements.</p>
       </div>
     </ng-template>
   </div>
@@ -66,14 +72,17 @@
       <div class="drawer-header">
         <button class="close-btn" (click)="closeDrawer()">✕</button>
         <div class="drawer-trophy-identity" *ngIf="selectedAchievement()">
-          <img [src]="selectedAchievement()?.image" [alt]="selectedAchievement()?.name" class="drawer-trophy-icon" />
+          <img [src]="selectedAchievement()?.icon" [alt]="selectedAchievement()?.displayName" class="drawer-trophy-icon" />
           <div class="drawer-trophy-meta">
-            <span class="drawer-badge-subtitle">Trophy / Achievement</span>
-            <h3 class="drawer-trophy-title">{{ selectedAchievement()?.name }}</h3>
+            <span class="drawer-badge-subtitle">Steam Achievement</span>
+            <h3 class="drawer-trophy-title">
+              {{ selectedAchievement()?.displayName }}
+              <span *ngIf="selectedAchievement()?.hidden === 1" class="hidden-badge">Hidden</span>
+            </h3>
           </div>
         </div>
         <p class="drawer-trophy-description" *ngIf="selectedAchievement()">
-          {{ selectedAchievement()?.description }}
+          {{ selectedAchievement()?.hidden === 1 ? 'Unlock this hidden story achievement to reveal its description.' : selectedAchievement()?.description }}
         </p>
       </div>
 
@@ -107,6 +116,11 @@
 
         <!-- Active Trophy Guide Content -->
         <div *ngIf="activeGuide() && !isLoadingGuide()" class="guide-content-area animate-fade-in">
+          <!-- Spoiler Warning for Hidden Achievement -->
+          <div *ngIf="selectedAchievement()?.hidden === 1" class="spoiler-warning-card">
+            <span class="spoiler-warn-icon">⚠️ SPOILER WARNING</span>
+            <p class="spoiler-warn-text">This is a hidden story achievement. The walkthrough below contains gameplay or storyline spoilers.</p>
+          </div>
           <!-- Guide Badges Grid -->
           <div class="guide-meta-grid">
             <div class="meta-item">

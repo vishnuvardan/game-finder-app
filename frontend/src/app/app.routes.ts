@@ -8,6 +8,6 @@ export const routes: Routes = [
   { path: '', component: MatchmakerComponent },
   { path: 'retrospective', component: RetrospectiveComponent },
   { path: 'search', component: TrophySearchComponent },
-  { path: 'game/:id', component: GameDetailComponent },
+  { path: 'game/:appid', component: GameDetailComponent },
   { path: '**', redirectTo: '' },
 ];

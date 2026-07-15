@@ -383,8 +383,8 @@ class GeminiService {
     `;
 
     const systemInstruction = 
-      "You are an elite, highly efficient video game guide writer specializing in trophy and achievement completionism. " +
-      "Provide an optimized, spoiler-free (where possible), tactical guide to unlock the specified trophy. " +
+      "You are an elite, highly efficient video game guide writer specializing in Steam achievement completionism. " +
+      "Provide an optimized, spoiler-free (where possible), tactical guide to unlock the specified achievement. " +
       "Break down the mechanical steps linearly. Be concise, accurate, and direct.";
 
     const schema = {
@@ -396,7 +396,7 @@ class GeminiService {
         },
         isMissable: { 
           type: "BOOLEAN", 
-          description: "True if the player can lock themselves out of getting this achievement in a single playthrough." 
+          description: "True if the player can completely lock themselves out of getting this achievement in a single playthrough." 
         },
         timeCommitment: { 
           type: "STRING", 
@@ -410,7 +410,7 @@ class GeminiService {
         walkthroughSteps: { 
           type: "ARRAY", 
           items: { "type": "STRING" },
-          description: "Chronological, actionable steps to physically unlock the trophy."
+          description: "Chronological, actionable steps to physically unlock the achievement."
         },
         proTip: { 
           type: "STRING", 

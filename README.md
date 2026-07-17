@@ -7,6 +7,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Google Gemini](https://img.shields.io/badge/Google%20Gemini-8E75C2?style=for-the-badge&logo=googlegemini&logoColor=white)](https://deepmind.google/technologies/gemini/)
 [![IGDB API](https://img.shields.io/badge/IGDB%20API-6441A5?style=for-the-badge&logo=twitch&logoColor=white)](https://api-docs.igdb.com/)
+[![Steam API](https://img.shields.io/badge/Steam%20API-000000?style=for-the-badge&logo=steam&logoColor=white)](https://partner.steamgames.com/doc/webapi_overview)
 [![Deployed on Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://vercel.com/)
 
 ---
@@ -48,8 +49,8 @@ Finished a game recently? Create a unique review sheet to share on social media:
 
 ### 3. 🏆 AI-Powered Achievements & Trophy Guide
 Want to complete everything in your favorite games? The AI Trophy Guide will help you unlock every achievement:
-*   **Reactive Autocomplete Search:** Search for any multi-platform game via an RxJS-debounced autocomplete search connecting to the RAWG API proxy.
-*   **Comprehensive Trophy Grid:** Displays a list of official game achievements (supporting large lists up to 150 items to fit open-world RPGs) with official icons, titles, and descriptions.
+*   **Reactive Autocomplete Search:** Search for any Steam game via an RxJS-debounced autocomplete search connecting to the Steam API proxy.
+*   **Comprehensive Trophy Grid:** Displays a list of official game achievements with official icons, titles, and descriptions.
 *   **Tactical Gemini Walkthroughs:** Click any trophy to open a sliding side drawer. Gemini generates a linear, step-by-step walkthrough guide detailing estimated difficulty, missable status, time commitment, prerequisites, and a strategic pro-tip.
 *   **Local Persistent Caching:** Employs a quick file-backed cache database on the Node.js BFF server. Previously generated walkthroughs load instantly, avoiding Gemini API latency and token fees.
 *   **Interactive Micro-Animations & Error Boundaries:** Uses modern skeleton loading states during generation and offers a graceful "Retry generating guide" CTA on API failures.
@@ -123,15 +124,21 @@ sequenceDiagram
     rect rgb(40, 40, 30)
         Note over User, Gemini: Phase 5: Achievements & Trophy Guide
         User->>FE: Types game name (debounced input >= 3 chars)
-        FE->>BE: GET /api/games/search?q=...
-        BE->>RAWG: Search games (page_size=6)
-        RAWG-->>BE: Game matches (id, name, background_image)
+        FE->>BE: GET /api/games/search?q=...&source=steam
+        BE->>Steam: Search games (via storefront autocomplete API)
+        Steam-->>BE: Game matches (appid, name, logo)
         BE-->>FE: Return game options
         User->>FE: Selects game & views achievements list
-        FE->>BE: GET /api/games/:id/achievements
-        BE->>RAWG: Get achievements (page_size=150)
-        RAWG-->>BE: Official trophies array
-        BE-->>FE: Return trophies list
+        FE->>BE: GET /api/games/:appid & /api/games/:appid/achievements
+        Note over BE: Check local JSON/file-backed cache
+        alt Cache HIT
+            BE-->>FE: Return cached details & achievements instantly
+        else Cache MISS
+            BE->>Steam: Get schema (key, appid)
+            Steam-->>BE: Official Steam schema & achievements list
+            BE->>BE: Cache achievements list locally
+            BE-->>FE: Return game details & achievements list
+        end
         User->>FE: Clicks a trophy
         FE->>BE: POST /api/trophies/guide
         Note over BE: Check local JSON/file-backed cache
@@ -179,10 +186,10 @@ The heart of our AI-driven systems, implemented via the official `@google/genai`
 *   **Structured Output Engine:** Uses Gemini's `responseMimeType: 'application/json'` along with strict `responseSchema` parameters to enforce type safety. This ensures that the generated quiz objects, recommendations, and evaluation criteria never break the frontend parser.
 *   **Highly Redundant Fallback Engine:** Features a fallback algorithm across **11 different model configurations and aliases** (from `gemini-2.5-flash` to `gemini-3.1-pro` and legacy versions). If Gemini encounters 429 Rate Limits or Quota Exceeded errors on the free-tier service, it instantly fallbacks to the next available alias, guaranteeing near 100% uptime.
 
-### 3. RAWG Video Games Database API
+### 3. Steam API
 Used for autocomplete searches, retrieving game details, and fetching official achievements lists.
-*   **Secure Backend Proxying:** The RAWG API key is configured exclusively on the backend environment variables layer and is never exposed directly to the Angular client.
-*   **Targeted Pagination:** Achievement lists are fetched with explicitly high page size parameter settings (`&page_size=150`) to ensure large games do not drop trophies due to API limits.
+*   **Secure Backend Proxying & API Key:** The Steam API key is configured exclusively on the backend environment variables layer and is never exposed directly to the Angular client.
+*   **Schema Fetching & Caching:** The backend fetches the game's achievement schema via `ISteamUserStats/GetSchemaForGame/v2` and caches the results locally to avoid unnecessary API requests.
 
 ---
 
@@ -198,7 +205,7 @@ PORT=3000
 IGDB_CLIENT_ID=your_twitch_client_id
 IGDB_CLIENT_SECRET=your_twitch_client_secret
 GEMINI_API_KEY=your_gemini_api_key
-RAWG_API_KEY=your_rawg_api_key
+STEAM_API_KEY=your_steam_api_key
 ```
 
 ### 2. Start Backend BFF

@@ -39,6 +39,16 @@ export interface TrophyGuideResponse {
   proTip?: string;
 }
 
+export interface CarouselSlide {
+  title: string;
+  bullets: string[];
+  footnote?: string;
+}
+
+export interface CarouselResponse {
+  slides: CarouselSlide[];
+}
+
 class GeminiService {
   /**
    * Helper to execute models.generateContent with automatic model fallback for quota/rate-limit errors.
@@ -433,6 +443,77 @@ class GeminiService {
     } catch (error: any) {
       console.error('Error generating trophy guide from Gemini:', error);
       throw new Error(`Failed to generate trophy guide: ${error.message}`);
+    }
+  }
+
+  /**
+   * Generates between 2 and 5 highly engaging social slides about a specific topic/angle for a game
+   */
+  public async generateSlides(
+    gameName: string,
+    gameSummary: string,
+    genres: string[],
+    topic: string
+  ): Promise<CarouselResponse> {
+    const prompt = `
+      Game: "${gameName}"
+      Genres: ${genres.join(', ')}
+      Description Summary: "${gameSummary}"
+      Requested Topic/Angle: "${topic}"
+
+      Analyze the game and the requested topic. Generate between 2 and 5 dynamic, highly engaging social-media style slides (e.g. for Instagram Carousel) centered on the requested topic: "${topic}".
+    `;
+
+    const systemInstruction = 
+      `You are a professional social media content manager for a major gaming network. ` +
+      `Your task is to analyze the provided game and the requested topic, and generate between 2 and 5 highly engaging, short-form slides (carousel style). \n` +
+      `Each slide must have a clear, punchy title (under 35 chars) and exactly 2 to 3 bullet points/sentences (each under 100 chars) that are witty, informative, and customized to the topic. ` +
+      `Optionally, provide a witty one-line footnote or CTA (under 50 chars) for each slide. \n` +
+      `Ensure the language is simple but extremely engaging for gaming fans. Output MUST strictly match the defined JSON schema.`;
+
+    const schema = {
+      type: "OBJECT",
+      properties: {
+        slides: {
+          type: "ARRAY",
+          items: {
+            type: "OBJECT",
+            properties: {
+              title: { 
+                type: "STRING", 
+                description: "A short, punchy heading for this slide, under 35 characters." 
+              },
+              bullets: { 
+                type: "ARRAY", 
+                items: { type: "STRING" },
+                description: "Exactly 2 to 3 engaging, interesting, short statements or details, under 100 characters each."
+              },
+              footnote: { 
+                type: "STRING", 
+                description: "A brief, witty quote, caption, or call to action related to this slide, under 50 characters." 
+              }
+            },
+            required: ["title", "bullets"]
+          },
+          description: "List of 2 to 5 slides detailing the requested topic."
+        }
+      },
+      required: ["slides"]
+    };
+
+    try {
+      const responseText = await this.generateContentWithFallback(prompt, systemInstruction, schema);
+      const parsed: CarouselResponse = JSON.parse(responseText);
+
+      // Simple validation
+      if (!parsed.slides || !Array.isArray(parsed.slides)) {
+        throw new Error('Response is missing required slides array');
+      }
+
+      return parsed;
+    } catch (error: any) {
+      console.error('Error generating slides from Gemini:', error);
+      throw new Error(`Failed to generate slides: ${error.message}`);
     }
   }
 }

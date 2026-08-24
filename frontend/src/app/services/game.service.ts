@@ -11,6 +11,16 @@ export interface IGDBGame {
   platforms: string[];
 }
 
+export interface CarouselSlide {
+  title: string;
+  bullets: string[];
+  footnote?: string;
+}
+
+export interface CarouselResponse {
+  slides: CarouselSlide[];
+}
+
 export interface QuizQuestion {
   id: string;
   questionText: string;
@@ -172,6 +182,23 @@ export class GameService {
       reviewerName,
       gameName,
       ratings,
+    });
+  }
+
+  /**
+   * Generate dynamic slides for a game based on a topic
+   */
+  generateSlides(
+    gameName: string,
+    gameSummary: string,
+    genres: string[],
+    topic: string
+  ): Observable<CarouselResponse> {
+    return this.http.post<CarouselResponse>(`${this.apiUrl}/slides/generate`, {
+      gameName,
+      gameSummary,
+      genres,
+      topic,
     });
   }
 }

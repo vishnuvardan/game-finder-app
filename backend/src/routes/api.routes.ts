@@ -265,4 +265,34 @@ router.post('/trophies/guide', async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * POST /api/slides/generate
+ * Payload: { gameName: string, gameSummary: string, genres: string[], topic: string }
+ * Returns an array of dynamic slides for Instagram Carousel posts.
+ */
+router.post('/slides/generate', async (req: Request, res: Response) => {
+  const { gameName, gameSummary, genres, topic } = req.body;
+
+  if (!gameName || typeof gameName !== 'string') {
+    return res.status(400).json({ error: 'gameName must be a string' });
+  }
+  if (!gameSummary || typeof gameSummary !== 'string') {
+    return res.status(400).json({ error: 'gameSummary must be a string' });
+  }
+  if (!genres || !Array.isArray(genres)) {
+    return res.status(400).json({ error: 'genres must be an array of strings' });
+  }
+  if (!topic || typeof topic !== 'string') {
+    return res.status(400).json({ error: 'topic must be a string' });
+  }
+
+  try {
+    const result = await geminiService.generateSlides(gameName, gameSummary, genres, topic);
+    return res.json(result);
+  } catch (error: any) {
+    console.error('Slides generation router error:', error.message);
+    return res.status(500).json({ error: error.message });
+  }
+});
+
 export default router;

@@ -447,6 +447,78 @@ class GeminiService {
   }
 
   /**
+   * Helper to execute models.generateContent with Google Search grounding.
+   */
+  private async generateSearchGroundedContent(
+    contents: string,
+    systemInstruction?: string
+  ): Promise<string> {
+    const models = [
+      'gemini-2.5-flash',
+      'gemini-3.5-flash',
+      'gemini-flash-latest',
+      'gemini-2.5-flash-lite',
+      'gemini-3.1-flash-lite',
+      'gemini-3.1-pro',
+      'gemini-3.5-pro',
+      'gemini-2.5-pro',
+      'gemini-pro-latest',
+      'gemini-1.5-flash',
+      'gemini-1.5-pro',
+    ];
+
+    let lastError: any = null;
+
+    for (const model of models) {
+      try {
+        console.log(`\n================== [Gemini Search Grounded Request] ==================`);
+        console.log(`[Model]               : ${model}`);
+        console.log(`[System Instruction]  : ${systemInstruction || 'None'}`);
+        console.log(`[User Prompt/Content] : ${contents}`);
+        console.log(`======================================================\n`);
+
+        const response = await ai.models.generateContent({
+          model,
+          contents,
+          config: {
+            systemInstruction,
+            tools: [{ googleSearch: {} }],
+          },
+        });
+
+        if (response.text) {
+          console.log(`\n================== [Gemini Search Grounded Response] ==================`);
+          console.log(`[Model]               : ${model}`);
+          console.log(`[Response Text]       :\n${response.text}`);
+          console.log(`=======================================================\n`);
+          return response.text;
+        }
+        throw new Error(`Empty response text from model ${model}`);
+      } catch (error: any) {
+        lastError = error;
+
+        const isQuotaError =
+          error.status === 429 ||
+          (error.message && error.message.toLowerCase().includes('quota')) ||
+          (error.message && error.message.toLowerCase().includes('exhausted')) ||
+          (error.message && error.message.toLowerCase().includes('rate limit'));
+
+        if (isQuotaError) {
+          console.warn(`[GeminiService] Quota or rate limit exceeded for search grounding model "${model}". Falling back...`);
+          continue;
+        }
+
+        console.error(`[GeminiService] Non-quota error encountered with search grounding model "${model}":`, error);
+        throw error;
+      }
+    }
+
+    throw new Error(
+      `All Gemini fallback models exhausted for search grounding. Last error: ${lastError?.message || lastError}`
+    );
+  }
+
+  /**
    * Generates between 2 and 5 highly engaging social slides about a specific topic/angle for a game
    */
   public async generateSlides(
@@ -455,21 +527,49 @@ class GeminiService {
     genres: string[],
     topic: string
   ): Promise<CarouselResponse> {
+    // Step 1: Query Google Search Grounding to fetch the actual news and details.
+    const searchQuery = `Find the latest, most accurate, and specific news, dates, and details for "${gameName}" regarding "${topic}".
+    Specifically search for and retrieve:
+    1. Verified release dates or timing.
+    2. Numbers, view counts, or community hype statistics (e.g. how many are waiting).
+    3. Platforms/channels of release (e.g. YouTube vs Netflix, subscription vs free).
+    4. Actionable details, expectations, or specific gameplay updates.`;
+    
+    let groundedInfo = "";
+    try {
+      groundedInfo = await this.generateSearchGroundedContent(
+        searchQuery,
+        "You are a professional gaming journalist. Perform a search to gather concrete details, real facts, dates, statistics, and expectations about the game and topic."
+      );
+    } catch (e) {
+      console.warn("Failed to retrieve search-grounded information, proceeding with base prompt:", e);
+    }
+
     const prompt = `
       Game: "${gameName}"
       Genres: ${genres.join(', ')}
       Description Summary: "${gameSummary}"
       Requested Topic/Angle: "${topic}"
 
-      Analyze the game and the requested topic. Generate between 2 and 5 dynamic, highly engaging social-media style slides (e.g. for Instagram Carousel) centered on the requested topic: "${topic}".
+      ${groundedInfo ? `Here is the actual news and real-time facts retrieved from the web:\n${groundedInfo}\n` : ''}
+
+      Analyze the game, the requested topic, and the retrieved real facts. Generate between 2 and 5 dynamic, highly engaging social-media style slides (e.g. for Instagram Carousel) centered on the requested topic: "${topic}".
+      
+      CRITICAL INSTRUCTIONS:
+      - Ground your slides in actual data, dates, and news gathered from the search results.
+      - If there are specific release dates, numbers of waiting players, trailer lengths, platform details, or gameplay expectations in the facts, include them directly in the bullets.
+      - Do NOT use generic placeholder text, rumors, or vague/witty banter that tells the user nothing. Make the updates look real and informative.
+      - Slide 1 (first slide) MUST be a title/cover slide. Its title should be a summary title (e.g. '${gameName} ${topic} - what you should know?'). Its bullets array must contain exactly 1 high-level summary sentence. (The UI will display only the title on the first slide, but provide a bullet for safety/fallback).
+      - Subsequent slides (Slide 2, 3, etc.) should contain the actual bulleted updates and details.
     `;
 
     const systemInstruction = 
       `You are a professional social media content manager for a major gaming network. ` +
-      `Your task is to analyze the provided game and the requested topic, and generate between 2 and 5 highly engaging, short-form slides (carousel style). \n` +
+      `Your task is to analyze the provided game and the requested topic (using the real facts retrieved from the web), and generate between 2 and 5 highly engaging, short-form slides (carousel style). \n` +
       `Each slide must have a clear, punchy title (under 35 chars) and exactly 2 to 3 bullet points/sentences (each under 100 chars) that are witty, informative, and customized to the topic. ` +
       `Optionally, provide a witty one-line footnote or CTA (under 50 chars) for each slide. \n` +
-      `Ensure the language is simple but extremely engaging for gaming fans. Output MUST strictly match the defined JSON schema.`;
+      `Ensure the language is simple but extremely engaging for gaming fans. Output MUST strictly match the defined JSON schema. ` +
+      `CRITICAL: Avoid generic filler or placeholders. Ground your slides in actual data, dates, and news gathered from the search results.`;
 
     const schema = {
       type: "OBJECT",

@@ -132,10 +132,17 @@
             <button class="nav-arrow left" (click)="prevSlide()" aria-label="Previous Slide">‹</button>
             
             <!-- Active Slide Card (Rendered Aspect Ratio and Theme CSS classes) -->
-            <div id="active-preview-card" class="slide-card" [class]="'theme-' + theme() + ' ratio-' + aspectRatio()">
-              <!-- Blurred Game Background -->
-              <div class="slide-bg-cover" [style.background-image]="'url(' + selectedGame()?.coverUrl + ')'"></div>
-              <div class="slide-overlay"></div>
+            <div id="active-preview-card" class="slide-card" 
+              [class]="'theme-' + theme() + ' ratio-' + aspectRatio()"
+              [class.first-slide]="activeSlideIndex() === 0">
+              
+              <!-- Blurred Game Background (hidden on first slide) -->
+              @if (activeSlideIndex() > 0) {
+                <div class="slide-bg-cover" [style.background-image]="'url(' + selectedGame()?.coverUrl + ')'"></div>
+                <div class="slide-overlay"></div>
+              } @else {
+                <div class="first-slide-bg"></div>
+              }
 
               <div class="slide-card-content">
                 <!-- Slide Header -->
@@ -144,15 +151,25 @@
                   <div class="slide-counter">{{ activeSlideIndex() + 1 }} / {{ slides().length }}</div>
                 </div>
 
-                <!-- Slide Title -->
-                <h2 class="slide-card-title">{{ slides()[activeSlideIndex()].title }}</h2>
+                @if (activeSlideIndex() === 0) {
+                  <!-- Slide 1: Cover Image & Bold Title below -->
+                  <div class="first-slide-media">
+                    <img [src]="selectedGame()?.coverUrl" class="first-slide-image" alt="Game Cover" />
+                  </div>
+                  <div class="first-slide-title-wrapper">
+                    <h2 class="slide-card-title first-slide-title">{{ slides()[0].title }}</h2>
+                  </div>
+                } @else {
+                  <!-- Slide Title -->
+                  <h2 class="slide-card-title">{{ slides()[activeSlideIndex()].title }}</h2>
 
-                <!-- Slide Body (Bullets) -->
-                <ul class="slide-card-bullets">
-                  @for (bullet of slides()[activeSlideIndex()].bullets; track bullet) {
-                    <li>{{ bullet }}</li>
-                  }
-                </ul>
+                  <!-- Slide Body (Bullets) -->
+                  <ul class="slide-card-bullets">
+                    @for (bullet of slides()[activeSlideIndex()].bullets; track bullet) {
+                      <li>{{ bullet }}</li>
+                    }
+                  </ul>
+                }
 
                 <!-- Slide Footnote/CTA -->
                 @if (slides()[activeSlideIndex()].footnote) {
@@ -240,10 +257,17 @@
   <!-- Offscreen Slides Container (Used strictly for batch HTML2Canvas downloads) -->
   <div class="offscreen-download-wrapper" aria-hidden="true">
     @for (slide of slides(); track $index) {
-      <div [id]="'offscreen-slide-' + $index" class="slide-card offscreen-card" [class]="'theme-' + theme() + ' ratio-' + aspectRatio()">
+      <div [id]="'offscreen-slide-' + $index" class="slide-card offscreen-card" 
+        [class]="'theme-' + theme() + ' ratio-' + aspectRatio()"
+        [class.first-slide]="$index === 0">
+        
         <!-- Blurred Game Background -->
-        <div class="slide-bg-cover" [style.background-image]="'url(' + selectedGame()?.coverUrl + ')'"></div>
-        <div class="slide-overlay"></div>
+        @if ($index > 0) {
+          <div class="slide-bg-cover" [style.background-image]="'url(' + selectedGame()?.coverUrl + ')'"></div>
+          <div class="slide-overlay"></div>
+        } @else {
+          <div class="first-slide-bg"></div>
+        }
 
         <div class="slide-card-content">
           <!-- Slide Header -->
@@ -252,15 +276,25 @@
             <div class="slide-counter">{{ $index + 1 }} / {{ slides().length }}</div>
           </div>
 
-          <!-- Slide Title -->
-          <h2 class="slide-card-title">{{ slide.title }}</h2>
+          @if ($index === 0) {
+            <!-- Slide 1: Cover Image & Bold Title below -->
+            <div class="first-slide-media">
+              <img [src]="selectedGame()?.coverUrl" class="first-slide-image" alt="Game Cover" />
+            </div>
+            <div class="first-slide-title-wrapper">
+              <h2 class="slide-card-title first-slide-title">{{ slide.title }}</h2>
+            </div>
+          } @else {
+            <!-- Slide Title -->
+            <h2 class="slide-card-title">{{ slide.title }}</h2>
 
-          <!-- Slide Body (Bullets) -->
-          <ul class="slide-card-bullets">
-            @for (bullet of slide.bullets; track bullet) {
-              <li>{{ bullet }}</li>
-            }
-          </ul>
+            <!-- Slide Body (Bullets) -->
+            <ul class="slide-card-bullets">
+              @for (bullet of slide.bullets; track bullet) {
+                <li>{{ bullet }}</li>
+              }
+            </ul>
+          }
 
           <!-- Slide Footnote/CTA -->
           @if (slide.footnote) {

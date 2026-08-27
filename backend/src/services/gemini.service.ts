@@ -47,6 +47,7 @@ export interface CarouselSlide {
 
 export interface CarouselResponse {
   slides: CarouselSlide[];
+  caption: string;
 }
 
 class GeminiService {
@@ -518,9 +519,6 @@ class GeminiService {
     );
   }
 
-  /**
-   * Generates between 2 and 5 highly engaging social slides about a specific topic/angle for a game
-   */
   public async generateSlides(
     gameName: string,
     gameSummary: string,
@@ -561,15 +559,16 @@ class GeminiService {
       - Do NOT use generic placeholder text, rumors, or vague/witty banter that tells the user nothing. Make the updates look real and informative.
       - Slide 1 (first slide) MUST be a title/cover slide. Its title should be a summary title (e.g. '${gameName} ${topic} - what you should know?'). Its bullets array must contain exactly 1 high-level summary sentence. (The UI will display only the title on the first slide, but provide a bullet for safety/fallback).
       - Subsequent slides (Slide 2, 3, etc.) should contain the actual bulleted updates and details.
+      - Generate a catchy, engaging social media post caption (under 250 characters) summarizing these slides, including a short description and 3 to 5 relevant hashtags (e.g. #GTAVI, #GamingNews).
     `;
 
     const systemInstruction = 
       `You are a professional social media content manager for a major gaming network. ` +
-      `Your task is to analyze the provided game and the requested topic (using the real facts retrieved from the web), and generate between 2 and 5 highly engaging, short-form slides (carousel style). \n` +
-      `Each slide must have a clear, punchy title (under 35 chars) and exactly 2 to 3 bullet points/sentences (each under 100 chars) that are witty, informative, and customized to the topic. ` +
-      `Optionally, provide a witty one-line footnote or CTA (under 50 chars) for each slide. \n` +
+      `Your task is to analyze the provided game and the requested topic (using the real facts retrieved from the web), and generate: \n` +
+      `1. Between 2 and 5 highly engaging, short-form slides (carousel style). Each slide must have a clear, punchy title (under 35 chars) and exactly 2 to 3 bullet points/sentences (each under 100 chars) that are witty, informative, and customized to the topic. Optionally, provide a witty footnote/CTA (under 50 chars). \n` +
+      `2. A catchy social media post caption (under 250 characters) with a brief summary of the game/topic and 3 to 5 relevant hashtags. \n` +
       `Ensure the language is simple but extremely engaging for gaming fans. Output MUST strictly match the defined JSON schema. ` +
-      `CRITICAL: Avoid generic filler or placeholders. Ground your slides in actual data, dates, and news gathered from the search results.`;
+      `CRITICAL: Avoid generic filler or placeholders. Ground your slides and caption in actual data, dates, and news gathered from the search results.`;
 
     const schema = {
       type: "OBJECT",
@@ -596,9 +595,13 @@ class GeminiService {
             required: ["title", "bullets"]
           },
           description: "List of 2 to 5 slides detailing the requested topic."
+        },
+        caption: {
+          type: "STRING",
+          description: "An engaging, catchy social media post caption (under 250 characters) summarizing the carousel slides, including 3 to 5 relevant hashtags."
         }
       },
-      required: ["slides"]
+      required: ["slides", "caption"]
     };
 
     try {

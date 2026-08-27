@@ -7,7 +7,7 @@ import html2canvas from 'html2canvas';
 
 type PageState = 'intake' | 'generating' | 'preview';
 type AspectRatio = '4-5' | '9-16' | '1-1';
-type SlideTheme = 'cyberpunk' | 'glass' | 'retro' | 'magazine';
+type SlideTheme = 'cyberpunk' | 'glass' | 'retro' | 'magazine' | 'ign' | 'kotaku' | 'polygon' | 'gamespot' | 'steam' | 'esports';
 
 @Component({
   selector: 'app-carousel-creator',

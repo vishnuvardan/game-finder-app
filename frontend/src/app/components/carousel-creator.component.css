@@ -733,6 +733,334 @@
   padding-top: 0.25rem;
 }
 
+/* 5. IGN Editorial */
+.theme-ign {
+  border: 1px solid #e4002b;
+  box-shadow: 0 10px 40px rgba(228, 0, 43, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.9);
+}
+
+.theme-ign .slide-overlay {
+  background: linear-gradient(
+    to bottom,
+    rgba(14, 15, 17, 0.4) 0%,
+    rgba(14, 15, 17, 0.9) 60%,
+    #0e0f11 100%
+  );
+}
+
+.theme-ign .slide-topic-badge {
+  color: #e4002b;
+  font-weight: 900;
+  letter-spacing: 0.15em;
+  border-bottom: 2px solid #e4002b;
+  padding-bottom: 0.1rem;
+}
+
+.theme-ign .slide-counter {
+  background: #e4002b;
+  color: #fff;
+  font-weight: 800;
+  border-radius: 2px;
+}
+
+.theme-ign .slide-card-title {
+  color: #fff;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+}
+
+.theme-ign .slide-card-bullets li {
+  color: #e2e8f0;
+}
+
+.theme-ign .slide-card-bullets li::before {
+  color: #e4002b;
+  content: "■";
+  font-size: 0.65rem;
+}
+
+.theme-ign .slide-card-footnote {
+  color: #94a3b8;
+  border-top: 1px solid rgba(228, 0, 43, 0.2);
+}
+
+.theme-ign .slide-card-watermark {
+  color: #e4002b;
+  font-weight: 700;
+}
+
+/* 6. Kotaku Grunge */
+.theme-kotaku {
+  border: 3px solid #000000;
+  box-shadow: 8px 8px 0px #facc15;
+}
+
+.theme-kotaku .slide-overlay {
+  background: linear-gradient(
+    135deg,
+    rgba(15, 23, 42, 0.65) 0%,
+    rgba(15, 23, 42, 0.95) 100%
+  );
+}
+
+.theme-kotaku .slide-topic-badge {
+  color: #000000;
+  background: #facc15;
+  padding: 0.2rem 0.6rem;
+  font-weight: 900;
+  transform: skewX(-10deg);
+}
+
+.theme-kotaku .slide-counter {
+  background: #000000;
+  color: #facc15;
+  font-weight: 900;
+  border: 1px solid #facc15;
+}
+
+.theme-kotaku .slide-card-title {
+  color: #facc15;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+}
+
+.theme-kotaku .slide-card-bullets li {
+  color: #fff;
+  font-weight: 600;
+}
+
+.theme-kotaku .slide-card-bullets li::before {
+  color: #facc15;
+  content: "⚡";
+}
+
+.theme-kotaku .slide-card-footnote {
+  color: #facc15;
+  border-top: 2px dashed #000000;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 0.4rem;
+}
+
+.theme-kotaku .slide-card-watermark {
+  color: #cbd5e1;
+  font-weight: 800;
+}
+
+/* 7. Polygon Creative */
+.theme-polygon {
+  border: 2px solid rgba(255, 0, 127, 0.3);
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.2);
+}
+
+.theme-polygon .slide-overlay {
+  background: linear-gradient(
+    to bottom,
+    rgba(30, 9, 44, 0.3) 0%,
+    rgba(15, 23, 42, 0.88) 55%,
+    rgba(15, 23, 42, 0.98) 100%
+  );
+}
+
+.theme-polygon .slide-topic-badge {
+  color: #ff007f;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.theme-polygon .slide-counter {
+  background: linear-gradient(135deg, #ff007f, #8b5cf6);
+  color: #fff;
+  border-radius: 12px;
+  font-weight: bold;
+}
+
+.theme-polygon .slide-card-title {
+  color: #fff;
+  font-weight: 800;
+  background: linear-gradient(135deg, #fff, #cbd5e1);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.theme-polygon .slide-card-bullets li {
+  color: #cbd5e1;
+}
+
+.theme-polygon .slide-card-bullets li::before {
+  color: #ff007f;
+  content: "♦";
+}
+
+.theme-polygon .slide-card-footnote {
+  color: #ff007f;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.theme-polygon .slide-card-watermark {
+  color: #8b5cf6;
+}
+
+/* 8. GameSpot Steel */
+.theme-gamespot {
+  border: 2px solid #f59e0b;
+  box-shadow: inset 0 0 15px rgba(245, 158, 11, 0.2);
+}
+
+.theme-gamespot .slide-overlay {
+  background: linear-gradient(
+    to bottom,
+    rgba(30, 41, 59, 0.5) 0%,
+    rgba(15, 23, 42, 0.9) 60%,
+    #090d16 100%
+  );
+}
+
+.theme-gamespot .slide-topic-badge {
+  color: #f59e0b;
+  font-weight: 800;
+  border-left: 3px solid #f59e0b;
+  padding-left: 0.4rem;
+}
+
+.theme-gamespot .slide-counter {
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid #f59e0b;
+  color: #f59e0b;
+  font-weight: 700;
+}
+
+.theme-gamespot .slide-card-title {
+  color: #fff;
+  font-weight: 900;
+}
+
+.theme-gamespot .slide-card-bullets li {
+  color: #cbd5e1;
+}
+
+.theme-gamespot .slide-card-bullets li::before {
+  color: #f59e0b;
+  content: "►";
+  font-size: 0.7rem;
+}
+
+.theme-gamespot .slide-card-footnote {
+  color: #f59e0b;
+  border-top: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.theme-gamespot .slide-card-watermark {
+  color: #94a3b8;
+}
+
+/* 9. Steam Storefront */
+.theme-steam {
+  border: 1px solid #1a3a53;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(103, 193, 245, 0.1);
+}
+
+.theme-steam .slide-overlay {
+  background: linear-gradient(
+    to bottom,
+    rgba(23, 26, 33, 0.4) 0%,
+    rgba(27, 40, 56, 0.92) 55%,
+    #171a21 100%
+  );
+}
+
+.theme-steam .slide-topic-badge {
+  color: #67c1f5;
+  font-weight: 700;
+}
+
+.theme-steam .slide-counter {
+  background: #101822;
+  border: 1px solid #67c1f5;
+  color: #67c1f5;
+  border-radius: 4px;
+}
+
+.theme-steam .slide-card-title {
+  color: #fff;
+  font-weight: 700;
+}
+
+.theme-steam .slide-card-bullets li {
+  color: #c4c5c6;
+}
+
+.theme-steam .slide-card-bullets li::before {
+  color: #67c1f5;
+  content: "•";
+  font-size: 1rem;
+}
+
+.theme-steam .slide-card-footnote {
+  color: #67c1f5;
+  border-top: 1px solid #1a3a53;
+}
+
+.theme-steam .slide-card-watermark {
+  color: #4f535b;
+}
+
+/* 10. Esports Arena */
+.theme-esports {
+  border: 1px solid #22c55e;
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.25);
+}
+
+.theme-esports .slide-overlay {
+  background: linear-gradient(
+    to bottom,
+    rgba(5, 5, 5, 0.2) 0%,
+    rgba(10, 15, 10, 0.9) 60%,
+    #050705 100%
+  );
+}
+
+.theme-esports .slide-topic-badge {
+  color: #22c55e;
+  font-weight: 900;
+  text-shadow: 0 0 8px rgba(34, 197, 94, 0.6);
+}
+
+.theme-esports .slide-counter {
+  background: rgba(34, 197, 94, 0.15);
+  border: 1px solid #22c55e;
+  color: #22c55e;
+  border-radius: 0;
+  font-weight: 900;
+}
+
+.theme-esports .slide-card-title {
+  color: #fff;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.theme-esports .slide-card-bullets li {
+  color: #e2e8f0;
+}
+
+.theme-esports .slide-card-bullets li::before {
+  color: #22c55e;
+  content: "»";
+  font-size: 0.95rem;
+}
+
+.theme-esports .slide-card-footnote {
+  color: #22c55e;
+  border-top: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.theme-esports .slide-card-watermark {
+  color: #22c55e;
+}
+
 /* Controls Column (RHS) */
 .preview-draft-column {
   display: flex;
@@ -1088,6 +1416,113 @@
   padding-bottom: 0.5rem;
 }
 
+/* --- Theme 5: IGN Editorial Cover --- */
+.theme-ign.first-slide .first-slide-bg {
+  background: linear-gradient(135deg, #0e0f11 0%, #16171a 100%);
+}
+
+.theme-ign.first-slide .first-slide-image {
+  border: 4px solid #e4002b;
+  box-shadow: 0 15px 35px rgba(228, 0, 43, 0.4);
+}
+
+.theme-ign.first-slide .first-slide-title {
+  color: #fff;
+  text-transform: uppercase;
+  font-weight: 900;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+/* --- Theme 6: Kotaku Grunge Cover --- */
+.theme-kotaku.first-slide .first-slide-bg {
+  background: #0d0f12;
+  background-image: repeating-linear-gradient(45deg, rgba(250, 204, 21, 0.05) 0px, rgba(250, 204, 21, 0.05) 2px, transparent 2px, transparent 10px);
+}
+
+.theme-kotaku.first-slide .first-slide-image {
+  border: 4px solid #000000;
+  box-shadow: 8px 8px 0px #facc15;
+  border-radius: 0;
+}
+
+.theme-kotaku.first-slide .first-slide-title {
+  color: #facc15;
+  text-transform: uppercase;
+  font-weight: 900;
+  text-shadow: 3px 3px 0px #000000;
+}
+
+/* --- Theme 7: Polygon Cover --- */
+.theme-polygon.first-slide .first-slide-bg {
+  background: linear-gradient(135deg, #1f0b2f 0%, #0d0e15 100%);
+}
+
+.theme-polygon.first-slide .first-slide-image {
+  border: 2px solid rgba(255, 0, 127, 0.5);
+  box-shadow: 0 15px 40px rgba(255, 0, 127, 0.3), 0 0 15px rgba(139, 92, 246, 0.2);
+  border-radius: 20px;
+}
+
+.theme-polygon.first-slide .first-slide-title {
+  color: #fff;
+  font-weight: 900;
+  background: linear-gradient(135deg, #ff007f, #8b5cf6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* --- Theme 8: GameSpot Cover --- */
+.theme-gamespot.first-slide .first-slide-bg {
+  background: linear-gradient(135deg, #1e293b 0%, #090d16 100%);
+}
+
+.theme-gamespot.first-slide .first-slide-image {
+  border: 3px solid #f59e0b;
+  box-shadow: 0 12px 35px rgba(245, 158, 11, 0.3);
+}
+
+.theme-gamespot.first-slide .first-slide-title {
+  color: #fff;
+  font-weight: 900;
+  border-bottom: 3px solid #f59e0b;
+  padding-bottom: 0.5rem;
+}
+
+/* --- Theme 9: Steam Cover --- */
+.theme-steam.first-slide .first-slide-bg {
+  background: linear-gradient(135deg, #171a21 0%, #1b2838 100%);
+}
+
+.theme-steam.first-slide .first-slide-image {
+  border: 3px solid #1a3a53;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6), 0 0 15px rgba(103, 193, 245, 0.15);
+  border-radius: 4px;
+}
+
+.theme-steam.first-slide .first-slide-title {
+  color: #fff;
+  font-weight: 700;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* --- Theme 10: Esports Cover --- */
+.theme-esports.first-slide .first-slide-bg {
+  background: linear-gradient(135deg, #050705 0%, #0c120c 100%);
+}
+
+.theme-esports.first-slide .first-slide-image {
+  border: 3px solid #22c55e;
+  box-shadow: 0 0 30px rgba(34, 197, 94, 0.5);
+  border-radius: 0;
+}
+
+.theme-esports.first-slide .first-slide-title {
+  color: #fff;
+  font-weight: 900;
+  text-transform: uppercase;
+  text-shadow: 0 0 10px rgba(34, 197, 94, 0.4);
+}
+
 /* --- Offscreen High-Res Scaling for Cover Slide --- */
 .offscreen-card.first-slide .first-slide-media {
   margin: 1.5rem auto 3rem auto;
@@ -1117,6 +1552,36 @@
 .offscreen-card.theme-magazine.first-slide .first-slide-image {
   border-width: 15px;
   box-shadow: 30px 30px 0px rgba(30, 41, 59, 0.15);
+}
+
+.offscreen-card.theme-ign.first-slide .first-slide-image {
+  border-width: 12px;
+  box-shadow: 0 35px 80px rgba(228, 0, 43, 0.5);
+}
+
+.offscreen-card.theme-kotaku.first-slide .first-slide-image {
+  border-width: 12px;
+  box-shadow: 24px 24px 0px #facc15;
+}
+
+.offscreen-card.theme-polygon.first-slide .first-slide-image {
+  border-width: 6px;
+  box-shadow: 0 35px 80px rgba(255, 0, 127, 0.4);
+}
+
+.offscreen-card.theme-gamespot.first-slide .first-slide-image {
+  border-width: 9px;
+  box-shadow: 0 30px 75px rgba(245, 158, 11, 0.4);
+}
+
+.offscreen-card.theme-steam.first-slide .first-slide-image {
+  border-width: 9px;
+  box-shadow: 0 35px 80px rgba(0, 0, 0, 0.7), 0 0 35px rgba(103, 193, 245, 0.3);
+}
+
+.offscreen-card.theme-esports.first-slide .first-slide-image {
+  border-width: 9px;
+  box-shadow: 0 0 75px rgba(34, 197, 94, 0.7);
 }
 
 /* =================== PREVIEW POST CAPTION & STYLING SELECTORS =================== */

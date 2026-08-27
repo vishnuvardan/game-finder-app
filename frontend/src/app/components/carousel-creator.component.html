@@ -257,7 +257,7 @@
   <!-- Offscreen Slides Container (Used strictly for batch HTML2Canvas downloads) -->
   <div class="offscreen-download-wrapper" aria-hidden="true">
     @for (slide of slides(); track $index) {
-      <div [id]="'offscreen-slide-' + $index" class="slide-card offscreen-card" 
+      <div [id]="'offscreen-slide-' + $index" class="slide-card" 
         [class]="'theme-' + theme() + ' ratio-' + aspectRatio()"
         [class.first-slide]="$index === 0">
         

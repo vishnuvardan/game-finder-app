@@ -1148,74 +1148,7 @@
   z-index: -999;
 }
 
-/* High-res scaling size (exact double of preview card layout) */
-.offscreen-card {
-  width: 1080px !important;
-  border-radius: 0 !important; /* No rounded borders for raw instagram exports */
-}
 
-.offscreen-card.ratio-4-5 {
-  height: 1350px !important;
-}
-
-.offscreen-card.ratio-9-16 {
-  height: 1920px !important;
-}
-
-.offscreen-card.ratio-1-1 {
-  height: 1080px !important;
-}
-
-/* Scale up fonts and paddings inside high-res offscreen cards */
-.offscreen-card .slide-card-content {
-  padding: 4.5rem 3.75rem;
-}
-
-.offscreen-card .slide-topic-badge {
-  font-size: 2rem;
-}
-
-.offscreen-card .slide-counter {
-  font-size: 2rem;
-  padding: 0.4rem 1.2rem;
-}
-
-.offscreen-card .slide-card-title {
-  font-size: 4rem;
-  margin-bottom: 2.5rem;
-}
-
-.offscreen-card .slide-card-bullets {
-  gap: 1.8rem;
-}
-
-.offscreen-card .slide-card-bullets li {
-  font-size: 2.55rem;
-  padding-left: 3.25rem;
-}
-
-.offscreen-card .slide-card-bullets li::before {
-  font-size: 2.4rem;
-}
-
-.offscreen-card .slide-card-footnote {
-  font-size: 2.25rem;
-  padding-top: 1.5rem;
-}
-
-.offscreen-card .slide-card-watermark {
-  font-size: 1.8rem;
-  margin-top: 1.5rem;
-}
-
-.offscreen-card.theme-retro {
-  border-width: 9px !important;
-}
-
-.offscreen-card.theme-magazine {
-  border-width: 12px !important;
-  box-shadow: 24px 24px 0px #1e293b !important;
-}
 
 /* Responsive Breakpoints */
 @media (max-width: 960px) {
@@ -1523,66 +1456,7 @@
   text-shadow: 0 0 10px rgba(34, 197, 94, 0.4);
 }
 
-/* --- Offscreen High-Res Scaling for Cover Slide --- */
-.offscreen-card.first-slide .first-slide-media {
-  margin: 1.5rem auto 3rem auto;
-  max-height: 55%;
-}
 
-.offscreen-card.first-slide .first-slide-image {
-  border-radius: 36px;
-  box-shadow: 0 35px 80px rgba(0, 0, 0, 0.7);
-}
-
-.offscreen-card.first-slide .first-slide-title {
-  font-size: 4.8rem;
-  margin-bottom: 2rem;
-}
-
-.offscreen-card.theme-cyberpunk.first-slide .first-slide-image {
-  border-width: 9px;
-  box-shadow: 0 0 75px rgba(255, 0, 127, 0.8), 0 0 15px #00f0ff;
-}
-
-.offscreen-card.theme-retro.first-slide .first-slide-image {
-  border-width: 12px;
-  box-shadow: 18px 18px 0px #ef4444;
-}
-
-.offscreen-card.theme-magazine.first-slide .first-slide-image {
-  border-width: 15px;
-  box-shadow: 30px 30px 0px rgba(30, 41, 59, 0.15);
-}
-
-.offscreen-card.theme-ign.first-slide .first-slide-image {
-  border-width: 12px;
-  box-shadow: 0 35px 80px rgba(228, 0, 43, 0.5);
-}
-
-.offscreen-card.theme-kotaku.first-slide .first-slide-image {
-  border-width: 12px;
-  box-shadow: 24px 24px 0px #facc15;
-}
-
-.offscreen-card.theme-polygon.first-slide .first-slide-image {
-  border-width: 6px;
-  box-shadow: 0 35px 80px rgba(255, 0, 127, 0.4);
-}
-
-.offscreen-card.theme-gamespot.first-slide .first-slide-image {
-  border-width: 9px;
-  box-shadow: 0 30px 75px rgba(245, 158, 11, 0.4);
-}
-
-.offscreen-card.theme-steam.first-slide .first-slide-image {
-  border-width: 9px;
-  box-shadow: 0 35px 80px rgba(0, 0, 0, 0.7), 0 0 35px rgba(103, 193, 245, 0.3);
-}
-
-.offscreen-card.theme-esports.first-slide .first-slide-image {
-  border-width: 9px;
-  box-shadow: 0 0 75px rgba(34, 197, 94, 0.7);
-}
 
 /* =================== PREVIEW POST CAPTION & STYLING SELECTORS =================== */
 

@@ -136,7 +136,7 @@ export class CarouselCreatorComponent {
       allowTaint: false,
       logging: false,
       backgroundColor: null,
-      scale: 2, // High-res export
+      scale: 3.375, // High-res export (320px * 3.375 = 1080px wide)
     };
 
     try {

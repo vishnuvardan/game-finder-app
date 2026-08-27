@@ -19,6 +19,7 @@ export interface CarouselSlide {
 
 export interface CarouselResponse {
   slides: CarouselSlide[];
+  caption?: string;
 }
 
 export interface QuizQuestion {

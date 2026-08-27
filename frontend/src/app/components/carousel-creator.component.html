@@ -44,54 +44,6 @@
       </div>
     </div>
 
-    <!-- Watermark / Social Handle -->
-    <div class="form-group">
-      <label class="form-label" for="watermark-input">Social Handle Watermark</label>
-      <input id="watermark-input" type="text" class="text-input" placeholder="e.g. @yourname"
-        [ngModel]="watermark()" (ngModelChange)="watermark.set($event)" />
-    </div>
-
-    <!-- Design Theme Selector -->
-    <div class="form-group">
-      <label class="form-label">Visual Style Theme</label>
-      <div class="themes-grid">
-        <button type="button" class="theme-card" [class.active]="theme() === 'cyberpunk'" (click)="selectTheme('cyberpunk')">
-          <div class="theme-preview cyberpunk-prev">Aa</div>
-          <span class="theme-name">Neon Cyberpunk</span>
-        </button>
-        <button type="button" class="theme-card" [class.active]="theme() === 'glass'" (click)="selectTheme('glass')">
-          <div class="theme-preview glass-prev">Aa</div>
-          <span class="theme-name">Glassmorphic</span>
-        </button>
-        <button type="button" class="theme-card" [class.active]="theme() === 'retro'" (click)="selectTheme('retro')">
-          <div class="theme-preview retro-prev">Aa</div>
-          <span class="theme-name">Retro Arcade</span>
-        </button>
-        <button type="button" class="theme-card" [class.active]="theme() === 'magazine'" (click)="selectTheme('magazine')">
-          <div class="theme-preview magazine-prev">Aa</div>
-          <span class="theme-name">Magazine Print</span>
-        </button>
-      </div>
-    </div>
-
-    <!-- Aspect Ratio Toggle -->
-    <div class="form-group">
-      <label class="form-label">Layout / Aspect Ratio</label>
-      <div class="ratios-grid">
-        <button type="button" class="ratio-btn" [class.active]="aspectRatio() === '4-5'" (click)="selectAspectRatio('4-5')">
-          <div class="ratio-icon ratio-4-5-icon"></div>
-          <span>Instagram Portrait (4:5)</span>
-        </button>
-        <button type="button" class="ratio-btn" [class.active]="aspectRatio() === '9-16'" (click)="selectAspectRatio('9-16')">
-          <div class="ratio-icon ratio-9-16-icon"></div>
-          <span>Story / Reels (9:16)</span>
-        </button>
-        <button type="button" class="ratio-btn" [class.active]="aspectRatio() === '1-1'" (click)="selectAspectRatio('1-1')">
-          <div class="ratio-icon ratio-1-1-icon"></div>
-          <span>Classic Square (1:1)</span>
-        </button>
-      </div>
-    </div>
 
     <!-- Action Bar -->
     <div class="action-bar" style="margin-top: 1.5rem;">
@@ -203,6 +155,48 @@
       <div class="preview-draft-column glass-panel">
         <h3 class="controls-title">Insta-Gamer Controls</h3>
         <p class="controls-desc">Your slides are ready! Navigate using the arrows or indicators, and export them as high-quality PNGs.</p>
+
+        <!-- Social Caption Section -->
+        @if (caption()) {
+          <div class="caption-container">
+            <label class="form-label">Social Post Caption</label>
+            <div class="caption-box">
+              <p class="caption-text">{{ caption() }}</p>
+              <button type="button" class="copy-btn" (click)="copyCaption()">
+                <span>{{ isCopied() ? '✓ Copied!' : '📋 Copy Caption' }}</span>
+              </button>
+            </div>
+          </div>
+        }
+
+        <!-- Visual Style settings in Preview -->
+        <div class="preview-settings-group">
+          <div class="form-group-compact">
+            <label class="form-label-compact">Theme</label>
+            <select class="select-input" [ngModel]="theme()" (ngModelChange)="selectTheme($event)">
+              <option value="cyberpunk">Neon Cyberpunk</option>
+              <option value="glass">Glassmorphic</option>
+              <option value="retro">Retro Arcade</option>
+              <option value="magazine">Magazine Print</option>
+            </select>
+          </div>
+
+          <div class="form-group-compact">
+            <label class="form-label-compact">Layout / Aspect Ratio</label>
+            <select class="select-input" [ngModel]="aspectRatio()" (ngModelChange)="selectAspectRatio($event)">
+              <option value="4-5">Instagram Portrait (4:5)</option>
+              <option value="9-16">Story / Reels (9:16)</option>
+              <option value="1-1">Classic Square (1:1)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Social Watermark Editor in Preview -->
+        <div class="form-group-compact" style="margin-bottom: 1.5rem; width: 100%;">
+          <label class="form-label-compact" for="watermark-preview-input">Social Handle Watermark</label>
+          <input id="watermark-preview-input" type="text" class="select-input" style="cursor: text;"
+            placeholder="e.g. @yourname" [ngModel]="watermark()" (ngModelChange)="watermark.set($event)" />
+        </div>
 
         <div class="action-buttons-group">
           <!-- Download Active Slide -->

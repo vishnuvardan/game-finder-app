@@ -32,6 +32,17 @@ export class CarouselCreatorComponent {
   protected readonly slides = signal<CarouselSlide[]>([]);
   protected readonly activeSlideIndex = signal<number>(0);
   protected readonly isDownloading = signal<boolean>(false);
+  protected readonly caption = signal<string>('');
+  protected readonly isCopied = signal<boolean>(false);
+
+  protected copyCaption() {
+    const text = this.caption();
+    if (!text) return;
+    navigator.clipboard.writeText(text).then(() => {
+      this.isCopied.set(true);
+      setTimeout(() => this.isCopied.set(false), 2000);
+    });
+  }
 
   // Computed state validations
   protected readonly isGenerateEnabled = computed(() => {
@@ -84,6 +95,7 @@ export class CarouselCreatorComponent {
           return;
         }
         this.slides.set(res.slides);
+        this.caption.set(res.caption || '');
         this.state.set('preview');
       },
       error: (err) => {
@@ -188,6 +200,7 @@ export class CarouselCreatorComponent {
     this.customTopic.set('');
     this.slides.set([]);
     this.activeSlideIndex.set(0);
+    this.caption.set('');
     this.errorMessage.set(null);
     this.state.set('intake');
   }

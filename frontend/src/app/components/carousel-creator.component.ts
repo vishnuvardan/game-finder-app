@@ -26,7 +26,7 @@ export class CarouselCreatorComponent {
   protected readonly selectedGame = signal<IGDBGame | null>(null);
   protected readonly customTopic = signal<string>('');
   protected readonly steamGamesInput = signal<string>('');
-  protected readonly watermark = signal<string>('@GamerInsights');
+  protected readonly watermark = signal<string>('@vsnuplays');
   protected readonly aspectRatio = signal<AspectRatio>('4-5');
   protected readonly theme = signal<SlideTheme>('cyberpunk');
 

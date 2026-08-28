@@ -1,5 +1,6 @@
 import { GoogleGenAI } from '@google/genai';
 import { config } from '../config';
+import axios from 'axios';
 
 // Initialize the Google Gen AI client
 const ai = new GoogleGenAI({ apiKey: config.gemini.apiKey });
@@ -48,6 +49,8 @@ export interface CarouselSlide {
 export interface CarouselResponse {
   slides: CarouselSlide[];
   caption: string;
+  coverImagePrompt?: string;
+  coverImageUrl?: string;
 }
 
 class GeminiService {
@@ -105,20 +108,29 @@ class GeminiService {
       } catch (error: any) {
         lastError = error;
 
-        // Check if error is a rate limit / quota exceeded (e.g., status 429 or containing "quota"/"exhausted")
-        const isQuotaError =
+        // Fall back on rate limits, quota limits, high demand, or model availability errors
+        const isFallbackEligible =
           error.status === 429 ||
-          (error.message && error.message.toLowerCase().includes('quota')) ||
-          (error.message && error.message.toLowerCase().includes('exhausted')) ||
-          (error.message && error.message.toLowerCase().includes('rate limit'));
+          error.status === 503 ||
+          error.status === 500 ||
+          error.status === 404 ||
+          (error.message && (
+            error.message.toLowerCase().includes('quota') ||
+            error.message.toLowerCase().includes('exhausted') ||
+            error.message.toLowerCase().includes('rate limit') ||
+            error.message.toLowerCase().includes('unavailable') ||
+            error.message.toLowerCase().includes('high demand') ||
+            error.message.toLowerCase().includes('not found') ||
+            error.message.toLowerCase().includes('overloaded')
+          ));
 
-        if (isQuotaError) {
-          console.warn(`[GeminiService] Quota or rate limit exceeded for model "${model}". Falling back to next model...`);
+        if (isFallbackEligible) {
+          console.warn(`[GeminiService] Transient error or limit exceeded for model "${model}". Falling back to next model...`);
           continue;
         }
 
         // If it's another error (such as validation/syntax/schema error), throw it immediately
-        console.error(`[GeminiService] Non-quota error encountered with model "${model}":`, error);
+        console.error(`[GeminiService] Fatal non-fallback error encountered with model "${model}":`, error);
         throw error;
       }
     }
@@ -498,18 +510,27 @@ class GeminiService {
       } catch (error: any) {
         lastError = error;
 
-        const isQuotaError =
+        const isFallbackEligible =
           error.status === 429 ||
-          (error.message && error.message.toLowerCase().includes('quota')) ||
-          (error.message && error.message.toLowerCase().includes('exhausted')) ||
-          (error.message && error.message.toLowerCase().includes('rate limit'));
+          error.status === 503 ||
+          error.status === 500 ||
+          error.status === 404 ||
+          (error.message && (
+            error.message.toLowerCase().includes('quota') ||
+            error.message.toLowerCase().includes('exhausted') ||
+            error.message.toLowerCase().includes('rate limit') ||
+            error.message.toLowerCase().includes('unavailable') ||
+            error.message.toLowerCase().includes('high demand') ||
+            error.message.toLowerCase().includes('not found') ||
+            error.message.toLowerCase().includes('overloaded')
+          ));
 
-        if (isQuotaError) {
-          console.warn(`[GeminiService] Quota or rate limit exceeded for search grounding model "${model}". Falling back...`);
+        if (isFallbackEligible) {
+          console.warn(`[GeminiService] Transient error or limit exceeded for search grounding model "${model}". Falling back...`);
           continue;
         }
 
-        console.error(`[GeminiService] Non-quota error encountered with search grounding model "${model}":`, error);
+        console.error(`[GeminiService] Fatal non-fallback error encountered with search grounding model "${model}":`, error);
         throw error;
       }
     }
@@ -519,19 +540,78 @@ class GeminiService {
     );
   }
 
+  public async generateCoverImage(prompt: string): Promise<string | null> {
+    try {
+      console.log(`\n================== [Imagen Image Generation Request] ==================`);
+      console.log(`[Prompt] : ${prompt}`);
+      console.log(`=======================================================================\n`);
+      const response = await ai.models.generateImages({
+        model: 'imagen-3.0-generate-002',
+        prompt,
+        config: {
+          numberOfImages: 1,
+          outputMimeType: 'image/jpeg',
+          aspectRatio: '1:1'
+        }
+      });
+      if (response.generatedImages && response.generatedImages[0]?.image?.imageBytes) {
+        console.log('[Imagen Service] Image generated successfully.');
+        return `data:image/jpeg;base64,${response.generatedImages[0].image.imageBytes}`;
+      }
+      return null;
+    } catch (error: any) {
+      console.warn('[Imagen Service] Failed to generate cover image:', error);
+      return null;
+    }
+  }
+
+  public getStockImageFallback(topic: string): string {
+    const lowerTopic = topic.toLowerCase();
+    
+    console.log(`[Unsplash Fallback] Matching local curated keywords for topic: "${topic}"`);
+    
+    // Choose the best matching fallback photo (all high-res square crops that support CORS)
+    if (lowerTopic.includes('xbox') || lowerTopic.includes('microsoft')) {
+      return 'https://images.unsplash.com/photo-1605901309584-818e25960a8f?w=1080&h=1080&fit=crop&q=80'; // Xbox console/controller
+    } else if (lowerTopic.includes('playstation') || lowerTopic.includes('sony') || lowerTopic.includes('ps5') || lowerTopic.includes('ps4') || lowerTopic.includes('console')) {
+      return 'https://images.unsplash.com/photo-1627856013091-fed6e4e30025?w=1080&h=1080&fit=crop&q=80'; // PS5 controller
+    } else if (lowerTopic.includes('nintendo') || lowerTopic.includes('switch') || lowerTopic.includes('mario') || lowerTopic.includes('zelda') || lowerTopic.includes('retro') || lowerTopic.includes('arcade')) {
+      return 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=1080&h=1080&fit=crop&q=80'; // Retro consoles & Switch
+    } else if (lowerTopic.includes('esports') || lowerTopic.includes('tournament') || lowerTopic.includes('championship') || lowerTopic.includes('arena') || lowerTopic.includes('event')) {
+      return 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1080&h=1080&fit=crop&q=80'; // Esports Arena
+    } else if (lowerTopic.includes('pc') || lowerTopic.includes('hardware') || lowerTopic.includes('steam') || lowerTopic.includes('rtx') || lowerTopic.includes('nvidia') || lowerTopic.includes('amd') || lowerTopic.includes('gpu')) {
+      return 'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=1080&h=1080&fit=crop&q=80'; // PC gaming setup
+    } else {
+      // Default premium gaming controller / setup
+      const generalGems = [
+        'https://images.unsplash.com/photo-1605901309584-818e25960a8f?w=1080&h=1080&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=1080&h=1080&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1080&h=1080&fit=crop&q=80'
+      ];
+      return generalGems[Math.floor(Math.random() * generalGems.length)];
+    }
+  }
+
   public async generateSlides(
-    gameName: string,
-    gameSummary: string,
-    genres: string[],
+    gameName: string | undefined,
+    gameSummary: string | undefined,
+    genres: string[] | undefined,
     topic: string
   ): Promise<CarouselResponse> {
     // Step 1: Query Google Search Grounding to fetch the actual news and details.
-    const searchQuery = `Find the latest, most accurate, and specific news, dates, and details for "${gameName}" regarding "${topic}".
-    Specifically search for and retrieve:
-    1. Verified release dates or timing.
-    2. Numbers, view counts, or community hype statistics (e.g. how many are waiting).
-    3. Platforms/channels of release (e.g. YouTube vs Netflix, subscription vs free).
-    4. Actionable details, expectations, or specific gameplay updates.`;
+    const searchQuery = gameName
+      ? `Find the latest, most accurate, and specific news, dates, and details for "${gameName}" regarding "${topic}".
+      Specifically search for and retrieve:
+      1. Verified release dates or timing.
+      2. Numbers, view counts, or community hype statistics (e.g. how many are waiting).
+      3. Platforms/channels of release (e.g. YouTube vs Netflix, subscription vs free).
+      4. Actionable details, expectations, or specific gameplay updates.`
+      : `Find the latest, most accurate, and specific news, dates, and details regarding the gaming industry topic: "${topic}".
+      Specifically search for and retrieve:
+      1. Verified facts, announcements, or timing.
+      2. Statistical numbers, impact analysis, or community reaction details.
+      3. Platforms, companies, or services involved (e.g. Xbox, PlayStation, Steam).
+      4. Actionable details or specific policy/hardware/software updates.`;
     
     let groundedInfo = "";
     try {
@@ -544,29 +624,31 @@ class GeminiService {
     }
 
     const prompt = `
-      Game: "${gameName}"
-      Genres: ${genres.join(', ')}
-      Description Summary: "${gameSummary}"
+      ${gameName ? `Game: "${gameName}"` : 'Topic: General Gaming Industry News'}
+      ${genres && genres.length > 0 ? `Genres: ${genres.join(', ')}` : ''}
+      ${gameSummary ? `Description Summary: "${gameSummary}"` : ''}
       Requested Topic/Angle: "${topic}"
 
       ${groundedInfo ? `Here is the actual news and real-time facts retrieved from the web:\n${groundedInfo}\n` : ''}
 
-      Analyze the game, the requested topic, and the retrieved real facts. Generate between 6 and 10 dynamic, highly engaging social-media style slides (e.g. for Instagram Carousel) centered on the requested topic: "${topic}".
+      Analyze the input topic and the retrieved real facts. Generate between 6 and 10 dynamic, highly engaging social-media style slides (e.g. for Instagram Carousel) centered on the requested topic: "${topic}".
       
       CRITICAL INSTRUCTIONS:
       - Ground your slides in actual data, dates, and news gathered from the search results.
-      - If there are specific release dates, numbers of waiting players, trailer lengths, platform details, or gameplay expectations in the facts, include them directly in the bullets.
+      - If there are specific dates, numbers of users, platform details, or company statements in the facts, include them directly in the bullets.
       - Do NOT use generic placeholder text, rumors, or vague/witty banter that tells the user nothing. Make the updates look real and informative.
-      - Slide 1 (first slide) MUST be a title/cover slide. Its title should be a summary title (e.g. '${gameName} ${topic} - what you should know?'). Its bullets array must contain exactly 1 highly important, eye-catching piece of info/news hook from the research (e.g. 'Free on Game Pass Day One', 'Releasing Dec 2026', '9/10 Rating on Steam'). This will be displayed on the cover as a subtitle badge/highlight.
+      - Slide 1 (first slide) MUST be a title/cover slide. Its title should be a summary title (e.g. '${gameName ? gameName : ''} ${topic} - what you should know?'). Its bullets array must contain exactly 1 highly important, eye-catching piece of info/news hook from the research (e.g. 'Free on Game Pass Day One', 'Releasing Dec 2026', '9/10 Rating on Steam'). This will be displayed on the cover as a subtitle badge/highlight.
       - Subsequent slides (Slide 2, 3, etc.) should contain the actual bulleted updates and details.
-      - Generate a catchy, engaging social media post caption (under 250 characters) summarizing these slides, including a short description and 3 to 5 relevant hashtags (e.g. #GTAVI, #GamingNews).
+      - Generate a catchy, engaging social media post caption (under 250 characters) summarizing these slides, including a short description and 3 to 5 relevant hashtags (e.g. #GamingNews).
+      - Also generate a highly detailed prompt for Imagen 3 to generate a cover image for Slide 1 that visually matches the news topic. For example, if it's about Xbox physical-to-digital copy conversions, write a prompt like "A sleek modern 3D render of an Xbox console, clean digital green flow lines, glowing disc slot, technological aesthetic, high resolution". Save it in the "coverImagePrompt" property.
     `;
 
     const systemInstruction = 
       `You are a professional social media content manager for a major gaming network. ` +
-      `Your task is to analyze the provided game and the requested topic (using the real facts retrieved from the web), and generate: \n` +
+      `Your task is to analyze the provided game/topic (using the real facts retrieved from the web), and generate: \n` +
       `1. Between 6 and 10 highly engaging, short-form slides (carousel style). Each slide must have a clear, punchy title (under 35 chars) and exactly 2 to 3 bullet points/sentences (each under 100 chars) that are witty, informative, and customized to the topic. Optionally, provide a witty footnote/CTA (under 50 chars). \n` +
       `2. A catchy social media post caption (under 250 characters) with a brief summary of the game/topic and 3 to 5 relevant hashtags. \n` +
+      `3. A detailed, descriptive image generation prompt (under 100 words) for the cover slide, summarizing the visual essence of the news topic. \n` +
       `Ensure the language is simple but extremely engaging for gaming fans. Output MUST strictly match the defined JSON schema. ` +
       `CRITICAL: Avoid generic filler or placeholders. Ground your slides and caption in actual data, dates, and news gathered from the search results.`;
 
@@ -599,9 +681,13 @@ class GeminiService {
         caption: {
           type: "STRING",
           description: "An engaging, catchy social media post caption (under 250 characters) summarizing the carousel slides, including 3 to 5 relevant hashtags."
+        },
+        coverImagePrompt: {
+          type: "STRING",
+          description: "A detailed image generation prompt for the Slide 1 cover image, describing a relevant conceptual scene, gaming item, or corporate logo/aesthetic in a modern, premium style."
         }
       },
-      required: ["slides", "caption"]
+      required: ["slides", "caption", "coverImagePrompt"]
     };
 
     try {
@@ -613,7 +699,23 @@ class GeminiService {
         throw new Error('Response is missing required slides array');
       }
 
-      return parsed;
+      let coverImageUrl: string | undefined = undefined;
+      if (parsed.coverImagePrompt) {
+        const base64Url = await this.generateCoverImage(parsed.coverImagePrompt);
+        if (base64Url) {
+          coverImageUrl = base64Url;
+        } else {
+          const stockUrl = this.getStockImageFallback(topic);
+          if (stockUrl) {
+            coverImageUrl = stockUrl;
+          }
+        }
+      }
+
+      return {
+        ...parsed,
+        coverImageUrl
+      };
     } catch (error: any) {
       console.error('Error generating slides from Gemini:', error);
       throw new Error(`Failed to generate slides: ${error.message}`);

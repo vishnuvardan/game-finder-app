@@ -19,7 +19,7 @@
 
     <!-- Game Selector -->
     <div class="form-group">
-      <app-autocomplete-input label="Select Video Game" placeholder="e.g. Cyberpunk 2077"
+      <app-autocomplete-input label="Select Video Game (Optional)" placeholder="Search for a game, or leave empty for general gaming news..."
         [selectedValue]="selectedGame()" (gameSelected)="onGameSelected($event)" />
     </div>
 
@@ -89,7 +89,9 @@
               
               <!-- Blurred Game Background (hidden on first slide) -->
               @if (activeSlideIndex() > 0) {
-                <div class="slide-bg-cover" [style.background-image]="'url(' + selectedGame()?.coverUrl + ')'"></div>
+                @if (getCoverUrl()) {
+                  <div class="slide-bg-cover" [style.background-image]="'url(' + getCoverUrl() + ')'"></div>
+                }
                 <div class="slide-overlay"></div>
               } @else {
                 <div class="first-slide-bg"></div>
@@ -98,15 +100,21 @@
               <div class="slide-card-content">
                 <!-- Slide Header -->
                 <div class="slide-card-header">
-                  <div class="slide-topic-badge">{{ selectedGame()?.name }}</div>
+                  <div class="slide-topic-badge">{{ selectedGame()?.name || 'GAMING NEWS' }}</div>
                   <div class="slide-counter">{{ activeSlideIndex() + 1 }} / {{ slides().length }}</div>
                 </div>
 
                 @if (activeSlideIndex() === 0) {
                   <!-- Slide 1: Cover Image & Bold Title below -->
-                  <div class="first-slide-media">
-                    <img [src]="selectedGame()?.coverUrl" class="first-slide-image" alt="Game Cover" />
-                  </div>
+                  @if (getCoverUrl()) {
+                    <div class="first-slide-media">
+                      <img [src]="getCoverUrl()" class="first-slide-image" alt="Cover Image" />
+                    </div>
+                  } @else {
+                    <div class="first-slide-no-image-placeholder">
+                      <div class="abstract-accent-sphere"></div>
+                    </div>
+                  }
                   <div class="first-slide-title-wrapper">
                     <h2 class="slide-card-title first-slide-title">{{ slides()[0].title }}</h2>
                     @if (slides()[0].bullets && slides()[0].bullets.length > 0) {
@@ -152,6 +160,29 @@
                 (click)="goToSlide($index)" [aria-label]="'Go to slide ' + ($index + 1)"></button>
             }
           </div>
+
+          <!-- Theme & Aspect Ratio Switchers Stacked -->
+          <div class="carousel-under-controls-column">
+            <!-- Theme Switcher -->
+            <div class="form-group-compact">
+              <label class="form-label-compact">Theme Visual Style</label>
+              <div class="theme-switcher-control">
+                <button type="button" class="theme-switch-btn" (click)="prevTheme()" aria-label="Previous Theme">‹</button>
+                <span class="current-theme-name">{{ getThemeLabel() }}</span>
+                <button type="button" class="theme-switch-btn" (click)="nextTheme()" aria-label="Next Theme">›</button>
+              </div>
+            </div>
+
+            <!-- Aspect Ratio Switcher -->
+            <div class="form-group-compact">
+              <label class="form-label-compact">Layout / Aspect Ratio</label>
+              <div class="theme-switcher-control">
+                <button type="button" class="theme-switch-btn" (click)="prevAspectRatio()" aria-label="Previous Layout">‹</button>
+                <span class="current-theme-name">{{ getAspectRatioLabel() }}</span>
+                <button type="button" class="theme-switch-btn" (click)="nextAspectRatio()" aria-label="Next Layout">›</button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -173,26 +204,7 @@
           </div>
         }
 
-        <!-- Visual Style settings in Preview -->
-        <div class="preview-settings-group">
-          <div class="form-group-compact">
-            <label class="form-label-compact">Theme Visual Style</label>
-            <div class="theme-switcher-control">
-              <button type="button" class="theme-switch-btn" (click)="prevTheme()" aria-label="Previous Theme">‹</button>
-              <span class="current-theme-name">{{ getThemeLabel() }}</span>
-              <button type="button" class="theme-switch-btn" (click)="nextTheme()" aria-label="Next Theme">›</button>
-            </div>
-          </div>
 
-          <div class="form-group-compact">
-            <label class="form-label-compact">Layout / Aspect Ratio</label>
-            <select class="select-input" [ngModel]="aspectRatio()" (ngModelChange)="selectAspectRatio($event)">
-              <option value="4-5">Instagram Portrait (4:5)</option>
-              <option value="9-16">Story / Reels (9:16)</option>
-              <option value="1-1">Classic Square (1:1)</option>
-            </select>
-          </div>
-        </div>
 
         <!-- Social Watermark Editor in Preview -->
         <div class="form-group-compact" style="margin-bottom: 1.5rem; width: 100%;">
@@ -224,7 +236,7 @@
         <div class="sidebar-details-box">
           <div class="details-row">
             <span class="detail-label">Game:</span>
-            <span class="detail-value">{{ selectedGame()?.name }}</span>
+            <span class="detail-value">{{ selectedGame()?.name || 'General Topic' }}</span>
           </div>
           <div class="details-row">
             <span class="detail-label">Topic:</span>
@@ -260,7 +272,9 @@
         
         <!-- Blurred Game Background -->
         @if ($index > 0) {
-          <div class="slide-bg-cover" [style.background-image]="'url(' + selectedGame()?.coverUrl + ')'"></div>
+          @if (getCoverUrl()) {
+            <div class="slide-bg-cover" [style.background-image]="'url(' + getCoverUrl() + ')'"></div>
+          }
           <div class="slide-overlay"></div>
         } @else {
           <div class="first-slide-bg"></div>
@@ -269,15 +283,21 @@
         <div class="slide-card-content">
           <!-- Slide Header -->
           <div class="slide-card-header">
-            <div class="slide-topic-badge">{{ selectedGame()?.name }}</div>
+            <div class="slide-topic-badge">{{ selectedGame()?.name || 'GAMING NEWS' }}</div>
             <div class="slide-counter">{{ $index + 1 }} / {{ slides().length }}</div>
           </div>
 
           @if ($index === 0) {
             <!-- Slide 1: Cover Image & Bold Title below -->
-            <div class="first-slide-media">
-              <img [src]="selectedGame()?.coverUrl" class="first-slide-image" alt="Game Cover" />
-            </div>
+            @if (getCoverUrl()) {
+              <div class="first-slide-media">
+                <img [src]="getCoverUrl()" class="first-slide-image" alt="Cover Image" />
+              </div>
+            } @else {
+              <div class="first-slide-no-image-placeholder">
+                <div class="abstract-accent-sphere"></div>
+              </div>
+            }
             <div class="first-slide-title-wrapper">
               <h2 class="slide-card-title first-slide-title">{{ slide.title }}</h2>
               @if (slide.bullets && slide.bullets.length > 0) {

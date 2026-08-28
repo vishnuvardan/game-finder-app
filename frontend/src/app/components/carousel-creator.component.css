@@ -1706,3 +1706,117 @@
   text-transform: uppercase;
   box-shadow: 0 0 10px rgba(34, 197, 94, 0.2);
 }
+
+/* First Slide Typographic No-Image Placeholder */
+.first-slide-no-image-placeholder {
+  width: 100%;
+  aspect-ratio: 16/10;
+  max-height: 180px;
+  background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.05), transparent 60%),
+              linear-gradient(135deg, rgba(15, 23, 42, 0.4), rgba(30, 41, 59, 0.2));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 1.25rem;
+  box-shadow: inset 0 0 15px rgba(255, 255, 255, 0.03);
+}
+
+.abstract-accent-sphere {
+  position: absolute;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--primary-glow, #ff007f) 0%, transparent 70%);
+  filter: blur(20px);
+  opacity: 0.4;
+  animation: pulse-sphere 8s infinite alternate;
+}
+
+@keyframes pulse-sphere {
+  0% {
+    transform: scale(0.9) translate(-10px, -10px);
+    opacity: 0.35;
+  }
+  100% {
+    transform: scale(1.15) translate(10px, 10px);
+    opacity: 0.55;
+  }
+}
+
+/* Theme variations for typographic cover accent sphere */
+.theme-cyberpunk .abstract-accent-sphere {
+  background: radial-gradient(circle, #00f0ff 0%, transparent 70%);
+}
+
+.theme-retro .first-slide-no-image-placeholder {
+  border: 3px solid #facc15;
+  background: #000;
+  border-radius: 0;
+  box-shadow: 4px 4px 0px #ef4444;
+}
+
+.theme-retro .abstract-accent-sphere {
+  background: radial-gradient(circle, #ef4444 0%, transparent 70%);
+  filter: blur(5px);
+}
+
+.theme-glass .first-slide-no-image-placeholder {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(8px);
+}
+
+.theme-glass .abstract-accent-sphere {
+  background: radial-gradient(circle, #ffffff 0%, transparent 75%);
+}
+
+.theme-polygon .first-slide-no-image-placeholder {
+  border: 1px solid rgba(255, 0, 127, 0.2);
+}
+
+.theme-polygon .abstract-accent-sphere {
+  background: radial-gradient(circle, #8b5cf6 0%, transparent 70%);
+}
+
+.theme-gamespot .first-slide-no-image-placeholder {
+  border: 2px solid #f59e0b;
+}
+
+.theme-gamespot .abstract-accent-sphere {
+  background: radial-gradient(circle, #f59e0b 0%, transparent 70%);
+}
+
+.theme-steam .first-slide-no-image-placeholder {
+  border: 1px solid #1a3a53;
+  background: linear-gradient(135deg, #171a21, #1b2838);
+}
+
+.theme-steam .abstract-accent-sphere {
+  background: radial-gradient(circle, #67c1f5 0%, transparent 70%);
+}
+
+.theme-esports .first-slide-no-image-placeholder {
+  border: 2px solid #22c55e;
+  border-radius: 0;
+}
+
+.theme-esports .abstract-accent-sphere {
+  background: radial-gradient(circle, #22c55e 0%, transparent 70%);
+}
+
+/* Controls Stacked Under Carousel preview */
+.carousel-under-controls-column {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+  margin-top: 1.25rem;
+  box-sizing: border-box;
+  padding: 0 0.25rem;
+}
+
+

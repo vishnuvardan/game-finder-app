@@ -273,13 +273,13 @@ router.post('/trophies/guide', async (req: Request, res: Response) => {
 router.post('/slides/generate', async (req: Request, res: Response) => {
   const { gameName, gameSummary, genres, topic } = req.body;
 
-  if (!gameName || typeof gameName !== 'string') {
+  if (gameName && typeof gameName !== 'string') {
     return res.status(400).json({ error: 'gameName must be a string' });
   }
-  if (!gameSummary || typeof gameSummary !== 'string') {
+  if (gameSummary && typeof gameSummary !== 'string') {
     return res.status(400).json({ error: 'gameSummary must be a string' });
   }
-  if (!genres || !Array.isArray(genres)) {
+  if (genres && !Array.isArray(genres)) {
     return res.status(400).json({ error: 'genres must be an array of strings' });
   }
   if (!topic || typeof topic !== 'string') {

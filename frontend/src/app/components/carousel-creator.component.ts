@@ -48,6 +48,15 @@ export class CarouselCreatorComponent {
   protected readonly isDownloading = signal<boolean>(false);
   protected readonly caption = signal<string>('');
   protected readonly isCopied = signal<boolean>(false);
+  protected readonly generatedCoverUrl = signal<string | null>(null);
+
+  protected readonly getCoverUrl = computed(() => {
+    return this.generatedCoverUrl() || this.selectedGame()?.coverUrl || null;
+  });
+
+  protected readonly hasCoverImage = computed(() => {
+    return this.getCoverUrl() !== null;
+  });
 
   protected copyCaption() {
     const text = this.caption();
@@ -60,7 +69,7 @@ export class CarouselCreatorComponent {
 
   // Computed state validations
   protected readonly isGenerateEnabled = computed(() => {
-    return this.selectedGame() !== null && this.customTopic().trim().length > 0;
+    return this.customTopic().trim().length > 0;
   });
 
   // Quick Chips
@@ -106,22 +115,53 @@ export class CarouselCreatorComponent {
     this.theme.set(this.themesList[prevIndex].value);
   }
 
+  protected readonly aspectRatiosList: { value: AspectRatio; label: string }[] = [
+    { value: '4-5', label: 'Instagram Portrait (4:5)' },
+    { value: '9-16', label: 'Story / Reels (9:16)' },
+    { value: '1-1', label: 'Classic Square (1:1)' },
+  ];
+
   protected selectAspectRatio(ratio: AspectRatio) {
     this.aspectRatio.set(ratio);
+  }
+
+  protected getAspectRatioLabel(): string {
+    const currentRatio = this.aspectRatio();
+    const found = this.aspectRatiosList.find(r => r.value === currentRatio);
+    return found ? found.label : currentRatio;
+  }
+
+  protected nextAspectRatio() {
+    const currentRatio = this.aspectRatio();
+    const currentIndex = this.aspectRatiosList.findIndex(r => r.value === currentRatio);
+    const nextIndex = (currentIndex + 1) % this.aspectRatiosList.length;
+    this.aspectRatio.set(this.aspectRatiosList[nextIndex].value);
+  }
+
+  protected prevAspectRatio() {
+    const currentRatio = this.aspectRatio();
+    const currentIndex = this.aspectRatiosList.findIndex(r => r.value === currentRatio);
+    const prevIndex = (currentIndex - 1 + this.aspectRatiosList.length) % this.aspectRatiosList.length;
+    this.aspectRatio.set(this.aspectRatiosList[prevIndex].value);
   }
 
   protected generateCarousel() {
     if (!this.isGenerateEnabled()) return;
 
-    const game = this.selectedGame()!;
+    const game = this.selectedGame();
     const topic = this.customTopic();
 
     this.state.set('generating');
     this.errorMessage.set(null);
     this.slides.set([]);
     this.activeSlideIndex.set(0);
+    this.generatedCoverUrl.set(null);
 
-    this.gameService.generateSlides(game.name, game.summary, game.genres, topic).subscribe({
+    const name = game ? game.name : undefined;
+    const summary = game ? game.summary : undefined;
+    const genres = game ? game.genres : undefined;
+
+    this.gameService.generateSlides(name, summary, genres, topic).subscribe({
       next: (res) => {
         if (!res.slides || res.slides.length === 0) {
           this.errorMessage.set('AI returned empty slides content. Please try again.');
@@ -130,6 +170,7 @@ export class CarouselCreatorComponent {
         }
         this.slides.set(res.slides);
         this.caption.set(res.caption || '');
+        this.generatedCoverUrl.set(res.coverImageUrl || null);
         this.state.set('preview');
       },
       error: (err) => {
@@ -235,6 +276,7 @@ export class CarouselCreatorComponent {
     this.slides.set([]);
     this.activeSlideIndex.set(0);
     this.caption.set('');
+    this.generatedCoverUrl.set(null);
     this.errorMessage.set(null);
     this.state.set('intake');
   }

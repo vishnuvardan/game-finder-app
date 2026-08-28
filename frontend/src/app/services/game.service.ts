@@ -20,6 +20,8 @@ export interface CarouselSlide {
 export interface CarouselResponse {
   slides: CarouselSlide[];
   caption?: string;
+  coverImagePrompt?: string;
+  coverImageUrl?: string;
 }
 
 export interface QuizQuestion {
@@ -190,9 +192,9 @@ export class GameService {
    * Generate dynamic slides for a game based on a topic
    */
   generateSlides(
-    gameName: string,
-    gameSummary: string,
-    genres: string[],
+    gameName: string | null | undefined,
+    gameSummary: string | null | undefined,
+    genres: string[] | null | undefined,
     topic: string
   ): Observable<CarouselResponse> {
     return this.http.post<CarouselResponse>(`${this.apiUrl}/slides/generate`, {

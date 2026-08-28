@@ -89,6 +89,132 @@ class SteamService {
       throw new Error(`Steam Schema fetch failed: ${error.message}`);
     }
   }
+
+  /**
+   * Fetch store details for a game from Steam Storefront AppDetails API
+   * GET https://store.steampowered.com/api/appdetails
+   */
+  public async getAppDetails(appid: string | number): Promise<any> {
+    try {
+      console.log(`[SteamService] Fetching AppDetails for AppID: ${appid}`);
+      const response = await axios.get(`https://store.steampowered.com/api/appdetails`, {
+        params: {
+          appids: String(appid),
+          cc: 'in',
+          l: 'english'
+        }
+      });
+      
+      const appData = response.data?.[String(appid)];
+      if (appData && appData.success) {
+        return appData.data;
+      }
+      return null;
+    } catch (error: any) {
+      console.error(`[SteamService] Error fetching AppDetails for AppID ${appid}:`, error.message);
+      return null;
+    }
+  }
+
+  /**
+   * Fetch top featured specials (discounted games) on Steam in India (INR)
+   */
+  public async getFeaturedSpecials(limit: number = 5): Promise<any[]> {
+    try {
+      console.log(`[SteamService] Fetching top featured specials (limit: ${limit})`);
+      const response = await axios.get('https://store.steampowered.com/api/featuredcategories/', {
+        params: {
+          cc: 'in',
+          l: 'english'
+        }
+      });
+
+      const specials = response.data?.specials?.items || [];
+      const games: any[] = [];
+
+      for (const item of specials) {
+        if (games.length >= limit) break;
+        if (item.type !== 0) continue; // Only process actual games (type 0)
+
+        // Parse prices (original and final are in cents)
+        const originalPrice = item.original_price ? item.original_price / 100 : 0;
+        const finalPrice = item.final_price ? item.final_price / 100 : 0;
+        const discountPercent = item.discount_percent || 0;
+
+        games.push({
+          appid: String(item.id),
+          name: item.name,
+          discounted: item.discounted,
+          discountPercent: discountPercent,
+          originalPrice: `₹${originalPrice.toLocaleString('en-IN')}`,
+          finalPrice: `₹${finalPrice.toLocaleString('en-IN')}`,
+          headerImage: item.header_image || `https://cdn.cloudflare.steamstatic.com/steam/apps/${item.id}/header.jpg`,
+          headline: item.headline || '',
+          shortDescription: `Currently on sale on Steam at a ${discountPercent}% discount! Only ${originalPrice > 0 ? `₹${finalPrice} down from ₹${originalPrice}` : `₹${finalPrice}`}.`
+        });
+      }
+
+      return games;
+    } catch (error: any) {
+      console.error('[SteamService] Error fetching featured specials:', error.message);
+      return [];
+    }
+  }
+
+  /**
+   * Resolve a list of game names into their Steam AppIDs and live pricing details
+   */
+  public async resolveGamesFromNames(names: string[]): Promise<any[]> {
+    const resolvedDeals: any[] = [];
+    console.log(`[SteamService] Resolving custom games list: [${names.join(', ')}]`);
+
+    for (const name of names) {
+      const trimmed = name.trim();
+      if (!trimmed) continue;
+
+      try {
+        // Step 1: Search app to find AppID
+        const matches = await this.searchGames(trimmed);
+        if (matches.length === 0) {
+          console.warn(`[SteamService] Could not find any Steam app matching: "${trimmed}"`);
+          continue;
+        }
+
+        const match = matches[0]; // Take top match
+        const appid = match.appid;
+
+        // Step 2: Fetch App Details (includes price overview)
+        const details = await this.getAppDetails(appid);
+        if (!details) {
+          console.warn(`[SteamService] Could not retrieve store details for appid: ${appid} (${match.name})`);
+          continue;
+        }
+
+        // Parse price info
+        const priceOverview = details.price_overview;
+        const discounted = priceOverview ? priceOverview.discount_percent > 0 : false;
+        const discountPercent = priceOverview ? priceOverview.discount_percent : 0;
+        
+        const originalPriceVal = priceOverview ? priceOverview.initial / 100 : 0;
+        const finalPriceVal = priceOverview ? priceOverview.final / 100 : 0;
+
+        resolvedDeals.push({
+          appid: String(appid),
+          name: details.name || match.name,
+          discounted,
+          discountPercent,
+          originalPrice: priceOverview ? `₹${originalPriceVal.toLocaleString('en-IN')}` : 'Free/TBD',
+          finalPrice: priceOverview ? `₹${finalPriceVal.toLocaleString('en-IN')}` : 'Free/TBD',
+          headerImage: details.header_image || `https://cdn.cloudflare.steamstatic.com/steam/apps/${appid}/header.jpg`,
+          shortDescription: details.short_description || `A popular game on Steam.`
+        });
+      } catch (err: any) {
+        console.warn(`[SteamService] Failed to resolve details for game name "${trimmed}":`, err.message);
+      }
+    }
+
+    return resolvedDeals;
+  }
 }
 
 export const steamService = new SteamService();

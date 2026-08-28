@@ -44,6 +44,7 @@ export interface CarouselSlide {
   title: string;
   bullets: string[];
   footnote?: string;
+  mediaUrl?: string;
 }
 
 export interface CarouselResponse {
@@ -719,6 +720,106 @@ class GeminiService {
     } catch (error: any) {
       console.error('Error generating slides from Gemini:', error);
       throw new Error(`Failed to generate slides: ${error.message}`);
+    }
+  }
+
+  public async generateSteamDealsSlides(deals: any[]): Promise<CarouselResponse> {
+    if (!deals || deals.length === 0) {
+      throw new Error('No deals provided for slide generation');
+    }
+
+    const dealsCount = deals.length;
+    const dealsListStr = deals.map((d, i) => {
+      return `${i + 1}. [Game] ${d.name} (AppID: ${d.appid})
+      - Original Price: ${d.originalPrice}
+      - Sale Price: ${d.finalPrice}
+      - Discount: -${d.discountPercent}%
+      - Description: ${d.shortDescription}`;
+    }).join('\n\n');
+
+    const prompt = `Generate a premium, highly engaging Instagram Carousel presenting these Steam deals currently live in India (Prices in INR):
+    
+    ${dealsListStr}
+
+    Follow these structural rules for the slides (Exactly ${dealsCount + 1} slides in total):
+    1. Slide 1 (First Slide) MUST be a title/cover slide. 
+       - Title: A catchy, high-impact deal headline summarizing this deals showcase (e.g. 'TOP STEAM DEALS TODAY', 'INSANE STEAM DEALS IN INDIA').
+       - Bullets: Exactly 1 item containing the maximum discount highlights (e.g. 'Save up to ${Math.max(...deals.map(d => d.discountPercent))}% Off!').
+    2. Slides 2 to ${dealsCount + 1} (Game Showcase slides):
+       - Slide index maps 1-to-1 with each game in the deals list.
+       - Title: The game name in uppercase followed by the discount (e.g. 'CYBERPUNK 2077 (-50%)').
+       - Bullets: Exactly 2 to 3 bullet points summarizing the deal:
+         - Price highlight: Show 'Sale price: finalPrice (was originalPrice)' as the first bullet.
+         - Gameplay & Deal value highlights: Detail what makes the game special and why this deal is an absolute steal today.
+       - Footnote: A short call-to-action or gamer quote (e.g., 'Grab it before the sale ends!', 'A masterpiece for under ₹1000').
+
+    Write a compelling, gamer-focused social media post caption (with hashtags) summarizing these deals in 'caption'.
+    `;
+
+    const systemInstruction = "You are a professional video game deals analyst and editor. Write engaging, hype-building social slide content summarizing the best deals.";
+
+    const schema = {
+      type: "OBJECT",
+      properties: {
+        slides: {
+          type: "ARRAY",
+          items: {
+            type: "OBJECT",
+            properties: {
+              title: { type: "STRING" },
+              bullets: {
+                type: "ARRAY",
+                items: { type: "STRING" }
+              },
+              footnote: { type: "STRING" }
+            },
+            required: ["title", "bullets"]
+          }
+        },
+        caption: {
+          type: "STRING",
+          description: "A gamer-focused post caption summarizing the deals, including emojis and relevant hashtags."
+        },
+        coverImagePrompt: {
+          type: "STRING",
+          description: "A detailed image generation prompt for a generic cover graphic depicting Steam sales, digital game boxes, or gaming setups."
+        }
+      },
+      required: ["slides", "caption", "coverImagePrompt"]
+    };
+
+    try {
+      const responseText = await this.generateContentWithFallback(prompt, systemInstruction, schema);
+      const parsed: CarouselResponse = JSON.parse(responseText);
+
+      if (!parsed.slides || !Array.isArray(parsed.slides)) {
+        throw new Error('Response is missing required slides array');
+      }
+
+      // Enrich slides with the corresponding game's header image as background mediaUrl
+      const enrichedSlides = parsed.slides.map((slide, index) => {
+        let mediaUrl = undefined;
+        if (index === 0) {
+          mediaUrl = deals[0]?.headerImage;
+        } else if (index - 1 < deals.length) {
+          mediaUrl = deals[index - 1]?.headerImage;
+        }
+        return {
+          ...slide,
+          mediaUrl
+        };
+      });
+
+      const coverImageUrl = deals[0]?.headerImage || this.getStockImageFallback('steam');
+
+      return {
+        ...parsed,
+        slides: enrichedSlides,
+        coverImageUrl
+      };
+    } catch (error: any) {
+      console.error('Error generating Steam Deals slides from Gemini:', error);
+      throw new Error(`Failed to generate Steam Deals slides: ${error.message}`);
     }
   }
 }

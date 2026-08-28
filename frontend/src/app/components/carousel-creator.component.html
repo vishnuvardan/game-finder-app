@@ -17,31 +17,54 @@
       Select a game, enter what you want to cover, cycle through premium visuals, and let AI build a 6-to-10 slide carousel.
     </p>
 
-    <!-- Game Selector -->
-    <div class="form-group">
-      <app-autocomplete-input label="Select Video Game (Optional)" placeholder="Search for a game, or leave empty for general gaming news..."
-        [selectedValue]="selectedGame()" (gameSelected)="onGameSelected($event)" />
+    <!-- Tab Switcher -->
+    <div class="tabs-container">
+      <button type="button" class="tab-btn" [class.active]="generationMode() === 'topic'" (click)="generationMode.set('topic')">
+        📰 Custom Topic
+      </button>
+      <button type="button" class="tab-btn" [class.active]="generationMode() === 'steam'" (click)="generationMode.set('steam')">
+        🎮 Steam Deals
+      </button>
     </div>
 
-    <!-- What to post about -->
-    <div class="form-group">
-      <label class="form-label" for="topic-input">What do you want to post about?</label>
-      <textarea id="topic-input" class="textarea-input" rows="3" 
-        placeholder="e.g. Recent updates, player reviews, release dates, patch notes, or sales statistics"
-        [ngModel]="customTopic()" (ngModelChange)="customTopic.set($event)"></textarea>
-      
-      <!-- Preset Chips -->
-      <div class="chips-container">
-        <span class="chips-label">Quick Topics:</span>
-        <div class="chips-grid">
-          @for (chip of topicChips; track chip.label) {
-            <button type="button" class="chip-btn" (click)="selectTopicChip(chip.text)">
-              {{ chip.label }}
-            </button>
-          }
+    @if (generationMode() === 'topic') {
+      <!-- Game Selector -->
+      <div class="form-group">
+        <app-autocomplete-input label="Select Video Game (Optional)" placeholder="Search for a game, or leave empty for general gaming news..."
+          [selectedValue]="selectedGame()" (gameSelected)="onGameSelected($event)" />
+      </div>
+
+      <!-- What to post about -->
+      <div class="form-group">
+        <label class="form-label" for="topic-input">What do you want to post about?</label>
+        <textarea id="topic-input" class="textarea-input" rows="3" 
+          placeholder="e.g. Recent updates, player reviews, release dates, patch notes, or sales statistics"
+          [ngModel]="customTopic()" (ngModelChange)="customTopic.set($event)"></textarea>
+        
+        <!-- Preset Chips -->
+        <div class="chips-container">
+          <span class="chips-label">Quick Topics:</span>
+          <div class="chips-grid">
+            @for (chip of topicChips; track chip.label) {
+              <button type="button" class="chip-btn" (click)="selectTopicChip(chip.text)">
+                {{ chip.label }}
+              </button>
+            }
+          </div>
         </div>
       </div>
-    </div>
+    } @else {
+      <!-- Steam Deals Mode Form -->
+      <div class="form-group">
+        <label class="form-label" for="steam-games-input">Deals Showcase Games (Optional)</label>
+        <textarea id="steam-games-input" class="textarea-input" rows="3" 
+          placeholder="e.g. Cyberpunk 2077, Elden Ring, Hogwarts Legacy (or leave blank to auto-fetch top live Steam specials)"
+          [ngModel]="steamGamesInput()" (ngModelChange)="steamGamesInput.set($event)"></textarea>
+        <small class="form-help-text" style="color: var(--text-muted, #94a3b8); font-size: 0.75rem; margin-top: 0.25rem; display: block; line-height: 1.4;">
+          If left blank, our system automatically fetches the top 5 live specials on the Indian Steam Store. If names are entered, it resolves their live INR pricing, discounts, and banner artwork.
+        </small>
+      </div>
+    }
 
 
     <!-- Action Bar -->
@@ -64,7 +87,13 @@
       <div class="glow-orb"></div>
       <div class="scanner-line"></div>
     </div>
-    <h3 class="loading-title">Drafting Carousel for {{ selectedGame()?.name }}...</h3>
+    <h3 class="loading-title">
+      @if (generationMode() === 'steam') {
+        Drafting Steam Deals Showcase...
+      } @else {
+        Drafting Carousel for {{ selectedGame()?.name || 'Gaming News' }}...
+      }
+    </h3>
     <p class="loading-text">Gemini is researching details and organizing engaging facts into a custom structured carousel slide-deck.</p>
   </div>
   }
@@ -89,7 +118,9 @@
               
               <!-- Blurred Game Background (hidden on first slide) -->
               @if (activeSlideIndex() > 0) {
-                @if (getCoverUrl()) {
+                @if (slides()[activeSlideIndex()].mediaUrl) {
+                  <div class="slide-bg-cover" [style.background-image]="'url(' + slides()[activeSlideIndex()].mediaUrl + ')'"></div>
+                } @else if (getCoverUrl()) {
                   <div class="slide-bg-cover" [style.background-image]="'url(' + getCoverUrl() + ')'"></div>
                 }
                 <div class="slide-overlay"></div>
@@ -272,7 +303,9 @@
         
         <!-- Blurred Game Background -->
         @if ($index > 0) {
-          @if (getCoverUrl()) {
+          @if (slide.mediaUrl) {
+            <div class="slide-bg-cover" [style.background-image]="'url(' + slide.mediaUrl + ')'"></div>
+          } @else if (getCoverUrl()) {
             <div class="slide-bg-cover" [style.background-image]="'url(' + getCoverUrl() + ')'"></div>
           }
           <div class="slide-overlay"></div>

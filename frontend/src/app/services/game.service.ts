@@ -15,6 +15,7 @@ export interface CarouselSlide {
   title: string;
   bullets: string[];
   footnote?: string;
+  mediaUrl?: string;
 }
 
 export interface CarouselResponse {
@@ -202,6 +203,15 @@ export class GameService {
       gameSummary,
       genres,
       topic,
+    });
+  }
+
+  /**
+   * Generate dynamic slides displaying Steam deals
+   */
+  generateSteamDealsSlides(gameNames?: string[]): Observable<CarouselResponse> {
+    return this.http.post<CarouselResponse>(`${this.apiUrl}/slides/steam-deals`, {
+      gameNames
     });
   }
 }

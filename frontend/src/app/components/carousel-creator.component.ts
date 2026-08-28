@@ -19,11 +19,13 @@ type SlideTheme = 'cyberpunk' | 'glass' | 'retro' | 'magazine' | 'ign' | 'kotaku
 export class CarouselCreatorComponent {
   // Navigation & Page State
   protected readonly state = signal<PageState>('intake');
+  protected readonly generationMode = signal<'topic' | 'steam'>('topic');
   protected readonly errorMessage = signal<string | null>(null);
 
   // Form inputs
   protected readonly selectedGame = signal<IGDBGame | null>(null);
   protected readonly customTopic = signal<string>('');
+  protected readonly steamGamesInput = signal<string>('');
   protected readonly watermark = signal<string>('@GamerInsights');
   protected readonly aspectRatio = signal<AspectRatio>('4-5');
   protected readonly theme = signal<SlideTheme>('cyberpunk');
@@ -69,6 +71,9 @@ export class CarouselCreatorComponent {
 
   // Computed state validations
   protected readonly isGenerateEnabled = computed(() => {
+    if (this.generationMode() === 'steam') {
+      return true; // Steam deals can be blank to generate top deals
+    }
     return this.customTopic().trim().length > 0;
   });
 
@@ -148,37 +153,66 @@ export class CarouselCreatorComponent {
   protected generateCarousel() {
     if (!this.isGenerateEnabled()) return;
 
-    const game = this.selectedGame();
-    const topic = this.customTopic();
-
     this.state.set('generating');
     this.errorMessage.set(null);
     this.slides.set([]);
     this.activeSlideIndex.set(0);
     this.generatedCoverUrl.set(null);
 
-    const name = game ? game.name : undefined;
-    const summary = game ? game.summary : undefined;
-    const genres = game ? game.genres : undefined;
+    if (this.generationMode() === 'steam') {
+      const gamesStr = this.steamGamesInput().trim();
+      const gameNames = gamesStr
+        ? gamesStr.split(',').map(name => name.trim()).filter(name => name.length > 0)
+        : undefined;
 
-    this.gameService.generateSlides(name, summary, genres, topic).subscribe({
-      next: (res) => {
-        if (!res.slides || res.slides.length === 0) {
-          this.errorMessage.set('AI returned empty slides content. Please try again.');
+      // Force Steam Visual theme for Steam deals
+      this.theme.set('steam');
+
+      this.gameService.generateSteamDealsSlides(gameNames).subscribe({
+        next: (res) => {
+          if (!res.slides || res.slides.length === 0) {
+            this.errorMessage.set('AI returned empty deals content. Please try again.');
+            this.state.set('intake');
+            return;
+          }
+          this.slides.set(res.slides);
+          this.caption.set(res.caption || '');
+          this.generatedCoverUrl.set(res.coverImageUrl || null);
+          this.state.set('preview');
+        },
+        error: (err) => {
+          console.error('Error generating Steam deals slides:', err);
+          this.errorMessage.set(err.error?.error || 'Failed to generate Steam deals. Make sure the backend is running.');
           this.state.set('intake');
-          return;
         }
-        this.slides.set(res.slides);
-        this.caption.set(res.caption || '');
-        this.generatedCoverUrl.set(res.coverImageUrl || null);
-        this.state.set('preview');
-      },
-      error: (err) => {
-        console.error('Error generating slides:', err);
-        this.errorMessage.set('Failed to generate slides. Make sure the backend is running.');
-        this.state.set('intake');
-      },
-    });
+      });
+    } else {
+      const game = this.selectedGame();
+      const topic = this.customTopic();
+
+      const name = game ? game.name : undefined;
+      const summary = game ? game.summary : undefined;
+      const genres = game ? game.genres : undefined;
+
+      this.gameService.generateSlides(name, summary, genres, topic).subscribe({
+        next: (res) => {
+          if (!res.slides || res.slides.length === 0) {
+            this.errorMessage.set('AI returned empty slides content. Please try again.');
+            this.state.set('intake');
+            return;
+          }
+          this.slides.set(res.slides);
+          this.caption.set(res.caption || '');
+          this.generatedCoverUrl.set(res.coverImageUrl || null);
+          this.state.set('preview');
+        },
+        error: (err) => {
+          console.error('Error generating slides:', err);
+          this.errorMessage.set('Failed to generate slides. Make sure the backend is running.');
+          this.state.set('intake');
+        },
+      });
+    }
   }
 
   // Slide Navigation
@@ -273,6 +307,7 @@ export class CarouselCreatorComponent {
   protected startOver() {
     this.selectedGame.set(null);
     this.customTopic.set('');
+    this.steamGamesInput.set('');
     this.slides.set([]);
     this.activeSlideIndex.set(0);
     this.caption.set('');

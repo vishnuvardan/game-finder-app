@@ -551,13 +551,13 @@ class GeminiService {
 
       ${groundedInfo ? `Here is the actual news and real-time facts retrieved from the web:\n${groundedInfo}\n` : ''}
 
-      Analyze the game, the requested topic, and the retrieved real facts. Generate between 2 and 5 dynamic, highly engaging social-media style slides (e.g. for Instagram Carousel) centered on the requested topic: "${topic}".
+      Analyze the game, the requested topic, and the retrieved real facts. Generate between 6 and 10 dynamic, highly engaging social-media style slides (e.g. for Instagram Carousel) centered on the requested topic: "${topic}".
       
       CRITICAL INSTRUCTIONS:
       - Ground your slides in actual data, dates, and news gathered from the search results.
       - If there are specific release dates, numbers of waiting players, trailer lengths, platform details, or gameplay expectations in the facts, include them directly in the bullets.
       - Do NOT use generic placeholder text, rumors, or vague/witty banter that tells the user nothing. Make the updates look real and informative.
-      - Slide 1 (first slide) MUST be a title/cover slide. Its title should be a summary title (e.g. '${gameName} ${topic} - what you should know?'). Its bullets array must contain exactly 1 high-level summary sentence. (The UI will display only the title on the first slide, but provide a bullet for safety/fallback).
+      - Slide 1 (first slide) MUST be a title/cover slide. Its title should be a summary title (e.g. '${gameName} ${topic} - what you should know?'). Its bullets array must contain exactly 1 highly important, eye-catching piece of info/news hook from the research (e.g. 'Free on Game Pass Day One', 'Releasing Dec 2026', '9/10 Rating on Steam'). This will be displayed on the cover as a subtitle badge/highlight.
       - Subsequent slides (Slide 2, 3, etc.) should contain the actual bulleted updates and details.
       - Generate a catchy, engaging social media post caption (under 250 characters) summarizing these slides, including a short description and 3 to 5 relevant hashtags (e.g. #GTAVI, #GamingNews).
     `;
@@ -565,7 +565,7 @@ class GeminiService {
     const systemInstruction = 
       `You are a professional social media content manager for a major gaming network. ` +
       `Your task is to analyze the provided game and the requested topic (using the real facts retrieved from the web), and generate: \n` +
-      `1. Between 2 and 5 highly engaging, short-form slides (carousel style). Each slide must have a clear, punchy title (under 35 chars) and exactly 2 to 3 bullet points/sentences (each under 100 chars) that are witty, informative, and customized to the topic. Optionally, provide a witty footnote/CTA (under 50 chars). \n` +
+      `1. Between 6 and 10 highly engaging, short-form slides (carousel style). Each slide must have a clear, punchy title (under 35 chars) and exactly 2 to 3 bullet points/sentences (each under 100 chars) that are witty, informative, and customized to the topic. Optionally, provide a witty footnote/CTA (under 50 chars). \n` +
       `2. A catchy social media post caption (under 250 characters) with a brief summary of the game/topic and 3 to 5 relevant hashtags. \n` +
       `Ensure the language is simple but extremely engaging for gaming fans. Output MUST strictly match the defined JSON schema. ` +
       `CRITICAL: Avoid generic filler or placeholders. Ground your slides and caption in actual data, dates, and news gathered from the search results.`;
@@ -594,7 +594,7 @@ class GeminiService {
             },
             required: ["title", "bullets"]
           },
-          description: "List of 2 to 5 slides detailing the requested topic."
+          description: "List of 6 to 10 slides detailing the requested topic."
         },
         caption: {
           type: "STRING",

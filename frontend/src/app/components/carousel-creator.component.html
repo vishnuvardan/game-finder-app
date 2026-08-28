@@ -14,8 +14,7 @@
   <section class="intake-section glass-panel">
     <h2 class="section-title">Insta-Gamer Carousel</h2>
     <p class="section-desc">
-      Generate stunning, portrait-format gaming posts for social media. 
-      Select a game, enter what you want to cover, pick a style theme, and let AI build a 2-to-5 slide carousel.
+      Select a game, enter what you want to cover, cycle through premium visuals, and let AI build a 6-to-10 slide carousel.
     </p>
 
     <!-- Game Selector -->
@@ -110,6 +109,11 @@
                   </div>
                   <div class="first-slide-title-wrapper">
                     <h2 class="slide-card-title first-slide-title">{{ slides()[0].title }}</h2>
+                    @if (slides()[0].bullets && slides()[0].bullets.length > 0) {
+                      <div class="first-slide-subtitle-badge">
+                        {{ slides()[0].bullets[0] }}
+                      </div>
+                    }
                   </div>
                 } @else {
                   <!-- Slide Title -->
@@ -172,19 +176,12 @@
         <!-- Visual Style settings in Preview -->
         <div class="preview-settings-group">
           <div class="form-group-compact">
-            <label class="form-label-compact">Theme</label>
-            <select class="select-input" [ngModel]="theme()" (ngModelChange)="selectTheme($event)">
-              <option value="cyberpunk">Neon Cyberpunk</option>
-              <option value="glass">Glassmorphic</option>
-              <option value="retro">Retro Arcade</option>
-              <option value="magazine">Magazine Print</option>
-              <option value="ign">IGN Editorial</option>
-              <option value="kotaku">Kotaku Grunge</option>
-              <option value="polygon">Polygon Creative</option>
-              <option value="gamespot">GameSpot Steel</option>
-              <option value="steam">Steam Storefront</option>
-              <option value="esports">Esports Arena</option>
-            </select>
+            <label class="form-label-compact">Theme Visual Style</label>
+            <div class="theme-switcher-control">
+              <button type="button" class="theme-switch-btn" (click)="prevTheme()" aria-label="Previous Theme">‹</button>
+              <span class="current-theme-name">{{ getThemeLabel() }}</span>
+              <button type="button" class="theme-switch-btn" (click)="nextTheme()" aria-label="Next Theme">›</button>
+            </div>
           </div>
 
           <div class="form-group-compact">
@@ -283,6 +280,11 @@
             </div>
             <div class="first-slide-title-wrapper">
               <h2 class="slide-card-title first-slide-title">{{ slide.title }}</h2>
+              @if (slide.bullets && slide.bullets.length > 0) {
+                <div class="first-slide-subtitle-badge">
+                  {{ slide.bullets[0] }}
+                </div>
+              }
             </div>
           } @else {
             <!-- Slide Title -->

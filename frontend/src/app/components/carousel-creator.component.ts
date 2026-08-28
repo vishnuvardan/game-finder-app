@@ -28,6 +28,20 @@ export class CarouselCreatorComponent {
   protected readonly aspectRatio = signal<AspectRatio>('4-5');
   protected readonly theme = signal<SlideTheme>('cyberpunk');
 
+  // List of themes for the theme cycling switcher
+  protected readonly themesList: { value: SlideTheme; label: string }[] = [
+    { value: 'cyberpunk', label: 'Neon Cyberpunk' },
+    { value: 'glass', label: 'Glassmorphic' },
+    { value: 'retro', label: 'Retro Arcade' },
+    { value: 'magazine', label: 'Magazine Print' },
+    { value: 'ign', label: 'IGN Editorial' },
+    { value: 'kotaku', label: 'Kotaku Grunge' },
+    { value: 'polygon', label: 'Polygon Creative' },
+    { value: 'gamespot', label: 'GameSpot Steel' },
+    { value: 'steam', label: 'Steam Storefront' },
+    { value: 'esports', label: 'Esports Arena' },
+  ];
+
   // Generated slides state
   protected readonly slides = signal<CarouselSlide[]>([]);
   protected readonly activeSlideIndex = signal<number>(0);
@@ -70,6 +84,26 @@ export class CarouselCreatorComponent {
 
   protected selectTheme(selectedTheme: SlideTheme) {
     this.theme.set(selectedTheme);
+  }
+
+  protected getThemeLabel(): string {
+    const currentTheme = this.theme();
+    const found = this.themesList.find(t => t.value === currentTheme);
+    return found ? found.label : currentTheme;
+  }
+
+  protected nextTheme() {
+    const currentTheme = this.theme();
+    const currentIndex = this.themesList.findIndex(t => t.value === currentTheme);
+    const nextIndex = (currentIndex + 1) % this.themesList.length;
+    this.theme.set(this.themesList[nextIndex].value);
+  }
+
+  protected prevTheme() {
+    const currentTheme = this.theme();
+    const currentIndex = this.themesList.findIndex(t => t.value === currentTheme);
+    const prevIndex = (currentIndex - 1 + this.themesList.length) % this.themesList.length;
+    this.theme.set(this.themesList[prevIndex].value);
   }
 
   protected selectAspectRatio(ratio: AspectRatio) {

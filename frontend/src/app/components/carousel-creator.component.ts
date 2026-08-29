@@ -58,6 +58,11 @@ export class CarouselCreatorComponent {
   protected readonly isDownloading = signal<boolean>(false);
   protected readonly caption = signal<string>('');
   protected readonly isCopied = signal<boolean>(false);
+  protected readonly isPublishModalOpen = signal<boolean>(false);
+  protected readonly publishPassword = signal<string>('');
+  protected readonly publishStep = signal<'idle' | 'rendering' | 'publishing' | 'success' | 'error'>('idle');
+  protected readonly publishProgressText = signal<string>('');
+  protected readonly publishSuccess = signal<string | null>(null);
   protected readonly generatedCoverUrl = signal<string | null>(null);
   protected readonly useCoverImage = signal<boolean>(true);
   protected readonly customCoverUrl = signal<string>('');
@@ -327,6 +332,79 @@ export class CarouselCreatorComponent {
     }
   }
 
+  protected openPublishModal() {
+    this.publishPassword.set('');
+    this.publishStep.set('idle');
+    this.publishProgressText.set('');
+    this.errorMessage.set(null);
+    this.publishSuccess.set(null);
+    this.isPublishModalOpen.set(true);
+  }
+
+  protected closePublishModal() {
+    this.isPublishModalOpen.set(false);
+  }
+
+  protected async startInstagramPublish() {
+    const pwd = this.publishPassword().trim();
+    if (!pwd) {
+      this.errorMessage.set('Password is required to publish.');
+      this.publishStep.set('error');
+      return;
+    }
+
+    this.publishStep.set('rendering');
+    this.publishProgressText.set('Initializing canvas renderer...');
+
+    try {
+      const totalSlides = this.slides().length;
+      const slideImages: string[] = [];
+
+      for (let i = 0; i < totalSlides; i++) {
+        this.publishProgressText.set(`Rendering slide ${i + 1} of ${totalSlides}...`);
+        const cardElement = document.getElementById(`offscreen-slide-${i}`);
+        if (!cardElement) {
+          throw new Error(`Slide element "offscreen-slide-${i}" was not found. Please wait.`);
+        }
+        
+        await new Promise((resolve) => setTimeout(resolve, 150));
+        
+        const canvas = await html2canvas(cardElement, {
+          useCORS: true,
+          allowTaint: false,
+          logging: false,
+          backgroundColor: null,
+          scale: 3.375, // High-res export
+        });
+        
+        slideImages.push(canvas.toDataURL('image/png'));
+      }
+
+      this.publishStep.set('publishing');
+      this.publishProgressText.set('Uploading slides to storage & publishing post... (takes ~15-20 seconds)');
+
+      this.gameService.publishInstagramCarousel(slideImages, this.caption(), pwd).subscribe({
+        next: (res) => {
+          this.publishStep.set('success');
+          this.publishProgressText.set('');
+          this.publishSuccess.set(`Published successfully! Post ID: ${res.postId}`);
+        },
+        error: (err) => {
+          this.publishStep.set('error');
+          const errMsg = err.error?.error || 'Failed to publish to Instagram. Verify your password or credentials.';
+          this.errorMessage.set(errMsg);
+          this.publishProgressText.set('');
+        }
+      });
+
+    } catch (err: any) {
+      console.error(err);
+      this.publishStep.set('error');
+      this.errorMessage.set(err.message || 'An error occurred while compiling slides for Instagram.');
+      this.publishProgressText.set('');
+    }
+  }
+
   protected startOver() {
     this.selectedGame.set(null);
     this.customTopic.set('');
@@ -339,6 +417,8 @@ export class CarouselCreatorComponent {
     this.customFirstSlideTitle.set('');
     this.customFirstSlideSubtitle.set('');
     this.errorMessage.set(null);
+    this.publishSuccess.set(null);
+    this.isPublishModalOpen.set(false);
     this.state.set('intake');
   }
 }

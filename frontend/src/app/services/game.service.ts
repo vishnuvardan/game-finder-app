@@ -226,4 +226,15 @@ export class GameService {
       category
     });
   }
+
+  /**
+   * Publish generated slides to Instagram as a carousel
+   */
+  publishInstagramCarousel(images: string[], caption: string, password?: string): Observable<{ success: boolean, postId: string }> {
+    return this.http.post<{ success: boolean, postId: string }>(`${this.apiUrl}/social/publish-instagram`, {
+      images,
+      caption,
+      password
+    });
+  }
 }

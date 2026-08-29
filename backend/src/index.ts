@@ -8,8 +8,8 @@ const app = express();
 // Configure CORS to allow access from the frontend
 app.use(cors());
 
-// Parse JSON request bodies
-app.use(express.json());
+// Parse JSON request bodies (increased limit to support base64 slide uploads)
+app.use(express.json({ limit: '50mb' }));
 
 // Register API routes under /api
 app.use('/api', apiRouter);

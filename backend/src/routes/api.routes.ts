@@ -3,6 +3,7 @@ import { igdbService } from '../services/igdb.service';
 import { geminiService } from '../services/gemini.service';
 import { steamService } from '../services/steam.service';
 import { cacheService } from '../services/cache.service';
+import { config } from '../config';
 import axios from 'axios';
 import { EdgeTTS } from 'node-edge-tts';
 import fs from 'fs';
@@ -431,6 +432,145 @@ router.post('/shorts/proxy-gemini', async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error('Shorts script generation proxy error:', error.message);
     return res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * POST /api/social/publish-instagram
+ * Payload: { images: string[], caption: string, password?: string }
+ * Uploads slide base64 images to Vercel Blob and publishes them to Instagram as a carousel.
+ */
+router.post('/social/publish-instagram', async (req: Request, res: Response) => {
+  const { images, caption, password } = req.body;
+
+  if (!images || !Array.isArray(images) || images.length === 0) {
+    return res.status(400).json({ error: 'images array is required and must not be empty' });
+  }
+  if (!password || password !== config.instagram.adminPassword) {
+    return res.status(401).json({ error: 'Invalid admin password' });
+  }
+
+  const vercelBlobToken = config.vercelBlob.readWriteToken;
+  const igUserId = config.instagram.userId;
+  const metaToken = config.instagram.accessToken;
+
+  if (!vercelBlobToken || !igUserId || !metaToken) {
+    return res.status(500).json({ error: 'Instagram publishing credentials are not configured on the server.' });
+  }
+
+  // Import put and del dynamically from @vercel/blob
+  let put: any, del: any;
+  try {
+    const blobModule = require('@vercel/blob');
+    put = blobModule.put;
+    del = blobModule.del;
+  } catch (e) {
+    return res.status(500).json({ error: 'Vercel Blob module is not loaded correctly' });
+  }
+
+  const uploadedUrls: string[] = [];
+
+  try {
+    // 1. Upload all base64 slides to Vercel Blob to get public URLs
+    for (let i = 0; i < images.length; i++) {
+      const dataUrl = images[i];
+      const mimeMatch = dataUrl.match(/^data:(image\/\w+);base64,/);
+      if (!mimeMatch) {
+        throw new Error(`Slide ${i + 1} has invalid image format`);
+      }
+      
+      const base64Data = dataUrl.replace(/^data:image\/\w+;base64,/, "");
+      const buffer = Buffer.from(base64Data, 'base64');
+      
+      // Upload using Vercel Blob
+      const blob = await put(`slide_${Date.now()}_${i}.png`, buffer, {
+        access: 'public',
+        token: vercelBlobToken
+      });
+      
+      uploadedUrls.push(blob.url);
+    }
+
+    // 2. Create Instagram container for each carousel item
+    const childrenIds: string[] = [];
+    for (let i = 0; i < uploadedUrls.length; i++) {
+      const url = uploadedUrls[i];
+      const itemRes = await axios.post(`https://graph.facebook.com/v20.0/${igUserId}/media`, {
+        image_url: url,
+        is_carousel_item: true,
+        access_token: metaToken
+      });
+      childrenIds.push(itemRes.data.id);
+    }
+
+    // 3. Poll Instagram to ensure all slide containers have finished processing
+    console.log(`[Instagram Publish] Created ${childrenIds.length} item containers. Waiting for processing...`);
+    for (const childId of childrenIds) {
+      let attempts = 0;
+      let finished = false;
+      
+      while (!finished && attempts < 15) { // max 30 seconds wait per slide
+        const statusRes = await axios.get(`https://graph.facebook.com/v20.0/${childId}`, {
+          params: {
+            fields: 'status_code',
+            access_token: metaToken
+          }
+        });
+        
+        const statusCode = statusRes.data?.status_code;
+        if (statusCode === 'FINISHED') {
+          finished = true;
+        } else if (statusCode === 'ERROR') {
+          throw new Error(`Instagram image processing failed for item container ${childId}`);
+        } else {
+          attempts++;
+          await new Promise(resolve => setTimeout(resolve, 2000)); // wait 2s
+        }
+      }
+      
+      if (!finished) {
+        throw new Error(`Instagram container processing timed out for item ${childId}`);
+      }
+    }
+    console.log(`[Instagram Publish] All slide containers are FINISHED. Linking Carousel...`);
+
+    // 4. Create the Carousel container linking all slide items
+    const carouselRes = await axios.post(`https://graph.facebook.com/v20.0/${igUserId}/media`, {
+      media_type: 'CAROUSEL',
+      children: childrenIds,
+      caption: caption || '',
+      access_token: metaToken
+    });
+    const carouselCreationId = carouselRes.data.id;
+
+    // 5. Publish the Carousel post
+    const publishRes = await axios.post(`https://graph.facebook.com/v20.0/${igUserId}/media_publish`, {
+      creation_id: carouselCreationId,
+      access_token: metaToken
+    });
+
+    const postId = publishRes.data.id;
+
+    // 6. Clean up Vercel Blob storage asynchronously after publishing
+    try {
+      await del(uploadedUrls, { token: vercelBlobToken });
+    } catch (cleanupErr) {
+      console.warn('Vercel Blob storage cleanup failed:', cleanupErr);
+    }
+
+    return res.json({ success: true, postId });
+  } catch (error: any) {
+    console.error('Instagram Carousel Publishing Error:', error.response?.data || error.message);
+    
+    // Attempt cleanup on error
+    if (uploadedUrls.length > 0) {
+      try {
+        await del(uploadedUrls, { token: vercelBlobToken });
+      } catch (e) {}
+    }
+
+    const apiErr = error.response?.data?.error?.message || error.message;
+    return res.status(500).json({ error: `Instagram publishing failed: ${apiErr}` });
   }
 });
 

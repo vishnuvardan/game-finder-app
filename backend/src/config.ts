@@ -20,6 +20,14 @@ export const config = {
     accessKey: process.env.UNSPLASH_ACCESS_KEY || '',
     secretKey: process.env.UNSPLASH_SECRET_KEY || '',
   },
+  instagram: {
+    userId: process.env.IG_USER_ID || '',
+    accessToken: process.env.META_ACCESS_TOKEN || '',
+    adminPassword: process.env.ADMIN_PASSWORD || 'admin123',
+  },
+  vercelBlob: {
+    readWriteToken: process.env.BLOB_READ_WRITE_TOKEN || '',
+  },
 };
 
 // Validate that required variables are defined

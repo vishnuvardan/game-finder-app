@@ -312,8 +312,8 @@ router.post('/slides/steam-deals', async (req: Request, res: Response) => {
     if (gameNames && gameNames.length > 0) {
       resolvedDeals = await steamService.resolveGamesFromNames(gameNames);
     } else {
-      // Default: fetch top 5 featured specials on Steam in INR
-      resolvedDeals = await steamService.getFeaturedSpecials(5);
+      // Default: fetch top 4 featured specials on Steam in INR
+      resolvedDeals = await steamService.getFeaturedSpecials(4);
     }
 
     if (resolvedDeals.length === 0) {

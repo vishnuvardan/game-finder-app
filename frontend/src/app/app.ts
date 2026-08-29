@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 
@@ -9,4 +9,20 @@ import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
   templateUrl: './app.html',
   styleUrl: './app.css',
 })
-export class App {}
+export class App {
+  protected isDropdownOpen = false;
+
+  protected toggleDropdown(event: Event) {
+    event.stopPropagation();
+    this.isDropdownOpen = !this.isDropdownOpen;
+  }
+
+  protected closeDropdown() {
+    this.isDropdownOpen = false;
+  }
+
+  @HostListener('document:click')
+  protected onDocumentClick() {
+    this.isDropdownOpen = false;
+  }
+}

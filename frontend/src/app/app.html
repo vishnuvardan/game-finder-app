@@ -3,22 +3,31 @@
   <!-- Header Section -->
   <header class="main-header">
     <h1 class="main-title">My Next Game</h1>
-    <p class="main-subtitle">AI-Driven Game Matchmaker & Reviewer</p>
+    <p class="main-subtitle">AI-Powered Trophy Guides, Social Slides & Matchmaker</p>
 
     <!-- Premium Navigation Tabs -->
     <nav class="main-nav">
       <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="nav-link">
-        <span>🎮 Matchmaker</span>
-      </a>
-      <a routerLink="/search" routerLinkActive="active" class="nav-link">
         <span>🏆 Trophy Guide</span>
-      </a>
-      <a routerLink="/retrospective" routerLinkActive="active" class="nav-link">
-        <span>📝 Retrospective</span>
       </a>
       <a routerLink="/carousel" routerLinkActive="active" class="nav-link">
         <span>📸 Social Slides</span>
       </a>
+
+      <!-- Dropdown sub menu -->
+      <div class="nav-dropdown" [class.open]="isDropdownOpen">
+        <button type="button" class="nav-link dropdown-toggle" (click)="toggleDropdown($event)">
+          <span>⚙️ More ▾</span>
+        </button>
+        <div class="dropdown-menu">
+          <a routerLink="/matchmaker" routerLinkActive="active" class="dropdown-item" (click)="closeDropdown()">
+            <span>🎮 Matchmaker</span>
+          </a>
+          <a routerLink="/retrospective" routerLinkActive="active" class="dropdown-item" (click)="closeDropdown()">
+            <span>📝 Retrospective</span>
+          </a>
+        </div>
+      </div>
     </nav>
   </header>
 

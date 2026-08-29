@@ -499,16 +499,13 @@
 
 /* Footnote/CTA Section */
 .slide-card-footnote {
-  font-size: 0.75rem;
-  font-style: italic;
+  font-size: 0.72rem;
+  font-weight: 700;
   margin-top: auto;
   padding-top: 0.5rem;
   text-align: center;
-  opacity: 0.85;
-}
-
-.slide-card-footnote span {
-  font-weight: bold;
+  opacity: 0.9;
+  letter-spacing: 0.02em;
 }
 
 /* Watermark */
@@ -1243,38 +1240,152 @@
   justify-content: center;
   align-items: center;
   width: 100%;
-  margin: 0.5rem auto 1rem auto;
+  margin: 0.25rem auto 0.5rem auto;
   overflow: hidden;
-  flex-grow: 1;
-  max-height: 55%;
+  flex-shrink: 0;
+  height: 160px;
+}
+
+.slide-card.ratio-1-1 .first-slide-media {
+  height: 120px;
+}
+
+.slide-card.ratio-9-16 .first-slide-media {
+  height: 240px;
 }
 
 .first-slide-image {
-  max-height: 100%;
-  max-width: 80%;
-  object-fit: contain;
+  height: 100%;
+  object-fit: cover;
   border-radius: 12px;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.7);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
   transition: all 0.3s ease;
 }
 
 .first-slide-title-wrapper {
   width: 100%;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
-  flex-grow: 0;
-  margin-bottom: 0.75rem;
+  flex-grow: 1;
+  margin-bottom: 0.25rem;
+  gap: 0.35rem;
 }
 
 .first-slide-title {
-  font-size: 1.45rem;
+  font-size: 1.25rem;
   font-weight: 800;
   text-align: center;
-  line-height: 1.25;
+  line-height: 1.2;
   margin: 0;
   width: 100%;
   word-wrap: break-word;
+}
+
+.slide-card.ratio-9-16 .first-slide-title {
+  font-size: 1.45rem;
+}
+
+.slide-card.ratio-1-1 .first-slide-title {
+  font-size: 1.15rem;
+}
+
+/* Custom CTA Slide styles */
+.cta-slide-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  flex-grow: 1;
+}
+
+.cta-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  text-align: center;
+  margin: 0.5rem 0 1rem 0;
+  letter-spacing: 0.05em;
+  background: linear-gradient(135deg, #fff, var(--secondary-glow, #00f0ff));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.cta-bullets-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  width: 100%;
+  margin-bottom: 1.5rem;
+}
+
+.cta-bullet-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 0.65rem 0.85rem;
+  border-radius: 8px;
+}
+
+.cta-arrow {
+  font-size: 1.1rem;
+  color: var(--secondary-glow, #00f0ff);
+}
+
+.cta-text {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #cbd5e1;
+  line-height: 1.3;
+}
+
+.cta-action-icons {
+  display: flex;
+  justify-content: space-around;
+  width: 100%;
+  margin-top: auto;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 1rem;
+}
+
+.cta-icon-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  position: relative;
+}
+
+.cta-icon {
+  font-size: 1.4rem;
+  animation: bounceCta 2s infinite ease-in-out;
+}
+
+.cta-icon-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--text-muted, #94a3b8);
+  text-transform: uppercase;
+}
+
+.cta-arrow-down {
+  font-size: 0.75rem;
+  color: var(--primary-glow, #ff007f);
+  animation: bounceArrow 1.5s infinite ease-in-out;
+}
+
+@keyframes bounceCta {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+}
+
+@keyframes bounceArrow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(4px); }
 }
 
 /* --- Theme 1: Cyberpunk Cover --- */
@@ -1850,6 +1961,41 @@
   color: var(--primary-glow, #ff007f);
   background: rgba(255, 0, 127, 0.08);
   border: 1px solid rgba(255, 0, 127, 0.2);
+}
+
+/* Premium Checkbox Toggle */
+.checkbox-container-compact {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  cursor: pointer;
+  user-select: none;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-muted, #94a3b8);
+  transition: color 0.2s ease;
+  padding: 0.25rem 0;
+}
+
+.checkbox-container-compact:hover {
+  color: var(--text-light, #f8fafc);
+}
+
+.checkbox-container-compact input[type="checkbox"] {
+  accent-color: var(--primary-glow, #ff007f);
+  width: 1.05rem;
+  height: 1.05rem;
+  cursor: pointer;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.select-input-compact {
+  padding: 0.4rem 0.6rem;
+  font-size: 0.8rem;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 

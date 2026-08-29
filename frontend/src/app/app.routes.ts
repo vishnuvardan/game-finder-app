@@ -6,9 +6,10 @@ import { GameDetailComponent } from './components/game-detail.component';
 import { CarouselCreatorComponent } from './components/carousel-creator.component';
 
 export const routes: Routes = [
-  { path: '', component: MatchmakerComponent },
+  { path: '', component: TrophySearchComponent },
+  { path: 'matchmaker', component: MatchmakerComponent },
   { path: 'retrospective', component: RetrospectiveComponent },
-  { path: 'search', component: TrophySearchComponent },
+  { path: 'search', redirectTo: '' },
   { path: 'game/:appid', component: GameDetailComponent },
   { path: 'carousel', component: CarouselCreatorComponent },
   { path: '**', redirectTo: '' },

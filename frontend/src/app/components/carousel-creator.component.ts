@@ -51,9 +51,14 @@ export class CarouselCreatorComponent {
   protected readonly caption = signal<string>('');
   protected readonly isCopied = signal<boolean>(false);
   protected readonly generatedCoverUrl = signal<string | null>(null);
+  protected readonly useCoverImage = signal<boolean>(true);
+  protected readonly customCoverUrl = signal<string>('');
 
   protected readonly getCoverUrl = computed(() => {
-    return this.generatedCoverUrl() || this.selectedGame()?.coverUrl || null;
+    if (!this.useCoverImage()) {
+      return null;
+    }
+    return this.customCoverUrl() || this.selectedGame()?.coverUrl || this.generatedCoverUrl() || null;
   });
 
   protected readonly hasCoverImage = computed(() => {

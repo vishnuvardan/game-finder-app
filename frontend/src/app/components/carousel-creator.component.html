@@ -132,19 +132,20 @@
                 <!-- Slide Header -->
                 <div class="slide-card-header">
                   <div class="slide-topic-badge">{{ selectedGame()?.name || 'GAMING NEWS' }}</div>
-                  <div class="slide-counter">{{ activeSlideIndex() + 1 }} / {{ slides().length }}</div>
                 </div>
 
                 @if (activeSlideIndex() === 0) {
                   <!-- Slide 1: Cover Image & Bold Title below -->
-                  @if (getCoverUrl()) {
-                    <div class="first-slide-media">
-                      <img [src]="getCoverUrl()" class="first-slide-image" alt="Cover Image" />
-                    </div>
-                  } @else {
-                    <div class="first-slide-no-image-placeholder">
-                      <div class="abstract-accent-sphere"></div>
-                    </div>
+                  @if (useCoverImage()) {
+                    @if (getCoverUrl()) {
+                      <div class="first-slide-media">
+                        <img [src]="getCoverUrl()" class="first-slide-image" alt="Cover Image" />
+                      </div>
+                    } @else {
+                      <div class="first-slide-no-image-placeholder">
+                        <div class="abstract-accent-sphere"></div>
+                      </div>
+                    }
                   }
                   <div class="first-slide-title-wrapper">
                     <h2 class="slide-card-title first-slide-title">{{ slides()[0].title }}</h2>
@@ -167,9 +168,9 @@
                 }
 
                 <!-- Slide Footnote/CTA -->
-                @if (slides()[activeSlideIndex()].footnote) {
+                @if (activeSlideIndex() === slides().length - 1) {
                   <div class="slide-card-footnote">
-                    <span>“</span>{{ slides()[activeSlideIndex()].footnote }}<span>”</span>
+                    💾 Save &nbsp;•&nbsp; ✈️ Share to friends
                   </div>
                 }
 
@@ -213,6 +214,30 @@
                 <button type="button" class="theme-switch-btn" (click)="nextAspectRatio()" aria-label="Next Layout">›</button>
               </div>
             </div>
+
+            <!-- Use Slide Cover Image Toggle -->
+            <div class="form-group-compact" style="margin-top: 0.75rem;">
+              <label class="checkbox-container-compact">
+                <input type="checkbox" [ngModel]="useCoverImage()" (ngModelChange)="useCoverImage.set($event)" />
+                <span class="checkbox-custom-label">🖼️ Use Cover Image</span>
+              </label>
+            </div>
+
+            <!-- Replace Image URL Input -->
+            @if (useCoverImage()) {
+              <div class="form-group-compact" style="margin-top: 0.75rem;">
+                <label class="form-label-compact" for="replace-image-url-input">Replace Cover Image URL</label>
+                <input id="replace-image-url-input" type="text" class="select-input select-input-compact" style="cursor: text;"
+                  placeholder="Paste direct image URL..." [ngModel]="customCoverUrl()" (ngModelChange)="customCoverUrl.set($event)" />
+              </div>
+            }
+
+            <!-- Social Handle Watermark Input -->
+            <div class="form-group-compact" style="margin-top: 0.75rem;">
+              <label class="form-label-compact" for="watermark-preview-input">Social Handle Watermark</label>
+              <input id="watermark-preview-input" type="text" class="select-input select-input-compact" style="cursor: text;"
+                placeholder="e.g. @yourname" [ngModel]="watermark()" (ngModelChange)="watermark.set($event)" />
+            </div>
           </div>
         </div>
       </div>
@@ -237,12 +262,7 @@
 
 
 
-        <!-- Social Watermark Editor in Preview -->
-        <div class="form-group-compact" style="margin-bottom: 1.5rem; width: 100%;">
-          <label class="form-label-compact" for="watermark-preview-input">Social Handle Watermark</label>
-          <input id="watermark-preview-input" type="text" class="select-input" style="cursor: text;"
-            placeholder="e.g. @yourname" [ngModel]="watermark()" (ngModelChange)="watermark.set($event)" />
-        </div>
+
 
         <div class="action-buttons-group">
           <!-- Download Active Slide -->
@@ -317,19 +337,20 @@
           <!-- Slide Header -->
           <div class="slide-card-header">
             <div class="slide-topic-badge">{{ selectedGame()?.name || 'GAMING NEWS' }}</div>
-            <div class="slide-counter">{{ $index + 1 }} / {{ slides().length }}</div>
           </div>
 
           @if ($index === 0) {
             <!-- Slide 1: Cover Image & Bold Title below -->
-            @if (getCoverUrl()) {
-              <div class="first-slide-media">
-                <img [src]="getCoverUrl()" class="first-slide-image" alt="Cover Image" />
-              </div>
-            } @else {
-              <div class="first-slide-no-image-placeholder">
-                <div class="abstract-accent-sphere"></div>
-              </div>
+            @if (useCoverImage()) {
+              @if (getCoverUrl()) {
+                <div class="first-slide-media">
+                  <img [src]="getCoverUrl()" class="first-slide-image" alt="Cover Image" />
+                </div>
+              } @else {
+                <div class="first-slide-no-image-placeholder">
+                  <div class="abstract-accent-sphere"></div>
+                </div>
+              }
             }
             <div class="first-slide-title-wrapper">
               <h2 class="slide-card-title first-slide-title">{{ slide.title }}</h2>
@@ -352,9 +373,9 @@
           }
 
           <!-- Slide Footnote/CTA -->
-          @if (slide.footnote) {
+          @if ($index === slides().length - 1) {
             <div class="slide-card-footnote">
-              <span>“</span>{{ slide.footnote }}<span>”</span>
+              💾 Save &nbsp;•&nbsp; ✈️ Share to friends
             </div>
           }
 

@@ -1,6 +1,7 @@
 import { GoogleGenAI } from '@google/genai';
 import { config } from '../config';
 import axios from 'axios';
+import { steamService } from './steam.service';
 
 // Initialize the Google Gen AI client
 const ai = new GoogleGenAI({ apiKey: config.gemini.apiKey });
@@ -541,56 +542,73 @@ class GeminiService {
     );
   }
 
-  public async generateCoverImage(prompt: string): Promise<string | null> {
-    try {
-      console.log(`\n================== [Imagen Image Generation Request] ==================`);
-      console.log(`[Prompt] : ${prompt}`);
-      console.log(`=======================================================================\n`);
-      const response = await ai.models.generateImages({
-        model: 'imagen-3.0-generate-002',
-        prompt,
-        config: {
-          numberOfImages: 1,
-          outputMimeType: 'image/jpeg',
-          aspectRatio: '1:1'
-        }
-      });
-      if (response.generatedImages && response.generatedImages[0]?.image?.imageBytes) {
-        console.log('[Imagen Service] Image generated successfully.');
-        return `data:image/jpeg;base64,${response.generatedImages[0].image.imageBytes}`;
-      }
-      return null;
-    } catch (error: any) {
-      console.warn('[Imagen Service] Failed to generate cover image:', error);
-      return null;
-    }
-  }
-
-  public getStockImageFallback(topic: string): string {
+  public async getStockImageFallback(topic: string): Promise<string> {
     const lowerTopic = topic.toLowerCase();
     
     console.log(`[Unsplash Fallback] Matching local curated keywords for topic: "${topic}"`);
     
-    // Choose the best matching fallback photo (all high-res square crops that support CORS)
+    // Extract the best query keyword based on simple rules
+    let queryKeyword = 'gaming';
     if (lowerTopic.includes('xbox') || lowerTopic.includes('microsoft')) {
-      return 'https://images.unsplash.com/photo-1605901309584-818e25960a8f?w=1080&h=1080&fit=crop&q=80'; // Xbox console/controller
-    } else if (lowerTopic.includes('playstation') || lowerTopic.includes('sony') || lowerTopic.includes('ps5') || lowerTopic.includes('ps4') || lowerTopic.includes('console')) {
-      return 'https://images.unsplash.com/photo-1627856013091-fed6e4e30025?w=1080&h=1080&fit=crop&q=80'; // PS5 controller
+      queryKeyword = 'xbox';
+    } else if (lowerTopic.includes('playstation') || lowerTopic.includes('sony') || lowerTopic.includes('ps5') || lowerTopic.includes('ps4') || lowerTopic.includes('ps6') || lowerTopic.includes('console')) {
+      queryKeyword = 'playstation';
     } else if (lowerTopic.includes('nintendo') || lowerTopic.includes('switch') || lowerTopic.includes('mario') || lowerTopic.includes('zelda') || lowerTopic.includes('retro') || lowerTopic.includes('arcade')) {
-      return 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=1080&h=1080&fit=crop&q=80'; // Retro consoles & Switch
+      queryKeyword = 'nintendo';
     } else if (lowerTopic.includes('esports') || lowerTopic.includes('tournament') || lowerTopic.includes('championship') || lowerTopic.includes('arena') || lowerTopic.includes('event')) {
-      return 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1080&h=1080&fit=crop&q=80'; // Esports Arena
+      queryKeyword = 'esports';
     } else if (lowerTopic.includes('pc') || lowerTopic.includes('hardware') || lowerTopic.includes('steam') || lowerTopic.includes('rtx') || lowerTopic.includes('nvidia') || lowerTopic.includes('amd') || lowerTopic.includes('gpu')) {
-      return 'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=1080&h=1080&fit=crop&q=80'; // PC gaming setup
+      queryKeyword = 'gaming-setup';
+    } else if (lowerTopic.includes('action') || lowerTopic.includes('shooter') || lowerTopic.includes('fps') || lowerTopic.includes('war') || lowerTopic.includes('battle')) {
+      queryKeyword = 'gaming-controller';
+    } else if (lowerTopic.includes('neon') || lowerTopic.includes('rgb') || lowerTopic.includes('cyberpunk')) {
+      queryKeyword = 'cyberpunk-neon';
     } else {
-      // Default premium gaming controller / setup
-      const generalGems = [
-        'https://images.unsplash.com/photo-1605901309584-818e25960a8f?w=1080&h=1080&fit=crop&q=80',
-        'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=1080&h=1080&fit=crop&q=80',
-        'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1080&h=1080&fit=crop&q=80'
-      ];
-      return generalGems[Math.floor(Math.random() * generalGems.length)];
+      // Clean query search term from the topic itself (e.g. "ps6 leaks" -> "ps6")
+      const words = topic.split(/\s+/).filter(w => w.length > 2 && !w.toLowerCase().includes('leak') && !w.toLowerCase().includes('rumor') && !w.toLowerCase().includes('news') && !w.toLowerCase().includes('update') && !w.toLowerCase().includes('info'));
+      if (words.length > 0) {
+        queryKeyword = words.slice(0, 2).join('-');
+      }
     }
+
+    // Generate a random seed signature to prevent browser caching of redirects
+    const sig = Math.floor(Math.random() * 10000);
+    const backupUrl = `https://images.unsplash.com/featured/1080x1080/?gaming,${encodeURIComponent(queryKeyword)}&sig=${sig}`;
+
+    // Try fetching from Unsplash API using access keys
+    if (config.unsplash.accessKey) {
+      try {
+        console.log(`[Unsplash API] Querying Unsplash Search API for "${queryKeyword}"...`);
+        const response = await axios.get('https://api.unsplash.com/search/photos', {
+          params: {
+            query: `gaming ${queryKeyword}`, // focus on gaming related images
+            client_id: config.unsplash.accessKey,
+            per_page: 15,
+            orientation: 'squarish'
+          },
+          timeout: 4000
+        });
+
+        const results = response.data?.results;
+        if (results && Array.isArray(results) && results.length > 0) {
+          const randomIndex = Math.floor(Math.random() * results.length);
+          const photo = results[randomIndex];
+          let imgUrl = photo.urls?.regular;
+          if (photo.urls?.raw) {
+            imgUrl = `${photo.urls.raw}&w=1080&h=1080&fit=crop&q=80`;
+          }
+          if (imgUrl) {
+            console.log(`[Unsplash API] Successfully fetched image from API: ${imgUrl}`);
+            return imgUrl;
+          }
+        }
+      } catch (err: any) {
+        console.warn(`[Unsplash API] API request failed (falling back to backup URL):`, err.message);
+      }
+    }
+
+    console.log(`[Unsplash Fallback] Using backup dynamic URL: ${backupUrl}`);
+    return backupUrl;
   }
 
   public async generateSlides(
@@ -632,7 +650,7 @@ class GeminiService {
 
       ${groundedInfo ? `Here is the actual news and real-time facts retrieved from the web:\n${groundedInfo}\n` : ''}
 
-      Analyze the input topic and the retrieved real facts. Generate between 6 and 10 dynamic, highly engaging social-media style slides (e.g. for Instagram Carousel) centered on the requested topic: "${topic}".
+      Analyze the input topic and the retrieved real facts. Generate between 3 and 5 dynamic, highly engaging social-media style slides (e.g. for Instagram Carousel) centered on the requested topic: "${topic}".
       
       CRITICAL INSTRUCTIONS:
       - Ground your slides in actual data, dates, and news gathered from the search results.
@@ -641,15 +659,13 @@ class GeminiService {
       - Slide 1 (first slide) MUST be a title/cover slide. Its title should be a summary title (e.g. '${gameName ? gameName : ''} ${topic} - what you should know?'). Its bullets array must contain exactly 1 highly important, eye-catching piece of info/news hook from the research (e.g. 'Free on Game Pass Day One', 'Releasing Dec 2026', '9/10 Rating on Steam'). This will be displayed on the cover as a subtitle badge/highlight.
       - Subsequent slides (Slide 2, 3, etc.) should contain the actual bulleted updates and details.
       - Generate a catchy, engaging social media post caption (under 250 characters) summarizing these slides, including a short description and 3 to 5 relevant hashtags (e.g. #GamingNews).
-      - Also generate a highly detailed prompt for Imagen 3 to generate a cover image for Slide 1 that visually matches the news topic. For example, if it's about Xbox physical-to-digital copy conversions, write a prompt like "A sleek modern 3D render of an Xbox console, clean digital green flow lines, glowing disc slot, technological aesthetic, high resolution". Save it in the "coverImagePrompt" property.
     `;
 
     const systemInstruction = 
       `You are a professional social media content manager for a major gaming network. ` +
       `Your task is to analyze the provided game/topic (using the real facts retrieved from the web), and generate: \n` +
-      `1. Between 6 and 10 highly engaging, short-form slides (carousel style). Each slide must have a clear, punchy title (under 35 chars) and exactly 2 to 3 bullet points/sentences (each under 100 chars) that are witty, informative, and customized to the topic. Optionally, provide a witty footnote/CTA (under 50 chars). \n` +
+      `1. Between 3 and 5 highly engaging, short-form slides (carousel style). Each slide must have a clear, punchy title (under 35 chars) and exactly 3 to 5 bullet points/sentences (each under 100 chars) that are witty, informative, and customized to the topic. Optionally, provide a witty footnote/CTA (under 50 chars). \n` +
       `2. A catchy social media post caption (under 250 characters) with a brief summary of the game/topic and 3 to 5 relevant hashtags. \n` +
-      `3. A detailed, descriptive image generation prompt (under 100 words) for the cover slide, summarizing the visual essence of the news topic. \n` +
       `Ensure the language is simple but extremely engaging for gaming fans. Output MUST strictly match the defined JSON schema. ` +
       `CRITICAL: Avoid generic filler or placeholders. Ground your slides and caption in actual data, dates, and news gathered from the search results.`;
 
@@ -668,7 +684,7 @@ class GeminiService {
               bullets: { 
                 type: "ARRAY", 
                 items: { type: "STRING" },
-                description: "Exactly 2 to 3 engaging, interesting, short statements or details, under 100 characters each."
+                description: "Exactly 3 to 5 engaging, interesting, short statements or details, under 100 characters each."
               },
               footnote: { 
                 type: "STRING", 
@@ -677,18 +693,14 @@ class GeminiService {
             },
             required: ["title", "bullets"]
           },
-          description: "List of 6 to 10 slides detailing the requested topic."
+          description: "List of 3 to 5 slides detailing the requested topic."
         },
         caption: {
           type: "STRING",
           description: "An engaging, catchy social media post caption (under 250 characters) summarizing the carousel slides, including 3 to 5 relevant hashtags."
-        },
-        coverImagePrompt: {
-          type: "STRING",
-          description: "A detailed image generation prompt for the Slide 1 cover image, describing a relevant conceptual scene, gaming item, or corporate logo/aesthetic in a modern, premium style."
         }
       },
-      required: ["slides", "caption", "coverImagePrompt"]
+      required: ["slides", "caption"]
     };
 
     try {
@@ -700,18 +712,7 @@ class GeminiService {
         throw new Error('Response is missing required slides array');
       }
 
-      let coverImageUrl: string | undefined = undefined;
-      if (parsed.coverImagePrompt) {
-        const base64Url = await this.generateCoverImage(parsed.coverImagePrompt);
-        if (base64Url) {
-          coverImageUrl = base64Url;
-        } else {
-          const stockUrl = this.getStockImageFallback(topic);
-          if (stockUrl) {
-            coverImageUrl = stockUrl;
-          }
-        }
-      }
+      const coverImageUrl = await this.getStockImageFallback(topic);
 
       return {
         ...parsed,
@@ -748,7 +749,7 @@ class GeminiService {
     2. Slides 2 to ${dealsCount + 1} (Game Showcase slides):
        - Slide index maps 1-to-1 with each game in the deals list.
        - Title: The game name in uppercase followed by the discount (e.g. 'CYBERPUNK 2077 (-50%)').
-       - Bullets: Exactly 2 to 3 bullet points summarizing the deal:
+       - Bullets: Exactly 3 to 5 bullet points summarizing the deal:
          - Price highlight: Show 'Sale price: finalPrice (was originalPrice)' as the first bullet.
          - Gameplay & Deal value highlights: Detail what makes the game special and why this deal is an absolute steal today.
        - Footnote: A short call-to-action or gamer quote (e.g., 'Grab it before the sale ends!', 'A masterpiece for under ₹1000').
@@ -810,7 +811,7 @@ class GeminiService {
         };
       });
 
-      const coverImageUrl = deals[0]?.headerImage || this.getStockImageFallback('steam');
+      const coverImageUrl = deals[0]?.headerImage || await this.getStockImageFallback('steam');
 
       return {
         ...parsed,

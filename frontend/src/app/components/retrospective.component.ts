@@ -45,6 +45,31 @@ export class RetrospectiveComponent {
   protected readonly reviewDraftError = signal<string | null>(null);
   protected readonly isFinalizingDraft = signal<boolean>(false);
 
+  // Computed average rating and label out of 10 for the Instagram card
+  protected readonly averageRating10 = computed(() => {
+    const depts = this.departments();
+    const currentRatings = this.ratings();
+    if (depts.length === 0) return 0;
+    const sum = depts.reduce((acc, dept) => acc + (currentRatings[dept] || 0), 0);
+    const avg = sum / depts.length;
+    const score = avg * 2;
+    return Math.round(score * 10) / 10;
+  });
+
+  protected readonly averageRatingLabel = computed(() => {
+    const score = this.averageRating10();
+    if (score >= 9.5) return 'MASTERPIECE';
+    if (score >= 8.5) return 'AMAZING';
+    if (score >= 7.5) return 'GREAT';
+    if (score >= 6.5) return 'GOOD';
+    if (score >= 5.5) return 'OKAY';
+    if (score >= 4.5) return 'MEDIOCRE';
+    if (score >= 3.5) return 'BAD';
+    if (score >= 2.5) return 'AWFUL';
+    if (score >= 1.5) return 'PAINFUL';
+    return 'UNBEARABLE';
+  });
+
   // Computed state validations
   protected readonly isGenerateEnabled = computed(() => {
     return this.reviewerName().trim().length > 0 && this.selectedGame() !== null;
@@ -191,9 +216,17 @@ export class RetrospectiveComponent {
   }
 
   protected copyReviewText() {
-    if (!this.reviewDraft()) return;
+    const text = this.reviewDraft();
+    if (!text) return;
 
-    navigator.clipboard.writeText(this.reviewDraft()).then(() => {
+    // Sanitize text to avoid carriage return and formatting paste bugs in Instagram Web
+    const sanitizedText = text
+      .replace(/\r\n/g, '\n')
+      .replace(/\r/g, '\n')
+      .replace(/[\u200B-\u200D\uFEFF]/g, '')
+      .trim();
+
+    navigator.clipboard.writeText(sanitizedText).then(() => {
       this.isCopied.set(true);
       setTimeout(() => this.isCopied.set(false), 2000);
     }).catch((err) => {
@@ -235,6 +268,42 @@ export class RetrospectiveComponent {
       })
       .catch((error) => {
         console.error('Screenshot generation failed:', error);
+        this.errorMessage.set('Could not generate download image. Ensure all assets are loaded securely.');
+      });
+  }
+
+  protected downloadInstagramPost() {
+    const cardElement = document.getElementById('instagram-share-card');
+    if (!cardElement) {
+      this.errorMessage.set('Instagram post container element not found.');
+      return;
+    }
+
+    this.errorMessage.set(null);
+
+    const options = {
+      useCORS: true,
+      allowTaint: false,
+      logging: false,
+      backgroundColor: null,
+      scale: 2, // High resolution download
+    };
+
+    html2canvas(cardElement, options)
+      .then((canvas) => {
+        const imgData = canvas.toDataURL('image/png');
+        const link = document.createElement('a');
+        const fileNameSafeGameName = (this.selectedGame()?.name || 'Game')
+          .replace(/[^a-z0-9]/gi, '_')
+          .toLowerCase();
+        link.download = `${fileNameSafeGameName}-instagram.png`;
+        link.href = imgData;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      })
+      .catch((error) => {
+        console.error('Instagram screenshot generation failed:', error);
         this.errorMessage.set('Could not generate download image. Ensure all assets are loaded securely.');
       });
   }

@@ -78,7 +78,15 @@ export class CarouselCreatorComponent {
   protected copyCaption() {
     const text = this.caption();
     if (!text) return;
-    navigator.clipboard.writeText(text).then(() => {
+
+    // Sanitize text to avoid carriage return and formatting paste bugs in Instagram Web
+    const sanitizedText = text
+      .replace(/\r\n/g, '\n')
+      .replace(/\r/g, '\n')
+      .replace(/[\u200B-\u200D\uFEFF]/g, '')
+      .trim();
+
+    navigator.clipboard.writeText(sanitizedText).then(() => {
       this.isCopied.set(true);
       setTimeout(() => this.isCopied.set(false), 2000);
     });

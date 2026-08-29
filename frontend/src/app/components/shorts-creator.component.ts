@@ -21,6 +21,7 @@ export class ShortsCreatorComponent implements OnInit, OnDestroy {
   // Input states
   protected promptTopic = signal('');
   protected voiceSelection = signal('en-US-ChristopherNeural');
+  protected scriptTone = signal('controversial'); // Tone of the narration script
   protected gameVolume = signal(0.15); // Default game volume is 15%
   
   // File uploads
@@ -128,8 +129,8 @@ export class ShortsCreatorComponent implements OnInit, OnDestroy {
     this.exportError.set('');
 
     try {
-      // Call backend proxy to generate script and subtitles
-      const result = await this.geminiClient.generateScriptProxy(this.promptTopic()).toPromise() as ShortsScriptResponse;
+      // Call backend proxy to generate script and subtitles with chosen tone
+      const result = await this.geminiClient.generateScriptProxy(this.promptTopic(), this.scriptTone()).toPromise() as ShortsScriptResponse;
 
       this.shortsTitle.set(result.title);
       this.shortsScript.set(result.script);
@@ -166,11 +167,35 @@ export class ShortsCreatorComponent implements OnInit, OnDestroy {
         const geminiTotalSec = lastSub.end;
         const scaleFactor = measuredDuration / (geminiTotalSec || 1);
 
-        const scaledSubtitles = geminiSubtitles.map(sub => ({
+        // 1. Initial scaling
+        let scaledSubtitles = geminiSubtitles.map(sub => ({
           text: sub.text,
           start: sub.start * scaleFactor,
           end: sub.end * scaleFactor
         }));
+
+        // 2. Force first subtitle to start at 0.0 to prevent opening delay/silence mismatch
+        if (scaledSubtitles.length > 0) {
+          scaledSubtitles[0].start = 0;
+        }
+
+        // 3. Close subtitle gaps to prevent rapid caption flickering
+        for (let i = 0; i < scaledSubtitles.length - 1; i++) {
+          const current = scaledSubtitles[i];
+          const next = scaledSubtitles[i + 1];
+          if (current.end < next.start) {
+            const gap = next.start - current.end;
+            if (gap <= 1.5) {
+              current.end = next.start;
+            }
+          }
+        }
+
+        // 4. Force last subtitle to extend to full measured audio duration
+        if (scaledSubtitles.length > 0) {
+          scaledSubtitles[scaledSubtitles.length - 1].end = measuredDuration;
+        }
+
         this.subtitles.set(scaledSubtitles);
       } else {
         const sentences = result.script.split(/[.!?]+/).filter(s => s.trim().length > 0);

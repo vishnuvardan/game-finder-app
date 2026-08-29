@@ -419,14 +419,14 @@ router.post('/slides/steam-deals', async (req: Request, res: Response) => {
  * Proxy endpoint to call Gemini API with Node server's key, returning script/subtitles.
  */
 router.post('/shorts/proxy-gemini', async (req: Request, res: Response) => {
-  const { promptTopic } = req.body;
+  const { promptTopic, tone } = req.body;
 
   if (!promptTopic || typeof promptTopic !== 'string' || promptTopic.trim() === '') {
     return res.status(400).json({ error: 'promptTopic must be a non-empty string' });
   }
 
   try {
-    const result = await geminiService.generateShortsScript(promptTopic);
+    const result = await geminiService.generateShortsScript(promptTopic, tone);
     return res.json(result);
   } catch (error: any) {
     console.error('Shorts script generation proxy error:', error.message);

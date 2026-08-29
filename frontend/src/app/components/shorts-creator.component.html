@@ -52,6 +52,16 @@
           </select>
         </div>
 
+        <div class="form-group">
+          <label for="scriptTone">🎭 Script Tone</label>
+          <select id="scriptTone" [(ngModel)]="scriptTone">
+            <option value="controversial">🔥 Controversial (Rage-bait Hook)</option>
+            <option value="detailed">📚 Educational / Informative Details</option>
+            <option value="funny">🎭 Humorous / Witty Memes</option>
+            <option value="hype">⚡ Hype / Epic Energy</option>
+          </select>
+        </div>
+
         <button 
           (click)="generateScriptAndNarration()" 
           [disabled]="isGeneratingScript() || !videoFile()"

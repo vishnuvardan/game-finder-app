@@ -847,42 +847,74 @@ class GeminiService {
     }
   }
 
-  public async generateShortsScript(promptTopic: string): Promise<ShortsScriptResponse> {
+  public async generateShortsScript(promptTopic: string, tone?: string): Promise<ShortsScriptResponse> {
+    const activeTone = tone || 'controversial';
+    
+    let tonePrompt = '';
+    let toneSystemInstruction = '';
+    
+    if (activeTone === 'detailed') {
+      tonePrompt = `Create a viral, high-retention educational and informative detailed explanation script about: "${promptTopic}". No controversy or rage-bait, focus on helpfulness and interesting details.`;
+      toneSystemInstruction = 
+        "You are an expert viral TikTok/Reels short-form educational and informative scriptwriter. " +
+        "Given a user topic, produce highly engaging, informative, and detailed breakdown text for a 30-50s Short video. Focus on interesting facts, mechanics, and trivia. " +
+        "Return STRICT JSON matching the schema. The subtitles array MUST contain chronological subtitle phrases, " +
+        "each with a 'text' string (2-4 words) and sequential 'start' and 'end' times in seconds covering the script from 0.0 to around 30-50 seconds.";
+    } else if (activeTone === 'funny') {
+      tonePrompt = `Create a viral, high-retention humorous and witty script filled with jokes and gaming memes about: "${promptTopic}".`;
+      toneSystemInstruction = 
+        "You are an expert viral TikTok/Reels short-form gaming humorist and comedy scriptwriter. " +
+        "Given a user topic, produce highly funny, sarcastic, and meme-filled text for a 30-50s Short video. Keep the tone playful, energetic, and witty. " +
+        "Return STRICT JSON matching the schema. The subtitles array MUST contain chronological subtitle phrases, " +
+        "each with a 'text' string (2-4 words) and sequential 'start' and 'end' times in seconds covering the script from 0.0 to around 30-50 seconds.";
+    } else if (activeTone === 'hype') {
+      tonePrompt = `Create a viral, high-retention high-energy hype script about: "${promptTopic}".`;
+      toneSystemInstruction = 
+        "You are an expert viral TikTok/Reels short-form energetic announcer scriptwriter. " +
+        "Given a user topic, produce highly motivational, enthusiastic, and epic hype text for a 30-50s Short video. Use strong, exciting vocab and keep energy maxed out. " +
+        "Return STRICT JSON matching the schema. The subtitles array MUST contain chronological subtitle phrases, " +
+        "each with a 'text' string (2-4 words) and sequential 'start' and 'end' times in seconds covering the script from 0.0 to around 30-50 seconds.";
+    } else {
+      // Default: controversial
+      tonePrompt = `Create a viral, high-retention controversial script about: "${promptTopic}".`;
+      toneSystemInstruction = 
+        "You are an expert viral TikTok/Reels short-form scriptwriter. " +
+        "Given a user topic, produce high-tension, controversial clickbait/rage-bait text for a 30-50s Short video. " +
+        "Return STRICT JSON matching the schema. The subtitles array MUST contain chronological subtitle phrases, " +
+        "each with a 'text' string (2-4 words) and sequential 'start' and 'end' times in seconds covering the script from 0.0 to around 30-50 seconds.";
+    }
+
     const prompt = `
-      Create a viral, high-retention controversial script about: "${promptTopic}".
-      Return a structured JSON with clickbait title, script narration, and sequential subtitles.
+      ${tonePrompt}
+      Return a structured JSON with title, script narration, and sequential subtitles.
     `;
 
-    const systemInstruction = 
-      "You are an expert viral TikTok/Reels short-form scriptwriter. " +
-      "Given a user topic, produce high-tension, controversial clickbait/rage-bait text for a 30-50s Short video. " +
-      "Return STRICT JSON matching the schema. The subtitles array MUST contain chronological subtitle phrases, " +
-      "each with a 'text' string (2-4 words) and sequential 'start' and 'end' times in seconds covering the script from 0.0 to around 30-50 seconds.";
+    const systemInstruction = toneSystemInstruction;
 
     const schema = {
       type: 'OBJECT',
       properties: {
         title: {
           type: 'STRING',
-          description: 'ALL-CAPS PUNCHY RAGE-BAIT QUESTION OR HOOK UNDER 10 WORDS',
+          description: 'ALL-CAPS PUNCHY hook or title under 10 words.',
         },
         script: {
           type: 'STRING',
-          description: 'Full 30-50s continuous speech text for voice synthesis. No brackets or stage directions.',
+          description: 'Full 30-50s continuous speech text for voice synthesis. Do NOT include any brackets, stage directions, or actions. Every single spoken word must be represented in the subtitles.',
         },
         subtitles: {
           type: 'ARRAY',
-          description: 'Chronological subtitle segments spanning the entire duration of the script.',
+          description: 'Chronological subtitle segments covering every single word of the script in order. The first segment MUST start at 0.0 seconds. There should be no gaps between consecutive segments.',
           items: {
             type: 'OBJECT',
             properties: {
               text: {
                 type: 'STRING',
-                description: 'The subtitle phrase (2-4 words).',
+                description: 'The subtitle phrase (2-4 words). Must match spoken words exactly.',
               },
               start: {
                 type: 'NUMBER',
-                description: 'Start time in seconds.',
+                description: 'Start time in seconds. First segment MUST start at 0.0.',
               },
               end: {
                 type: 'NUMBER',

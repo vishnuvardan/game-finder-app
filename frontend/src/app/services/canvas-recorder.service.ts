@@ -92,6 +92,8 @@ export class CanvasRecorderService {
         if (!ctx) {
           throw new Error('Could not get 2D context for export canvas');
         }
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
 
         // 2. Initialize AudioContext for mixing
         const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
@@ -145,7 +147,11 @@ export class CanvasRecorderService {
         }
 
         console.log(`Starting export using MIME type: ${mimeType}`);
-        const mediaRecorder = new MediaRecorder(combinedStream, { mimeType });
+        const mediaRecorder = new MediaRecorder(combinedStream, {
+          mimeType,
+          videoBitsPerSecond: 8500000, // 8.5 Mbps high-definition bitrate for crisp video detail
+          audioBitsPerSecond: 128000   // 128 kbps for high-quality audio
+        });
         const chunks: Blob[] = [];
 
         mediaRecorder.ondataavailable = (event) => {

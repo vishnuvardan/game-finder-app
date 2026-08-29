@@ -30,9 +30,10 @@ export class GeminiClientService {
 
   constructor(private http: HttpClient) {}
 
-  generateScriptProxy(promptTopic: string): Observable<ShortsScriptResponse> {
+  generateScriptProxy(promptTopic: string, tone: string): Observable<ShortsScriptResponse> {
     return this.http.post<ShortsScriptResponse>(`${this.apiUrl}/shorts/proxy-gemini`, {
-      promptTopic
+      promptTopic,
+      tone
     });
   }
 

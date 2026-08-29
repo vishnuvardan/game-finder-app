@@ -61,6 +61,8 @@ export class CarouselCreatorComponent {
   protected readonly generatedCoverUrl = signal<string | null>(null);
   protected readonly useCoverImage = signal<boolean>(true);
   protected readonly customCoverUrl = signal<string>('');
+  protected readonly customFirstSlideTitle = signal<string>('');
+  protected readonly customFirstSlideSubtitle = signal<string>('');
 
   protected readonly getCoverUrl = computed(() => {
     if (!this.useCoverImage()) {
@@ -284,7 +286,7 @@ export class CarouselCreatorComponent {
     const safeName = gameName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
     const filename = `${safeName}-slide-${index + 1}.png`;
 
-    const success = await this.triggerDownload('active-preview-card', filename);
+    const success = await this.triggerDownload(`offscreen-slide-${index}`, filename);
     if (!success) {
       this.errorMessage.set('Failed to download active slide. Please ensure all assets are loaded.');
     }
@@ -325,6 +327,9 @@ export class CarouselCreatorComponent {
     this.activeSlideIndex.set(0);
     this.caption.set('');
     this.generatedCoverUrl.set(null);
+    this.customCoverUrl.set('');
+    this.customFirstSlideTitle.set('');
+    this.customFirstSlideSubtitle.set('');
     this.errorMessage.set(null);
     this.state.set('intake');
   }

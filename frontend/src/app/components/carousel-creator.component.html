@@ -158,10 +158,10 @@
                     }
                   }
                   <div class="first-slide-title-wrapper">
-                    <h2 class="slide-card-title first-slide-title">{{ slides()[0].title }}</h2>
-                    @if (slides()[0].bullets && slides()[0].bullets.length > 0) {
+                    <h2 class="slide-card-title first-slide-title">{{ customFirstSlideTitle() || slides()[0].title }}</h2>
+                    @if (customFirstSlideSubtitle() || (slides()[0].bullets && slides()[0].bullets.length > 0)) {
                       <div class="first-slide-subtitle-badge">
-                        {{ slides()[0].bullets[0] }}
+                        {{ customFirstSlideSubtitle() || slides()[0].bullets[0] }}
                       </div>
                     }
                   </div>
@@ -241,6 +241,20 @@
                   placeholder="Paste direct image URL..." [ngModel]="customCoverUrl()" (ngModelChange)="customCoverUrl.set($event)" />
               </div>
             }
+
+            <!-- Replace First Slide Title -->
+            <div class="form-group-compact" style="margin-top: 0.75rem;">
+              <label class="form-label-compact" for="replace-title-input">Replace First Slide Title</label>
+              <input id="replace-title-input" type="text" class="select-input select-input-compact" style="cursor: text;"
+                placeholder="Enter custom slide 1 title..." [ngModel]="customFirstSlideTitle()" (ngModelChange)="customFirstSlideTitle.set($event)" />
+            </div>
+
+            <!-- Replace First Slide Subtitle -->
+            <div class="form-group-compact" style="margin-top: 0.75rem;">
+              <label class="form-label-compact" for="replace-subtitle-input">Replace First Slide Subtitle</label>
+              <input id="replace-subtitle-input" type="text" class="select-input select-input-compact" style="cursor: text;"
+                placeholder="Enter custom slide 1 subtitle..." [ngModel]="customFirstSlideSubtitle()" (ngModelChange)="customFirstSlideSubtitle.set($event)" />
+            </div>
 
             <!-- Social Handle Watermark Input -->
             <div class="form-group-compact" style="margin-top: 0.75rem;">
@@ -363,10 +377,10 @@
               }
             }
             <div class="first-slide-title-wrapper">
-              <h2 class="slide-card-title first-slide-title">{{ slide.title }}</h2>
-              @if (slide.bullets && slide.bullets.length > 0) {
+              <h2 class="slide-card-title first-slide-title">{{ customFirstSlideTitle() || slide.title }}</h2>
+              @if (customFirstSlideSubtitle() || (slide.bullets && slide.bullets.length > 0)) {
                 <div class="first-slide-subtitle-badge">
-                  {{ slide.bullets[0] }}
+                  {{ customFirstSlideSubtitle() || slide.bullets[0] }}
                 </div>
               }
             </div>

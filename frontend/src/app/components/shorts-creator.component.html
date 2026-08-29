@@ -1,0 +1,184 @@
+<div class="shorts-container">
+  
+  <!-- Main Header -->
+  <div class="shorts-header">
+    <h2>🎬 AI Shorts & Reels Creator</h2>
+    <p>Upload a gameplay video, enter a topic, and compile a controversial meme short completely in your browser.</p>
+  </div>
+
+  <div class="error-banner" *ngIf="exportError()">
+    <span>⚠️ {{ exportError() }}</span>
+  </div>
+
+  <!-- Step 1: Upload & Generation Screen -->
+  <div class="step-card upload-step" *ngIf="step() === 'upload'">
+    
+    <div class="upload-grid">
+      <!-- Left side: File selection -->
+      <div class="grid-section file-section">
+        <label class="drop-zone" [class.has-file]="videoFile() !== null">
+          <input type="file" (change)="onVideoSelected($event)" accept="video/mp4,video/webm,video/quicktime" class="file-input">
+          <div class="drop-content">
+            <span class="icon">📁</span>
+            <h4 *ngIf="!videoFile()">Upload Video File</h4>
+            <h4 *ngIf="videoFile()">{{ videoFile()?.name }}</h4>
+            <p *ngIf="!videoFile()">Drag & drop or click to choose MP4/WebM</p>
+            <p *ngIf="videoFile()" class="meta">
+              Duration: {{ videoDuration() | number:'1.1-1' }}s | Resolution: {{ videoWidth() }}x{{ videoHeight() }}
+            </p>
+          </div>
+        </label>
+      </div>
+
+      <!-- Right side: Prompts & Synthesizer settings -->
+      <div class="grid-section settings-section">
+        <div class="form-group">
+          <label for="promptTopic">💡 Controversy Topic / Hook</label>
+          <textarea 
+            id="promptTopic" 
+            [(ngModel)]="promptTopic" 
+            placeholder="e.g. Why GTA 6 is secretly locked to 30 FPS on consoles, or Why Elden Ring DLC is too hard for casual gamers..." 
+            rows="3">
+          </textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="voiceSelection">🗣️ Narration Voice</label>
+          <select id="voiceSelection" [(ngModel)]="voiceSelection">
+            <option value="en-US-ChristopherNeural">Christopher (US Male - Energetic)</option>
+            <option value="en-US-GuyNeural">Guy (US Male - Conversational)</option>
+            <option value="en-US-JennyNeural">Jenny (US Female - Clear)</option>
+            <option value="en-US-AriaNeural">Aria (US Female - Animated)</option>
+          </select>
+        </div>
+
+        <button 
+          (click)="generateScriptAndNarration()" 
+          [disabled]="isGeneratingScript() || !videoFile()"
+          class="btn-primary generate-btn">
+          <span *ngIf="!isGeneratingScript()">✨ Generate Script & Narration</span>
+          <span *ngIf="isGeneratingScript()">⏳ Generating (this takes ~10s)...</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 2: Interactive Studio View -->
+  <div class="step-card studio-step" *ngIf="step() === 'studio'">
+    
+    <div class="studio-workspace">
+      <!-- 9:16 Phone Preview Simulator -->
+      <div class="preview-panel">
+        <div class="canvas-simulator">
+          <!-- Top Title overlay (snug above centered video) -->
+          <div class="title-overlay-text">{{ shortsTitle().toUpperCase() }}</div>
+
+          <!-- Video viewport container -->
+          <div class="sim-viewport">
+            <video #previewVideo [src]="uploadedVideoUrl()" loop muted playsinline class="bg-video"></video>
+            <!-- Floating play button overlay -->
+            <button class="play-overlay" (click)="togglePlay()">
+              <span *ngIf="!isPlaying()">▶</span>
+              <span *ngIf="isPlaying()">❚❚</span>
+            </button>
+          </div>
+
+          <!-- Bottom Subtitles overlay (snug below centered video) -->
+          <div class="subtitle-overlay-text" *ngIf="activeSubtitleText()">
+            {{ activeSubtitleText().toUpperCase() }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Editing & Captions Sidebar -->
+      <div class="controls-panel">
+        <div class="panel-section">
+          <h3>📝 Edit Title</h3>
+          <input type="text" [(ngModel)]="shortsTitle" class="title-input">
+        </div>
+
+        <div class="panel-section">
+          <h3>🔊 Game Video Volume: {{ getRoundedVolume() }}%</h3>
+          <input 
+            type="range" 
+            min="0" 
+            max="1" 
+            step="0.05" 
+            [ngModel]="gameVolume()" 
+            (ngModelChange)="onVolumeChanged($event)"
+            class="volume-slider">
+        </div>
+
+        <div class="panel-section flex-grow">
+          <h3>💬 Subtitle Phrases</h3>
+          <div class="subtitle-list">
+            <div *ngFor="let sub of subtitles(); let idx = index" class="subtitle-item">
+              <span class="timestamp">{{ sub.start | number:'1.1-1' }}s - {{ sub.end | number:'1.1-1' }}s</span>
+              <input type="text" [value]="sub.text" (input)="updateCaptionText(idx, $event)" class="sub-text-input">
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-actions">
+          <button (click)="resetCreator()" class="btn-secondary">🔙 Start Over</button>
+          <button (click)="exportReel()" class="btn-primary export-btn">🎬 Export & Download</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Timeline Scrubber Area -->
+    <div class="timeline-container">
+      <div class="timeline-info">
+        <span>🕒 Scrub Video Timeline (Narration duration: <b>{{ ttsDuration() | number:'1.1-1' }}s</b>)</span>
+        <span class="range-display">
+          Start: {{ selectedStartTime() | number:'1.1-1' }}s | 
+          End: {{ selectedStartTime() + ttsDuration() | number:'1.1-1' }}s
+        </span>
+      </div>
+
+      <div class="timeline-scrubber" #timelineTrack (click)="onTimelineClick($event)">
+        <!-- Highlighted locked window handle -->
+        <div 
+          class="timeline-window" 
+          [style.width.%]="windowWidthPercent()" 
+          [style.left.%]="windowLeftPercent()"
+          (mousedown)="onWindowMouseDown($event)">
+          <div class="drag-handle left"></div>
+          <span class="window-label">Narrated Slice</span>
+          <div class="drag-handle right"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Step 3: Export Render Loading Screen -->
+  <div class="step-card render-step" *ngIf="step() === 'exporting'">
+    <div class="loading-container">
+      <div class="spinner-ring"></div>
+      <h3>Rendering Meme Short...</h3>
+      <p>Mixing audio streams and drawing 1080x1920 canvas frames at 30 FPS in-browser.</p>
+      
+      <div class="progress-bar-container">
+        <div class="progress-bar-fill" [style.width.%]="exportProgress()"></div>
+      </div>
+      <span class="progress-text">{{ exportProgress() }}% Complete</span>
+      
+      <p class="warning-text">⚠️ Keep this tab active! Do not close or navigate away during rendering.</p>
+    </div>
+  </div>
+
+  <!-- Step 4: Export Complete Success Screen -->
+  <div class="step-card completed-step" *ngIf="step() === 'completed'">
+    <div class="success-container">
+      <span class="success-icon">🎉</span>
+      <h3>Reel Successfully Exported!</h3>
+      <p>The video has been saved directly to your local downloads folder.</p>
+      
+      <div class="completed-actions">
+        <button (click)="resetCreator()" class="btn-primary">⚡ Create Another Reel</button>
+      </div>
+    </div>
+  </div>
+
+</div>

@@ -55,6 +55,18 @@ export interface CarouselResponse {
   coverImageUrl?: string;
 }
 
+export interface SubtitleSegment {
+  text: string;
+  start: number;
+  end: number;
+}
+
+export interface ShortsScriptResponse {
+  title: string;
+  script: string;
+  subtitles: SubtitleSegment[];
+}
+
 class GeminiService {
   /**
    * Helper to execute models.generateContent with automatic model fallback for quota/rate-limit errors.
@@ -832,6 +844,70 @@ class GeminiService {
     } catch (error: any) {
       console.error('Error generating Steam Deals slides from Gemini:', error);
       throw new Error(`Failed to generate Steam Deals slides: ${error.message}`);
+    }
+  }
+
+  public async generateShortsScript(promptTopic: string): Promise<ShortsScriptResponse> {
+    const prompt = `
+      Create a viral, high-retention controversial script about: "${promptTopic}".
+      Return a structured JSON with clickbait title, script narration, and sequential subtitles.
+    `;
+
+    const systemInstruction = 
+      "You are an expert viral TikTok/Reels short-form scriptwriter. " +
+      "Given a user topic, produce high-tension, controversial clickbait/rage-bait text for a 30-50s Short video. " +
+      "Return STRICT JSON matching the schema. The subtitles array MUST contain chronological subtitle phrases, " +
+      "each with a 'text' string (2-4 words) and sequential 'start' and 'end' times in seconds covering the script from 0.0 to around 30-50 seconds.";
+
+    const schema = {
+      type: 'OBJECT',
+      properties: {
+        title: {
+          type: 'STRING',
+          description: 'ALL-CAPS PUNCHY RAGE-BAIT QUESTION OR HOOK UNDER 10 WORDS',
+        },
+        script: {
+          type: 'STRING',
+          description: 'Full 30-50s continuous speech text for voice synthesis. No brackets or stage directions.',
+        },
+        subtitles: {
+          type: 'ARRAY',
+          description: 'Chronological subtitle segments spanning the entire duration of the script.',
+          items: {
+            type: 'OBJECT',
+            properties: {
+              text: {
+                type: 'STRING',
+                description: 'The subtitle phrase (2-4 words).',
+              },
+              start: {
+                type: 'NUMBER',
+                description: 'Start time in seconds.',
+              },
+              end: {
+                type: 'NUMBER',
+                description: 'End time in seconds.',
+              },
+            },
+            required: ['text', 'start', 'end'],
+          },
+        },
+      },
+      required: ['title', 'script', 'subtitles'],
+    };
+
+    try {
+      const responseText = await this.generateContentWithFallback(prompt, systemInstruction, schema);
+      const parsed: ShortsScriptResponse = JSON.parse(responseText);
+
+      if (!parsed.title || !parsed.script || !parsed.subtitles || !Array.isArray(parsed.subtitles)) {
+        throw new Error('Response is missing required script fields');
+      }
+
+      return parsed;
+    } catch (error: any) {
+      console.error('Error generating Shorts script from Gemini:', error);
+      throw new Error(`Failed to generate Shorts script: ${error.message}`);
     }
   }
 }

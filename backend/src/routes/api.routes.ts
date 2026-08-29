@@ -3,6 +3,7 @@ import { igdbService } from '../services/igdb.service';
 import { geminiService } from '../services/gemini.service';
 import { steamService } from '../services/steam.service';
 import { cacheService } from '../services/cache.service';
+import axios from 'axios';
 
 const router = Router();
 
@@ -196,6 +197,86 @@ router.get('/games/:appid', async (req: Request, res: Response) => {
       name: 'Steam Game ' + appid,
       background_image: `https://cdn.cloudflare.steamstatic.com/steam/apps/${appid}/header.jpg`
     });
+  }
+});
+
+/**
+ * GET /api/proxy-image
+ * Proxies external images to bypass CORS restriction in browser canvas screenshots
+ */
+router.get('/proxy-image', async (req: Request, res: Response) => {
+  const { url } = req.query;
+  if (!url || typeof url !== 'string') {
+    return res.status(400).json({ error: 'url query parameter is required' });
+  }
+
+  let hostname = '';
+  let targetUrl = url;
+
+  try {
+    const parsedUrl = new URL(url);
+    hostname = parsedUrl.hostname.toLowerCase();
+    
+    // Normalize target URL to use https for security if possible
+    if (parsedUrl.protocol === 'http:') {
+      targetUrl = 'https://' + url.slice(7);
+    }
+  } catch (err) {
+    return res.status(400).json({ error: 'Invalid URL format' });
+  }
+
+  // Allow trusted steam image domains
+  const isAllowedHost = 
+    hostname === 'steamcdn-a.akamaihd.net' ||
+    hostname === 'steamcommunity-a.akamaihd.net' ||
+    hostname === 'media.steampowered.com' ||
+    hostname === 'cdn.steamstatic.com' ||
+    hostname.endsWith('.steamstatic.com') ||
+    hostname === 'steamcommunity.com' ||
+    hostname.endsWith('.steamcommunity.com') ||
+    hostname === 'images.unsplash.com' ||
+    hostname === 'placehold.co';
+
+  if (!isAllowedHost) {
+    return res.status(403).json({ error: 'Untrusted image domain' });
+  }
+
+  const requestHeaders = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+  };
+
+  try {
+    const response = await axios.get(targetUrl, {
+      responseType: 'arraybuffer',
+      timeout: 5000,
+      headers: requestHeaders
+    });
+
+    const contentTypeHeader = response.headers['content-type'];
+    const contentType = typeof contentTypeHeader === 'string' ? contentTypeHeader : 'image/png';
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    return res.send(response.data);
+  } catch (error: any) {
+    console.error('Image proxy error fetching:', targetUrl, error.message);
+    // If fetching targetUrl failed, retry with original url
+    try {
+      const response = await axios.get(url, {
+        responseType: 'arraybuffer',
+        timeout: 5000,
+        headers: requestHeaders
+      });
+      const contentTypeHeader = response.headers['content-type'];
+      const contentType = typeof contentTypeHeader === 'string' ? contentTypeHeader : 'image/png';
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+      return res.send(response.data);
+    } catch (retryError: any) {
+      console.error('Image proxy retry error fetching:', url, retryError.message);
+      return res.status(500).json({ error: 'Failed to proxy image' });
+    }
   }
 });
 

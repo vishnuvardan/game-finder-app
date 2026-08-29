@@ -159,5 +159,58 @@
     ],
     "proTip": "Ending A is the default ending. Simply complete the game without fulfilling the specific, extensive requirements for Ending B or Ending C. If you are pursuing all achievements, ensure you make a backup save before the final boss if you plan to attempt other endings on the same playthrough.",
     "timeCommitment": "Requires full playthrough"
+  },
+  "elden ring_elden lord": {
+    "estimatedDifficulty": "8/10 Hard (due to game progression difficulty)",
+    "isMissable": false,
+    "walkthroughSteps": [
+      "Progress through the main story, defeating all mandatory bosses including Shardbearers.",
+      "Access Leyndell, Royal Capital, and defeat Godfrey, First Elden Lord (Spirit) and Morgott, The Omen King.",
+      "Access the Mountaintops of the Giants and defeat the Fire Giant.",
+      "Proceed to Crumbling Farum Azula and defeat Maliketh, The Black Blade.",
+      "Return to Leyndell, now the Ashen Capital, and defeat Godfrey, First Elden Lord (Hoarah Loux).",
+      "Defeat Radagon of the Golden Order and the Elden Beast, the final bosses.",
+      "After defeating the Elden Beast, approach and interact with Marika's body at the fractured Elden Ring to mend it.",
+      "This will trigger the 'Elden Lord' ending and unlock the achievement."
+    ],
+    "prerequisites": [
+      "Completion of the main story progression up to the final boss."
+    ],
+    "proTip": "To unlock multiple endings in a single playthrough, create a manual save backup to cloud storage or a USB drive immediately after defeating the Elden Beast, but BEFORE interacting with Marika's body. You can then reload this save to choose different ending options if you've met their specific requirements.",
+    "timeCommitment": "Requires a full playthrough (approximately 60-100+ hours)."
+  },
+  "elden ring_age of the stars": {
+    "estimatedDifficulty": "4/10 Moderate",
+    "isMissable": true,
+    "walkthroughSteps": [
+      "Speak with Ranni at Ranni's Rise in Liurnia of the Lakes (after defeating Royal Knight Loretta at Caria Manor).",
+      "Engage in conversation with Iji, Seluvis, and Blaidd's spectral projections in Ranni's Rise.",
+      "Speak to Ranni again and pledge your service.",
+      "Locate Blaidd in Siofra River and converse with him.",
+      "Speak to Seluvis at Seluvis's Rise.",
+      "Travel to Redmane Castle in Caelid and defeat Starscourage Radahn to initiate a falling star event.",
+      "Enter Nokron, Eternal City, via the newly formed crater in Limgrave (south of Fort Haight).",
+      "In Nokron, locate the Fingerslayer Blade within Night's Sacred Ground.",
+      "Return the Fingerslayer Blade to Ranni at Ranni's Rise to receive the Carian Inverted Statue.",
+      "Use the Carian Inverted Statue at the Carian Study Hall to reach the Divine Tower of Liurnia and obtain the Cursemark of Death.",
+      "Access Renna's Rise (next to Ranni's Rise) and use the portal to Ainsel River Main.",
+      "Collect the Miniature Ranni doll from the nearby coffin.",
+      "Rest at a Site of Grace and repeatedly speak to the Miniature Ranni doll until she converses with you.",
+      "Progress through Ainsel River Main and Nokstella, Eternal City, and defeat the Baleful Shadow near the Lake of Rot.",
+      "Receive the Discarded Palace Key from Ranni after defeating the Baleful Shadow.",
+      "Use the key to open the chest in Raya Lucarian Grand Library (Rennala's boss arena) to acquire the Dark Moon Ring.",
+      "Traverse the Lake of Rot and use the coffin in the Grand Cloister to reach the Deep Siofra River.",
+      "Defeat Astel, Naturalborn of the Void, to gain access to the Moonlight Altar plateau.",
+      "Enter the Cathedral of Manus Celes on the Moonlight Altar plateau and descend the hole in the floor.",
+      "Locate Ranni's true body and use the Dark Moon Ring to complete her questline.",
+      "After defeating the game's final boss, interact with the Fractured Marika and select the 'Summon Ranni' option to achieve the Age of the Stars ending."
+    ],
+    "prerequisites": [
+      "Access to Liurnia of the Lakes.",
+      "Defeat Royal Knight Loretta at Caria Manor.",
+      "Unlock and defeat Starscourage Radahn (part of the questline)."
+    ],
+    "proTip": "The Lake of Rot inflicts Scarlet Rot; prepare with Preserving Boluses or high immunity gear. Many challenging boss encounters are part of this questline, including Radahn, Baleful Shadow, and Astel. Fast travel extensively between key locations to save time.",
+    "timeCommitment": "Several hours (quest spans most of the game's major areas)"
   }
 }

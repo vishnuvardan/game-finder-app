@@ -71,8 +71,11 @@
     <div class="drawer-content" (click)="$event.stopPropagation()">
       <div class="drawer-header">
         <button class="close-btn" (click)="closeDrawer()">✕</button>
+        <button *ngIf="activeGuide() && !isLoadingGuide()" class="export-btn animate-fade-in" (click)="exportAsImage()">
+          📥 Export Image
+        </button>
         <div class="drawer-trophy-identity" *ngIf="selectedAchievement()">
-          <img [src]="selectedAchievement()?.icon" [alt]="selectedAchievement()?.displayName" class="drawer-trophy-icon" />
+          <img [src]="gameService.getProxiedImageUrl(selectedAchievement()?.icon)" [alt]="selectedAchievement()?.displayName" class="drawer-trophy-icon" crossorigin="anonymous" />
           <div class="drawer-trophy-meta">
             <span class="drawer-badge-subtitle">Steam Achievement</span>
             <h3 class="drawer-trophy-title">

@@ -134,6 +134,17 @@ export class GameService {
   }
 
   /**
+   * Returns a proxied image URL from the backend to bypass CORS checks
+   */
+  getProxiedImageUrl(url: string | undefined): string {
+    if (!url) return 'https://placehold.co/100x100/1e1e24/ff007f?text=🏆';
+    if (url.startsWith('data:') || url.startsWith('http://localhost') || url.startsWith('/') || url.includes('placehold.co')) {
+      return url;
+    }
+    return `${this.apiUrl}/proxy-image?url=${encodeURIComponent(url)}`;
+  }
+
+  /**
    * Fetch precise details for a game by its title
    */
   getGameByTitle(title: string): Observable<IGDBGame> {

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { GameService, SteamAchievement, TrophyGuide } from '../services/game.service';
 import { forkJoin, Subscription } from 'rxjs';
+import html2canvas from 'html2canvas';
 
 @Component({
   selector: 'app-game-detail',
@@ -30,7 +31,7 @@ export class GameDetailComponent implements OnInit, OnDestroy {
 
   constructor(
     private route: ActivatedRoute,
-    private gameService: GameService
+    protected gameService: GameService
   ) {}
 
   ngOnInit() {
@@ -116,5 +117,37 @@ export class GameDetailComponent implements OnInit, OnDestroy {
         this.guideError.set(null);
       }
     }, 300);
+  }
+
+  protected exportAsImage() {
+    const element = document.querySelector('.drawer-content') as HTMLElement;
+    if (!element) return;
+
+    // Apply exporting class to expand content fully for html2canvas capture
+    element.classList.add('exporting');
+
+    // Wait a brief tick to let DOM repaint
+    setTimeout(() => {
+      html2canvas(element, {
+        useCORS: true,
+        backgroundColor: '#0a0f1e',
+        scale: 2,
+        logging: false
+      }).then((canvas) => {
+        // Remove exporting class
+        element.classList.remove('exporting');
+
+        // Trigger download
+        const link = document.createElement('a');
+        const gameNameClean = this.gameName().replace(/[^a-zA-Z0-9-_]/g, '_');
+        const achNameClean = (this.selectedAchievement()?.displayName || 'Trophy').replace(/[^a-zA-Z0-9-_]/g, '_');
+        link.download = `${gameNameClean}_${achNameClean}_Guide.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      }).catch((err) => {
+        console.error('Error exporting image:', err);
+        element.classList.remove('exporting');
+      });
+    }, 50);
   }
 }

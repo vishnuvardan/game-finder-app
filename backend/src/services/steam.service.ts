@@ -119,9 +119,9 @@ class SteamService {
   /**
    * Fetch top featured specials (discounted games) on Steam in India (INR)
    */
-  public async getFeaturedSpecials(limit: number = 5): Promise<any[]> {
+  public async getFeaturedSpecials(limit: number = 5, category: string = 'main'): Promise<any[]> {
     try {
-      console.log(`[SteamService] Fetching top featured specials (limit: ${limit})`);
+      console.log(`[SteamService] Fetching specials (limit: ${limit}, category: ${category})`);
       const response = await axios.get('https://store.steampowered.com/api/featuredcategories/', {
         params: {
           cc: 'in',
@@ -129,10 +129,27 @@ class SteamService {
         }
       });
 
-      const specials = response.data?.specials?.items || [];
+      let items: any[] = [];
+      if (category === 'top_sellers') {
+        items = response.data?.top_sellers?.items || [];
+      } else {
+        const specials = response.data?.specials?.items || [];
+        const topSellers = response.data?.top_sellers?.items || [];
+        const featuredWin = response.data?.featured_win?.items || [];
+        
+        items = [...specials];
+        const seenIds = new Set(specials.map((i: any) => i.id));
+        for (const item of [...topSellers, ...featuredWin]) {
+          if (!seenIds.has(item.id)) {
+            seenIds.add(item.id);
+            items.push(item);
+          }
+        }
+      }
+
       const games: any[] = [];
 
-      for (const item of specials) {
+      for (const item of items) {
         if (games.length >= limit) break;
         if (item.type !== 0) continue; // Only process actual games (type 0)
 
@@ -141,16 +158,29 @@ class SteamService {
         const finalPrice = item.final_price ? item.final_price / 100 : 0;
         const discountPercent = item.discount_percent || 0;
 
+        // Apply price filters
+        if (category === 'under_500' && finalPrice > 500) {
+          continue;
+        }
+        if (category === 'under_250' && finalPrice > 250) {
+          continue;
+        }
+        if (category === 'under_1000' && finalPrice > 1000) {
+          continue;
+        }
+
         games.push({
           appid: String(item.id),
           name: item.name,
           discounted: item.discounted,
           discountPercent: discountPercent,
-          originalPrice: `₹${originalPrice.toLocaleString('en-IN')}`,
+          originalPrice: item.discounted ? `₹${originalPrice.toLocaleString('en-IN')}` : `₹${finalPrice.toLocaleString('en-IN')}`,
           finalPrice: `₹${finalPrice.toLocaleString('en-IN')}`,
           headerImage: item.header_image || `https://cdn.cloudflare.steamstatic.com/steam/apps/${item.id}/header.jpg`,
           headline: item.headline || '',
-          shortDescription: `Currently on sale on Steam at a ${discountPercent}% discount! Only ${originalPrice > 0 ? `₹${finalPrice} down from ₹${originalPrice}` : `₹${finalPrice}`}.`
+          shortDescription: item.discounted
+            ? `Currently on sale on Steam at a ${discountPercent}% discount! Only ₹${finalPrice} down from ₹${originalPrice}.`
+            : `Available on Steam for only ₹${finalPrice}.`
         });
       }
 

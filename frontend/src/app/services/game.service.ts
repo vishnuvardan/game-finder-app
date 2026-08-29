@@ -209,9 +209,10 @@ export class GameService {
   /**
    * Generate dynamic slides displaying Steam deals
    */
-  generateSteamDealsSlides(gameNames?: string[]): Observable<CarouselResponse> {
+  generateSteamDealsSlides(gameNames?: string[], category?: string): Observable<CarouselResponse> {
     return this.http.post<CarouselResponse>(`${this.apiUrl}/slides/steam-deals`, {
-      gameNames
+      gameNames,
+      category
     });
   }
 }

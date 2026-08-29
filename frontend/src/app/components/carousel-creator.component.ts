@@ -26,6 +26,14 @@ export class CarouselCreatorComponent {
   protected readonly selectedGame = signal<IGDBGame | null>(null);
   protected readonly customTopic = signal<string>('');
   protected readonly steamGamesInput = signal<string>('');
+  protected readonly dealsCategory = signal<string>('main');
+  protected readonly dealsCategoriesList = [
+    { value: 'main', label: 'Main Specials / Deals' },
+    { value: 'under_500', label: 'Deals under ₹500' },
+    { value: 'under_250', label: 'Deals under ₹250' },
+    { value: 'under_1000', label: 'Deals under ₹1,000' },
+    { value: 'top_sellers', label: 'Top Selling Deals' }
+  ];
   protected readonly watermark = signal<string>('@vsnuplays');
   protected readonly aspectRatio = signal<AspectRatio>('4-5');
   protected readonly theme = signal<SlideTheme>('cyberpunk');
@@ -173,7 +181,7 @@ export class CarouselCreatorComponent {
       // Force Steam Visual theme for Steam deals
       this.theme.set('steam');
 
-      this.gameService.generateSteamDealsSlides(gameNames).subscribe({
+      this.gameService.generateSteamDealsSlides(gameNames, this.dealsCategory()).subscribe({
         next: (res) => {
           if (!res.slides || res.slides.length === 0) {
             this.errorMessage.set('AI returned empty deals content. Please try again.');

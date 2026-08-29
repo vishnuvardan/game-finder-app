@@ -301,7 +301,7 @@ router.post('/slides/generate', async (req: Request, res: Response) => {
  * Returns an array of dynamic slides showcasing Steam deals in INR.
  */
 router.post('/slides/steam-deals', async (req: Request, res: Response) => {
-  const { gameNames } = req.body;
+  const { gameNames, category } = req.body;
 
   if (gameNames && !Array.isArray(gameNames)) {
     return res.status(400).json({ error: 'gameNames must be an array of strings' });
@@ -312,15 +312,15 @@ router.post('/slides/steam-deals', async (req: Request, res: Response) => {
     if (gameNames && gameNames.length > 0) {
       resolvedDeals = await steamService.resolveGamesFromNames(gameNames);
     } else {
-      // Default: fetch top 4 featured specials on Steam in INR
-      resolvedDeals = await steamService.getFeaturedSpecials(4);
+      // Fetch 5 deals on Steam in INR with category filter
+      resolvedDeals = await steamService.getFeaturedSpecials(5, category || 'main');
     }
 
     if (resolvedDeals.length === 0) {
       return res.status(404).json({ error: 'Could not retrieve or resolve any Steam deals. Please check the game names.' });
     }
 
-    const result = await geminiService.generateSteamDealsSlides(resolvedDeals);
+    const result = await geminiService.generateSteamDealsSlides(resolvedDeals, category);
     return res.json(result);
   } catch (error: any) {
     console.error('Steam deals slides generation router error:', error.message);

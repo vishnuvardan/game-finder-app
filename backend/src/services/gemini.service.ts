@@ -724,7 +724,7 @@ class GeminiService {
     }
   }
 
-  public async generateSteamDealsSlides(deals: any[]): Promise<CarouselResponse> {
+  public async generateSteamDealsSlides(deals: any[], category?: string): Promise<CarouselResponse> {
     if (!deals || deals.length === 0) {
       throw new Error('No deals provided for slide generation');
     }
@@ -738,21 +738,32 @@ class GeminiService {
       - Description: ${d.shortDescription}`;
     }).join('\n\n');
 
+    let categoryHeadline = 'TOP STEAM DEALS TODAY';
+    if (category === 'under_500') {
+      categoryHeadline = 'BEST GAMES UNDER ₹500';
+    } else if (category === 'under_250') {
+      categoryHeadline = 'BEST GAMES UNDER ₹250';
+    } else if (category === 'under_1000') {
+      categoryHeadline = 'BEST GAMES UNDER ₹1,000';
+    } else if (category === 'top_sellers') {
+      categoryHeadline = 'TOP SELLING STEAM DEALS';
+    }
+
     const prompt = `Generate a premium, highly engaging Instagram Carousel presenting these Steam deals currently live in India (Prices in INR):
     
     ${dealsListStr}
 
     Follow these structural rules for the slides (Exactly ${dealsCount + 1} slides in total):
     1. Slide 1 (First Slide) MUST be a title/cover slide. 
-       - Title: A catchy, high-impact deal headline summarizing this deals showcase (e.g. 'TOP STEAM DEALS TODAY', 'INSANE STEAM DEALS IN INDIA').
-       - Bullets: Exactly 1 item containing the maximum discount highlights (e.g. 'Save up to ${Math.max(...deals.map(d => d.discountPercent))}% Off!').
+       - Title: A catchy, high-impact deal headline summarizing this category (MUST be exactly: '${categoryHeadline}').
+       - Bullets: Exactly 1 item highlighting the value or maximum discount (e.g. 'Save up to ${Math.max(...deals.map(d => d.discountPercent))}% Off!' or 'Best budget gaming picks live today!').
     2. Slides 2 to ${dealsCount + 1} (Game Showcase slides):
        - Slide index maps 1-to-1 with each game in the deals list.
-       - Title: The game name in uppercase followed by the discount (e.g. 'CYBERPUNK 2077 (-50%)').
-       - Bullets: Exactly 3 to 5 bullet points summarizing the deal:
-         - Price highlight: Show 'Sale price: finalPrice (was originalPrice)' as the first bullet.
-         - Gameplay & Deal value highlights: Detail what makes the game special and why this deal is an absolute steal today.
-       - Footnote: A short call-to-action or gamer quote (e.g., 'Grab it before the sale ends!', 'A masterpiece for under ₹1000').
+       - Title: The game name in uppercase. If discounted, append the discount percentage (e.g. 'CYBERPUNK 2077 (-50%)'). If not discounted, just show the game name (e.g. 'CYBERPUNK 2077').
+       - Bullets: Exactly 3 to 5 bullet points summarizing the game and price:
+         - Price highlight: If discounted, show 'Sale price: finalPrice (was originalPrice)' as the first bullet. If not discounted, show 'Price: finalPrice' as the first bullet.
+         - Gameplay & Value highlights: Detail what makes the game special and why it is a great budget pick today.
+       - Footnote: A short call-to-action or gamer quote (e.g., 'Grab it before the sale ends!', 'A masterpiece for under ₹500').
 
     Write a compelling, gamer-focused social media post caption (with hashtags) summarizing these deals in 'caption'.
     `;

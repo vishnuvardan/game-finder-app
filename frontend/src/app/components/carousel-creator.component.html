@@ -56,12 +56,22 @@
     } @else {
       <!-- Steam Deals Mode Form -->
       <div class="form-group">
-        <label class="form-label" for="steam-games-input">Deals Showcase Games (Optional)</label>
-        <textarea id="steam-games-input" class="textarea-input" rows="3" 
-          placeholder="e.g. Cyberpunk 2077, Elden Ring, Hogwarts Legacy (or leave blank to auto-fetch top live Steam specials)"
+        <label class="form-label" for="deals-category-select">Auto-Fetch Deals Category</label>
+        <select id="deals-category-select" class="select-input"
+          [ngModel]="dealsCategory()" (ngModelChange)="dealsCategory.set($event)" style="margin-bottom: 1.25rem; width: 100%;">
+          @for (cat of dealsCategoriesList; track cat.value) {
+            <option [value]="cat.value" style="background: #1e293b; color: #fff;">{{ cat.label }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="steam-games-input">Deals Showcase Games (Optional Override)</label>
+        <textarea id="steam-games-input" class="textarea-input" rows="2" 
+          placeholder="e.g. Cyberpunk 2077, Elden Ring, Hogwarts Legacy (leave blank to auto-fetch games from the category dropdown above)"
           [ngModel]="steamGamesInput()" (ngModelChange)="steamGamesInput.set($event)"></textarea>
         <small class="form-help-text" style="color: var(--text-muted, #94a3b8); font-size: 0.75rem; margin-top: 0.25rem; display: block; line-height: 1.4;">
-          If left blank, our system automatically fetches the top 5 live specials on the Indian Steam Store. If names are entered, it resolves their live INR pricing, discounts, and banner artwork.
+          If games are entered, it resolves their live INR pricing and discounts instead of using the auto-fetch category dropdown.
         </small>
       </div>
     }

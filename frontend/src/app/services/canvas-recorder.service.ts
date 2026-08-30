@@ -197,7 +197,7 @@ export class CanvasRecorderService {
           onProgress(progress);
 
           // Sync video element time to audio track clock if it drifts by > 0.5s
-          const expectedVideoTime = startTime + elapsed;
+          const expectedVideoTime = videoEl.duration ? (startTime + elapsed) % videoEl.duration : (startTime + elapsed);
           if (Math.abs(videoEl.currentTime - expectedVideoTime) > 0.5) {
             videoEl.currentTime = expectedVideoTime;
           }
@@ -254,6 +254,7 @@ export class CanvasRecorderService {
         };
 
         // 8. Start Playback in sync
+        videoEl.loop = true; // Ensure video looping is enabled during export
         videoEl.muted = true;
         videoEl.currentTime = startTime;
         

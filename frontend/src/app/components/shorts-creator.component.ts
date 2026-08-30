@@ -217,7 +217,7 @@ export class ShortsCreatorComponent implements OnInit, OnDestroy {
     } else {
       // Seek back to start if finished, or play from current position relative to selectedStartTime
       const currentOffset = this.previewAudio ? this.previewAudio.currentTime : 0;
-      video.currentTime = this.selectedStartTime() + currentOffset;
+      video.currentTime = video.duration ? (this.selectedStartTime() + currentOffset) % video.duration : (this.selectedStartTime() + currentOffset);
       video.muted = false; // Enable preview volume
       video.volume = this.gameVolume(); // Apply chosen game volume
       
@@ -267,7 +267,7 @@ export class ShortsCreatorComponent implements OnInit, OnDestroy {
         this.activeSubtitleText.set(activeSub ? activeSub.text : '');
 
         // Re-align video stream position if they drift apart by more than 0.3s
-        const expectedVideoTime = this.selectedStartTime() + audioTime;
+        const expectedVideoTime = video.duration ? (this.selectedStartTime() + audioTime) % video.duration : (this.selectedStartTime() + audioTime);
         if (Math.abs(video.currentTime - expectedVideoTime) > 0.3) {
           video.currentTime = expectedVideoTime;
         }

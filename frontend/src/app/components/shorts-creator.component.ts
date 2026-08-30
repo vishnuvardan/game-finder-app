@@ -420,11 +420,13 @@ export class ShortsCreatorComponent implements OnInit, OnDestroy {
       this.generatedVideoUrl.set(videoUrl);
       this.step.set('completed');
 
-      // Auto trigger browser download
+      // Auto trigger browser download using sanitized title as filename
       const extension = finalVideoBlob.type.includes('mp4') ? 'mp4' : 'webm';
+      const sanitizedTitle = this.shortsTitle().trim().replace(/[^a-zA-Z0-9_ -]/g, '');
+      const fileName = sanitizedTitle || 'viral_short';
       const a = document.createElement('a');
       a.href = videoUrl;
-      a.download = `viral_short_${Date.now()}.${extension}`;
+      a.download = `${fileName}.${extension}`;
       a.click();
 
     } catch (err: any) {

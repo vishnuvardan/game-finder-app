@@ -351,10 +351,10 @@
   position: absolute;
   left: 12px;
   right: 12px;
-  top: 60px; /* Always 60px from top of 9:16 screen */
+  top: 95px; /* Positioned closer to the centered video content */
   font-family: "Impact", "Arial Black", sans-serif;
   color: #fff;
-  font-size: 1.15rem;
+  font-size: 1.5rem; /* Increased size to match 72px canvas size */
   line-height: 1.15;
   text-shadow: -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000;
   font-weight: 900;
@@ -416,10 +416,10 @@
   position: absolute;
   left: 12px;
   right: 12px;
-  bottom: 80px; /* Always 80px from bottom of 9:16 screen */
+  bottom: 110px; /* Positioned closer to the centered video content */
   font-family: "Impact", "Arial Black", sans-serif;
   color: #ffe600; /* Neon yellow for subtitles */
-  font-size: 1.1rem;
+  font-size: 1.4rem; /* Increased size to match 64px canvas size */
   line-height: 1.15;
   text-shadow: -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000;
   font-weight: 800;

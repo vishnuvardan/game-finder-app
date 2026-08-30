@@ -222,26 +222,26 @@ export class CanvasRecorderService {
             ctx.drawImage(videoEl, 0, vY, 1080, vHeight);
           }
 
-          // Render Top Title (Impact Meme style - fixed top safe zone at y=250)
-          ctx.font = '900 56px Impact, "Arial Black", sans-serif';
+          // Render Top Title (Impact Meme style - fixed top safe zone at y=380)
+          ctx.font = '900 72px Impact, "Arial Black", sans-serif';
           ctx.textAlign = 'center';
           ctx.fillStyle = '#FFFFFF';
           ctx.strokeStyle = '#000000';
-          ctx.lineWidth = 10;
+          ctx.lineWidth = 12;
           
-          const titleCenterY = 250;
-          this.wrapAndDrawText(ctx, title.toUpperCase(), 540, titleCenterY, 980, 70);
+          const titleCenterY = 380;
+          this.wrapAndDrawText(ctx, title.toUpperCase(), 540, titleCenterY, 980, 88);
 
-          // Find active subtitle and render at fixed bottom safe zone (y=1600)
+          // Find active subtitle and render at fixed bottom safe zone (y=1480)
           const activeSub = subtitles.find(sub => elapsed >= sub.start && elapsed <= sub.end);
           if (activeSub) {
-            ctx.font = '800 48px "Impact", "Arial Black", sans-serif';
+            ctx.font = '800 64px "Impact", "Arial Black", sans-serif';
             ctx.fillStyle = '#FFE600'; // Meme yellow for subtitle highlight
             ctx.strokeStyle = '#000000';
-            ctx.lineWidth = 8;
+            ctx.lineWidth = 10;
             
-            const subCenterY = 1600;
-            this.wrapAndDrawText(ctx, activeSub.text.toUpperCase(), 540, subCenterY, 980, 60);
+            const subCenterY = 1480;
+            this.wrapAndDrawText(ctx, activeSub.text.toUpperCase(), 540, subCenterY, 980, 78);
           }
 
           // Check if finished

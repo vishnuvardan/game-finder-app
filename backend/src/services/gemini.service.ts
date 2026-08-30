@@ -122,8 +122,9 @@ class GeminiService {
       } catch (error: any) {
         lastError = error;
 
-        // Fall back on rate limits, quota limits, high demand, or model availability errors
+        // Fall back on rate limits, quota limits, high demand, model availability, or network errors
         const isFallbackEligible =
+          !error.status || // Network/Connection/Timeout errors have no status code
           error.status === 429 ||
           error.status === 503 ||
           error.status === 500 ||
@@ -135,7 +136,10 @@ class GeminiService {
             error.message.toLowerCase().includes('unavailable') ||
             error.message.toLowerCase().includes('high demand') ||
             error.message.toLowerCase().includes('not found') ||
-            error.message.toLowerCase().includes('overloaded')
+            error.message.toLowerCase().includes('overloaded') ||
+            error.message.toLowerCase().includes('fetch failed') ||
+            error.message.toLowerCase().includes('timeout') ||
+            error.message.toLowerCase().includes('connect')
           ));
 
         if (isFallbackEligible) {

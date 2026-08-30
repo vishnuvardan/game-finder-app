@@ -333,10 +333,10 @@
   padding: 10px 24px;
 }
 
-/* 4:5 simulated viewport */
+/* 9:16 simulated viewport */
 .canvas-simulator {
   width: 270px;
-  height: 338px;
+  height: 480px;
   background: #000;
   border: 4px solid #1e293b;
   border-radius: 12px;
@@ -347,23 +347,11 @@
   overflow: hidden;
 }
 
-.sim-header {
-  height: 20%;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  padding: 0 12px 8px 12px;
-  box-sizing: border-box;
-  text-align: center;
-  z-index: 10;
-  background: #000;
-}
-
 .title-overlay-text {
   position: absolute;
   left: 12px;
   right: 12px;
-  bottom: calc(50% + 80px); /* 4px above the centered gameplay video top */
+  top: 60px; /* Always 60px from top of 9:16 screen */
   font-family: "Impact", "Arial Black", sans-serif;
   color: #fff;
   font-size: 1.15rem;
@@ -389,6 +377,8 @@
 .bg-video {
   width: 100%;
   height: auto;
+  max-height: 100%;
+  object-fit: contain;
 }
 
 .play-overlay {
@@ -426,7 +416,7 @@
   position: absolute;
   left: 12px;
   right: 12px;
-  top: calc(50% + 80px); /* 4px below the centered gameplay video bottom */
+  bottom: 80px; /* Always 80px from bottom of 9:16 screen */
   font-family: "Impact", "Arial Black", sans-serif;
   color: #ffe600; /* Neon yellow for subtitles */
   font-size: 1.1rem;

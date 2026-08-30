@@ -574,13 +574,88 @@ router.post('/social/publish-instagram', async (req: Request, res: Response) => 
   }
 });
 
+interface WordSegment {
+  part: string;
+  start: number;
+  end: number;
+}
+
+interface SubtitlePhrase {
+  text: string;
+  start: number;
+  end: number;
+}
+
+function alignSubtitles(phrases: SubtitlePhrase[], words: WordSegment[]): SubtitlePhrase[] {
+  if (!words || words.length === 0) return phrases;
+
+  const aligned: SubtitlePhrase[] = [];
+  let wordIdx = 0;
+
+  for (let i = 0; i < phrases.length; i++) {
+    const phrase = phrases[i];
+    const phraseWords = phrase.text.split(/\s+/).filter(w => w.trim().length > 0);
+    const numWordsToConsume = phraseWords.length;
+
+    if (numWordsToConsume === 0 || wordIdx >= words.length) {
+      aligned.push({ ...phrase });
+      continue;
+    }
+
+    const startWord = words[wordIdx];
+    const phraseStartMs = startWord.start;
+
+    let endWord = words[wordIdx];
+    for (let j = 0; j < numWordsToConsume; j++) {
+      if (wordIdx < words.length) {
+        endWord = words[wordIdx];
+        wordIdx++;
+      }
+    }
+
+    const phraseEndMs = endWord.end;
+
+    aligned.push({
+      text: phrase.text,
+      start: phraseStartMs / 1000,
+      end: phraseEndMs / 1000
+    });
+  }
+
+  // Adjust overlapping or gaps
+  if (aligned.length > 0) {
+    aligned[0].start = 0;
+  }
+
+  for (let i = 0; i < aligned.length - 1; i++) {
+    const current = aligned[i];
+    const next = aligned[i + 1];
+
+    if (next.start < current.end) {
+      next.start = current.end;
+    } else if (current.end < next.start) {
+      const gap = next.start - current.end;
+      if (gap <= 1.5) {
+        current.end = next.start;
+      }
+    }
+  }
+
+  // Force the last subtitle to extend to the very end of the last word
+  if (aligned.length > 0 && words.length > 0) {
+    aligned[aligned.length - 1].end = words[words.length - 1].end / 1000;
+  }
+
+  return aligned;
+}
+
 /**
  * POST /api/shorts/proxy-tts
- * Payload: { text: string, voiceSelection?: string }
- * Proxy endpoint to generate TTS audio using Microsoft Edge Neural voices (node-edge-tts) and return the binary MP3 stream.
+ * Payload: { text: string, subtitles?: Array, voiceSelection?: string }
+ * Proxy endpoint to generate TTS audio and aligned word-level subtitles, returning a JSON response.
  */
 router.post('/shorts/proxy-tts', async (req: Request, res: Response) => {
-  const { text, voiceSelection } = req.body;
+  const { text, subtitles, voiceSelection } = req.body;
 
   if (!text || typeof text !== 'string' || text.trim() === '') {
     return res.status(400).json({ error: 'text must be a non-empty string' });
@@ -593,7 +668,8 @@ router.post('/shorts/proxy-tts', async (req: Request, res: Response) => {
   try {
     const tts = new EdgeTTS({ 
       voice,
-      rate: '+50%'
+      rate: '+50%',
+      saveSubtitles: true
     });
     await tts.ttsPromise(text, tempFile);
 
@@ -602,20 +678,61 @@ router.post('/shorts/proxy-tts', async (req: Request, res: Response) => {
     }
 
     const fileBuffer = fs.readFileSync(tempFile);
-    
-    // Clean up temporary file asynchronously
+    const audioBase64 = fileBuffer.toString('base64');
+
+    // Align subtitles if possible
+    let alignedSubs = subtitles || [];
+    const subFile = tempFile + '.json';
+    if (fs.existsSync(subFile)) {
+      try {
+        const subContent = fs.readFileSync(subFile, 'utf8');
+        const words = JSON.parse(subContent);
+        
+        if (subtitles && subtitles.length > 0) {
+          alignedSubs = alignSubtitles(subtitles, words);
+        } else {
+          // Auto-generate phrases of 3 words each
+          const phraseSize = 3;
+          const autoPhrases = [];
+          for (let i = 0; i < words.length; i += phraseSize) {
+            const chunk = words.slice(i, i + phraseSize);
+            const chunkText = chunk.map((w: any) => w.part.trim()).join(' ');
+            const start = chunk[0].start / 1000;
+            const end = chunk[chunk.length - 1].end / 1000;
+            autoPhrases.push({ text: chunkText, start, end });
+          }
+          alignedSubs = autoPhrases;
+        }
+      } catch (err) {
+        console.error('Error parsing subtitle file:', err);
+      } finally {
+        fs.unlink(subFile, (err) => {
+          if (err) console.error('Error deleting temp subtitle file:', err);
+        });
+      }
+    }
+
+    // Clean up temporary audio file asynchronously
     fs.unlink(tempFile, (err) => {
       if (err) console.error('Error deleting temp TTS file:', err);
     });
 
-    res.set('Content-Type', 'audio/mpeg');
-    return res.send(fileBuffer);
+    return res.json({
+      audio: audioBase64,
+      subtitles: alignedSubs
+    });
   } catch (error: any) {
     console.error('TTS proxy generation error:', error.message);
-    // Cleanup on error if file exists
+    // Cleanup on error if files exist
     if (fs.existsSync(tempFile)) {
       try {
         fs.unlinkSync(tempFile);
+      } catch (e) {}
+    }
+    const subFile = tempFile + '.json';
+    if (fs.existsSync(subFile)) {
+      try {
+        fs.unlinkSync(subFile);
       } catch (e) {}
     }
     return res.status(500).json({ error: error.message });

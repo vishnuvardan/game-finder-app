@@ -135,8 +135,26 @@ export class ShortsCreatorComponent implements OnInit, OnDestroy {
       this.shortsTitle.set(result.title);
       this.shortsScript.set(result.script);
 
-      // Fetch TTS Audio from backend proxy using chosen neural voice
-      const ttsBlob = await this.geminiClient.generateTtsProxy(result.script, this.voiceSelection()).toPromise() as Blob;
+      // Fetch TTS Audio from backend proxy using chosen neural voice and inputting Gemini subtitles
+      const ttsResponse = await this.geminiClient.generateTtsProxy(
+        result.script, 
+        result.subtitles || [], 
+        this.voiceSelection()
+      ).toPromise();
+
+      if (!ttsResponse || !ttsResponse.audio) {
+        throw new Error('Invalid response received from TTS proxy synthesizer');
+      }
+
+      // Decode base64 audio to Blob
+      const byteCharacters = atob(ttsResponse.audio);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const ttsBlob = new Blob([byteArray], { type: 'audio/mpeg' });
+
       this.ttsAudioBlob.set(ttsBlob);
       
       const audioUrl = URL.createObjectURL(ttsBlob);
@@ -160,53 +178,8 @@ export class ShortsCreatorComponent implements OnInit, OnDestroy {
 
       this.previewAudio = new Audio(audioUrl);
 
-      // Align subtitles mapping to the actual TTS duration
-      const geminiSubtitles = result.subtitles || [];
-      if (geminiSubtitles.length > 0) {
-        const lastSub = geminiSubtitles[geminiSubtitles.length - 1];
-        const geminiTotalSec = lastSub.end;
-        const scaleFactor = measuredDuration / (geminiTotalSec || 1);
-
-        // 1. Initial scaling
-        let scaledSubtitles = geminiSubtitles.map(sub => ({
-          text: sub.text,
-          start: sub.start * scaleFactor,
-          end: sub.end * scaleFactor
-        }));
-
-        // 2. Force first subtitle to start at 0.0 to prevent opening delay/silence mismatch
-        if (scaledSubtitles.length > 0) {
-          scaledSubtitles[0].start = 0;
-        }
-
-        // 3. Close subtitle gaps to prevent rapid caption flickering
-        for (let i = 0; i < scaledSubtitles.length - 1; i++) {
-          const current = scaledSubtitles[i];
-          const next = scaledSubtitles[i + 1];
-          if (current.end < next.start) {
-            const gap = next.start - current.end;
-            if (gap <= 1.5) {
-              current.end = next.start;
-            }
-          }
-        }
-
-        // 4. Force last subtitle to extend to full measured audio duration
-        if (scaledSubtitles.length > 0) {
-          scaledSubtitles[scaledSubtitles.length - 1].end = measuredDuration;
-        }
-
-        this.subtitles.set(scaledSubtitles);
-      } else {
-        const sentences = result.script.split(/[.!?]+/).filter(s => s.trim().length > 0);
-        const subDuration = measuredDuration / (sentences.length || 1);
-        const autoSubtitles = sentences.map((sentence, index) => ({
-          text: sentence.trim(),
-          start: index * subDuration,
-          end: (index + 1) * subDuration
-        }));
-        this.subtitles.set(autoSubtitles);
-      }
+      // Directly set the aligned subtitles returned by the backend
+      this.subtitles.set(ttsResponse.subtitles || []);
 
       // Transition to Studio view
       this.step.set('studio');

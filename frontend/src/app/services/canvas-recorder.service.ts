@@ -87,7 +87,7 @@ export class CanvasRecorderService {
         // 1. Create offscreen canvas
         const canvas = document.createElement('canvas');
         canvas.width = 1080;
-        canvas.height = 1350;
+        canvas.height = 1920;
         const ctx = canvas.getContext('2d');
         if (!ctx) {
           throw new Error('Could not get 2D context for export canvas');
@@ -98,6 +98,9 @@ export class CanvasRecorderService {
         // 2. Initialize AudioContext for mixing
         const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
         const audioCtx = new AudioContextClass();
+        if (audioCtx.state === 'suspended') {
+          await audioCtx.resume();
+        }
         const dest = audioCtx.createMediaStreamDestination();
 
         // 3. Connect video audio
@@ -162,6 +165,7 @@ export class CanvasRecorderService {
 
         let isRecording = true;
         let animationFrameId: number;
+        let audioStartTime = 0;
 
         mediaRecorder.onstop = () => {
           isRecording = false;
@@ -188,36 +192,47 @@ export class CanvasRecorderService {
         const drawFrame = () => {
           if (!isRecording) return;
 
-          const elapsed = videoEl.currentTime - startTime;
+          const elapsed = audioCtx.currentTime - audioStartTime;
           const progress = Math.min(100, Math.max(0, (elapsed / duration) * 100));
           onProgress(progress);
 
+          // Sync video element time to audio track clock if it drifts by > 0.5s
+          const expectedVideoTime = startTime + elapsed;
+          if (Math.abs(videoEl.currentTime - expectedVideoTime) > 0.5) {
+            videoEl.currentTime = expectedVideoTime;
+          }
+
           // Render Black Background
           ctx.fillStyle = '#000000';
-          ctx.fillRect(0, 0, 1080, 1350);
+          ctx.fillRect(0, 0, 1080, 1920);
 
-          // Calculate video dimensions (snug text drawing relies on this)
-          const vHeight = videoEl.videoWidth > 0 ? (videoEl.videoHeight / videoEl.videoWidth) * 1080 : 607.5;
-          const vY = (1350 - vHeight) / 2;
+          // Calculate centered contain video dimensions inside 1080x1920 canvas
+          let vHeight = 607.5;
+          if (videoEl.videoWidth > 0) {
+            const aspect = videoEl.videoHeight / videoEl.videoWidth;
+            vHeight = aspect * 1080;
+          }
+          if (vHeight > 1920) {
+            vHeight = 1920;
+          }
+          const vY = (1920 - vHeight) / 2;
 
           // Render Video (centered)
           if (videoEl.videoWidth > 0) {
             ctx.drawImage(videoEl, 0, vY, 1080, vHeight);
           }
 
-          // Render Top Title (Impact Meme style - snug above the video top)
+          // Render Top Title (Impact Meme style - fixed top safe zone at y=250)
           ctx.font = '900 56px Impact, "Arial Black", sans-serif';
           ctx.textAlign = 'center';
           ctx.fillStyle = '#FFFFFF';
           ctx.strokeStyle = '#000000';
           ctx.lineWidth = 10;
           
-          const linesCount = this.getLinesCount(ctx, title.toUpperCase(), 980);
-          const totalTitleHeight = linesCount * 70;
-          const titleCenterY = vY - 25 - (totalTitleHeight / 2);
+          const titleCenterY = 250;
           this.wrapAndDrawText(ctx, title.toUpperCase(), 540, titleCenterY, 980, 70);
 
-          // Find active subtitle
+          // Find active subtitle and render at fixed bottom safe zone (y=1600)
           const activeSub = subtitles.find(sub => elapsed >= sub.start && elapsed <= sub.end);
           if (activeSub) {
             ctx.font = '800 48px "Impact", "Arial Black", sans-serif';
@@ -225,14 +240,12 @@ export class CanvasRecorderService {
             ctx.strokeStyle = '#000000';
             ctx.lineWidth = 8;
             
-            const subLinesCount = this.getLinesCount(ctx, activeSub.text.toUpperCase(), 980);
-            const totalSubHeight = subLinesCount * 60;
-            const subCenterY = vY + vHeight + 25 + (totalSubHeight / 2);
+            const subCenterY = 1600;
             this.wrapAndDrawText(ctx, activeSub.text.toUpperCase(), 540, subCenterY, 980, 60);
           }
 
           // Check if finished
-          if (elapsed >= duration || videoEl.paused) {
+          if (elapsed >= duration) {
             mediaRecorder.stop();
             return;
           }
@@ -249,6 +262,7 @@ export class CanvasRecorderService {
           
           mediaRecorder.start();
           videoEl.play().then(() => {
+            audioStartTime = audioCtx.currentTime;
             ttsSource.start(0);
             drawFrame();
           }).catch(err => {

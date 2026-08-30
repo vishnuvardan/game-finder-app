@@ -37,10 +37,8 @@ export class GeminiClientService {
     });
   }
 
-  generateTtsProxy(text: string, voiceSelection: string): Observable<Blob> {
-    return this.http.post(`${this.apiUrl}/shorts/proxy-tts`, { text, voiceSelection }, {
-      responseType: 'blob'
-    });
+  generateTtsProxy(text: string, subtitles: SubtitleSegment[], voiceSelection: string): Observable<{ audio: string, subtitles: SubtitleSegment[] }> {
+    return this.http.post<{ audio: string, subtitles: SubtitleSegment[] }>(`${this.apiUrl}/shorts/proxy-tts`, { text, subtitles, voiceSelection });
   }
 
   /**

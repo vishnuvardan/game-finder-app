@@ -377,7 +377,7 @@ export class CarouselCreatorComponent {
           scale: 3.375, // High-res export
         });
         
-        slideImages.push(canvas.toDataURL('image/jpeg', 0.85));
+        slideImages.push(canvas.toDataURL('image/jpeg', 0.92));
       }
 
       this.publishStep.set('publishing');

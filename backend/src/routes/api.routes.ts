@@ -478,14 +478,17 @@ router.post('/social/publish-instagram', async (req: Request, res: Response) => 
       if (!mimeMatch) {
         throw new Error(`Slide ${i + 1} has invalid image format`);
       }
+      const mimeType = mimeMatch[1];
+      const extension = (mimeType === 'image/jpeg' || mimeType === 'image/jpg') ? 'jpg' : 'png';
       
       const base64Data = dataUrl.replace(/^data:image\/\w+;base64,/, "");
       const buffer = Buffer.from(base64Data, 'base64');
       
-      // Upload using Vercel Blob
-      const blob = await put(`slide_${Date.now()}_${i}.png`, buffer, {
+      // Upload using Vercel Blob with proper mime type and extension
+      const blob = await put(`slide_${Date.now()}_${i}.${extension}`, buffer, {
         access: 'public',
-        token: vercelBlobToken
+        token: vercelBlobToken,
+        contentType: mimeType
       });
       
       uploadedUrls.push(blob.url);

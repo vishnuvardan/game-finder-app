@@ -373,11 +373,11 @@ export class CarouselCreatorComponent {
           useCORS: true,
           allowTaint: false,
           logging: false,
-          backgroundColor: null,
+          backgroundColor: '#070913', // Solid dark slate background to prevent transparency rendering issues in JPEGs
           scale: 3.375, // High-res export
         });
         
-        slideImages.push(canvas.toDataURL('image/png'));
+        slideImages.push(canvas.toDataURL('image/jpeg', 0.85));
       }
 
       this.publishStep.set('publishing');

@@ -41,6 +41,14 @@ export class GeminiClientService {
     return this.http.post<{ audio: string, subtitles: SubtitleSegment[] }>(`${this.apiUrl}/shorts/proxy-tts`, { text, subtitles, voiceSelection });
   }
 
+  publishInstagramReel(video: string, caption: string, password?: string): Observable<{ success: boolean, postId: string }> {
+    return this.http.post<{ success: boolean, postId: string }>(`${this.apiUrl}/social/publish-instagram-reel`, {
+      video,
+      caption,
+      password
+    });
+  }
+
   /**
    * Call the Google AI Studio REST API directly from the browser using a custom key.
    */

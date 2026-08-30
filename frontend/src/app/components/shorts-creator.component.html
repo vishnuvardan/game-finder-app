@@ -10,6 +10,18 @@
     <span>⚠️ {{ exportError() }}</span>
   </div>
 
+  <!-- Success notification toast -->
+  <div class="error-toast success-toast" *ngIf="publishSuccess()" style="border-left-color: #10b981; background: rgba(16, 185, 129, 0.15); padding: 12px; margin-bottom: 1rem; border-radius: 8px; border-left: 4px solid #10b981; display: flex; justify-content: space-between; align-items: center;">
+    <div class="error-text" style="color: #f8fafc; font-size: 0.9rem;">✨ {{ publishSuccess() }}</div>
+    <button class="error-close" (click)="publishSuccess.set(null)" style="background: none; border: none; color: #fff; cursor: pointer; font-size: 1.2rem; line-height: 1;">×</button>
+  </div>
+
+  <!-- General error toast for publish modal errors on top -->
+  <div class="error-toast" *ngIf="errorMessage() && isPublishModalOpen() === false" style="border-left-color: #ef4444; background: rgba(239, 68, 68, 0.15); padding: 12px; margin-bottom: 1rem; border-radius: 8px; border-left: 4px solid #ef4444; display: flex; justify-content: space-between; align-items: center;">
+    <div class="error-text" style="color: #f8fafc; font-size: 0.9rem;">⚠️ {{ errorMessage() }}</div>
+    <button class="error-close" (click)="errorMessage.set(null)" style="background: none; border: none; color: #fff; cursor: pointer; font-size: 1.2rem; line-height: 1;">×</button>
+  </div>
+
   <!-- Step 1: Upload & Generation Screen -->
   <div class="step-card upload-step" *ngIf="step() === 'upload'">
     
@@ -185,9 +197,100 @@
       <h3>Reel Successfully Exported!</h3>
       <p>The video has been saved directly to your local downloads folder.</p>
       
-      <div class="completed-actions">
-        <button (click)="resetCreator()" class="btn-primary">⚡ Create Another Reel</button>
+      <div class="completed-actions" style="display: flex; justify-content: center; gap: 16px;">
+        <button (click)="resetCreator()" class="btn-secondary">⚡ Create Another Reel</button>
+        <button (click)="openPublishModal()" class="btn-primary">🚀 Publish to Instagram</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Instagram Reels Publishing Modal Overlay -->
+  <div class="publish-modal-backdrop" *ngIf="isPublishModalOpen()" (click)="publishStep() === 'idle' || publishStep() === 'error' || publishStep() === 'success' ? closePublishModal() : null">
+    <div class="publish-modal-content glass-panel" (click)="$event.stopPropagation()">
+      
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <h3>🚀 Publish to Instagram Reels</h3>
+        <button class="close-modal-btn" [disabled]="publishStep() === 'uploading' || publishStep() === 'publishing'" (click)="closePublishModal()">×</button>
+      </div>
+
+      <!-- Modal Body: Step 1: Password Input -->
+      <div class="modal-body" *ngIf="publishStep() === 'idle' || publishStep() === 'error'">
+        <p class="modal-desc">Enter the administrator password to publish this Reel directly to your Instagram feed and Reels tab.</p>
+        
+        <div class="form-group" style="margin-bottom: 0.5rem;">
+          <label for="publish-password" class="form-label" style="display: block; margin-bottom: 6px; font-size: 0.85rem; color: #94a3b8; text-align: left;">Password</label>
+          <input type="password" id="publish-password" class="select-input" placeholder="Enter admin password..." 
+            [(ngModel)]="publishPassword" (keyup.enter)="startInstagramPublish()" style="cursor: text; width: 100%; box-sizing: border-box; background: rgba(15, 23, 42, 0.6); color: #fff; padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);" />
+        </div>
+
+        <div class="modal-error-alert" *ngIf="errorMessage()" style="color: #ef4444; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); padding: 10px; border-radius: 8px; font-size: 0.85rem; margin-top: 10px;">
+          ⚠️ {{ errorMessage() }}
+        </div>
+      </div>
+
+      <div class="modal-footer" *ngIf="publishStep() === 'idle' || publishStep() === 'error'" style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 1.5rem;">
+        <button type="button" class="btn-secondary" (click)="closePublishModal()" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; padding: 8px 16px; border-radius: 8px; cursor: pointer;">Cancel</button>
+        <button type="button" class="btn-primary" (click)="startInstagramPublish()" style="padding: 8px 20px;">Publish Reel</button>
+      </div>
+
+      <!-- Modal Body: Step 2: Processing / Progress -->
+      <div class="modal-body progress-body" *ngIf="publishStep() === 'uploading' || publishStep() === 'publishing'" style="padding: 1.5rem 0; text-align: center;">
+        <div class="spinner-container" style="margin-bottom: 1.5rem; display: flex; justify-content: center;">
+          <div class="orb-spinner"></div>
+        </div>
+        
+        <h4 style="color: #fff; font-size: 1.1rem; margin-bottom: 0.5rem; font-weight: 700;">Publishing Reel</h4>
+        <p style="color: #94a3b8; font-size: 0.88rem; max-width: 320px; margin: 0 auto 1.5rem auto; min-height: 40px; line-height: 1.4;">
+          {{ publishProgressText() }}
+        </p>
+
+        <!-- Progress step checklist visualizer -->
+        <div class="progress-steps-list" style="text-align: left; max-width: 320px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; background: rgba(15, 23, 42, 0.4); padding: 16px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
+          
+          <div class="progress-step-item" style="display: flex; align-items: center; gap: 10px; font-size: 0.85rem;">
+            <span [style.color]="publishStep() === 'uploading' ? '#00f2fe' : '#10b981'">
+              {{ publishStep() === 'uploading' ? '🔄' : '✅' }}
+            </span>
+            <span [style.color]="publishStep() === 'uploading' ? '#fff' : '#94a3b8'">
+              Upload Reel video to Vercel Blob storage
+            </span>
+          </div>
+          
+          <div class="progress-step-item" style="display: flex; align-items: center; gap: 10px; font-size: 0.85rem;">
+            <span [style.color]="publishStep() === 'uploading' ? '#475569' : (publishStep() === 'publishing' ? '#00f2fe' : '#10b981')">
+              {{ publishStep() === 'uploading' ? '⚪' : (publishStep() === 'publishing' ? '🔄' : '✅') }}
+            </span>
+            <span [style.color]="publishStep() === 'uploading' ? '#475569' : (publishStep() === 'publishing' ? '#fff' : '#94a3b8')">
+              Instagram Reel container processing (polls Meta)
+            </span>
+          </div>
+
+          <div class="progress-step-item" style="display: flex; align-items: center; gap: 10px; font-size: 0.85rem;">
+            <span [style.color]="publishStep() === 'uploading' || publishStep() === 'publishing' ? '#475569' : '#10b981'">
+              {{ publishStep() === 'uploading' || publishStep() === 'publishing' ? '⚪' : '✅' }}
+            </span>
+            <span [style.color]="publishStep() === 'uploading' || publishStep() === 'publishing' ? '#475569' : '#94a3b8'">
+              Publish Reel post to Instagram feed & tab
+            </span>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Modal Body: Step 3: Success -->
+      <div class="modal-body text-center" *ngIf="publishStep() === 'success'" style="padding: 2rem 0; text-align: center;">
+        <div class="success-banner-graphic" style="font-size: 3rem; margin-bottom: 1rem;">🎉</div>
+        <h4 style="color: #fff; font-size: 1.25rem; margin-bottom: 0.5rem; font-weight: 700;">Reel Published!</h4>
+        <p style="color: #94a3b8; font-size: 0.88rem; max-width: 320px; margin: 0 auto 1.5rem auto; line-height: 1.4; word-break: break-all;">
+          {{ publishSuccess() }}
+        </p>
+      </div>
+
+      <div class="modal-footer" *ngIf="publishStep() === 'success'" style="display: flex; justify-content: center; margin-top: 1rem;">
+        <button type="button" class="btn-primary" (click)="closePublishModal()" style="padding: 8px 30px;">Done</button>
+      </div>
+
     </div>
   </div>
 

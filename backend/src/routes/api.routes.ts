@@ -577,6 +577,148 @@ router.post('/social/publish-instagram', async (req: Request, res: Response) => 
   }
 });
 
+/**
+ * POST /api/social/publish-instagram-reel
+ * Payload: { video: string, caption: string, password?: string }
+ * Uploads video base64 to Vercel Blob and publishes it to Instagram as a Reel.
+ */
+router.post('/social/publish-instagram-reel', async (req: Request, res: Response) => {
+  const { video, caption, password } = req.body;
+
+  if (!video || typeof video !== 'string') {
+    return res.status(400).json({ error: 'video base64 data URL is required' });
+  }
+  if (!password || password !== config.instagram.adminPassword) {
+    return res.status(401).json({ error: 'Invalid admin password' });
+  }
+
+  const vercelBlobToken = config.vercelBlob.readWriteToken;
+  const igUserId = config.instagram.userId;
+  const metaToken = config.instagram.accessToken;
+
+  if (!vercelBlobToken || !igUserId || !metaToken) {
+    return res.status(500).json({ error: 'Instagram publishing credentials are not configured on the server.' });
+  }
+
+  // Import put and del dynamically from @vercel/blob
+  let put: any, del: any;
+  try {
+    const blobModule = require('@vercel/blob');
+    put = blobModule.put;
+    del = blobModule.del;
+  } catch (e) {
+    return res.status(500).json({ error: 'Vercel Blob module is not loaded correctly' });
+  }
+
+  let uploadedUrl = '';
+
+  try {
+    // 1. Upload base64 video to Vercel Blob to get a public URL
+    const mimeMatch = video.match(/^data:([^;]+).*?;base64,/);
+    if (!mimeMatch) {
+      throw new Error(`Video has invalid format. Must be a valid video base64 Data URL.`);
+    }
+    const mimeType = mimeMatch[1]; // e.g. "video/webm" or "video/mp4"
+    if (!mimeType.startsWith('video/')) {
+      throw new Error(`Invalid MIME type: ${mimeType}. Must be a video.`);
+    }
+    const extension = mimeType.includes('mp4') ? 'mp4' : 'webm';
+    
+    const base64Data = video.substring(video.indexOf(';base64,') + 8);
+    const buffer = Buffer.from(base64Data, 'base64');
+    
+    console.log(`[Instagram Reel] Uploading video to Vercel Blob (${buffer.length} bytes)...`);
+    const blob = await put(`reel_${Date.now()}.${extension}`, buffer, {
+      access: 'public',
+      token: vercelBlobToken,
+      contentType: mimeType
+    });
+    
+    uploadedUrl = blob.url;
+    console.log(`[Instagram Reel] Uploaded to Vercel Blob: ${uploadedUrl}`);
+
+    // 2. Create Instagram container for Reel
+    console.log(`[Instagram Reel] Creating Instagram Reel container...`);
+    const containerRes = await axios.post(`https://graph.facebook.com/v20.0/${igUserId}/media`, {
+      media_type: 'REELS',
+      video_url: uploadedUrl,
+      caption: caption || '',
+      share_to_feed: true,
+      access_token: metaToken
+    });
+    
+    const creationId = containerRes.data.id;
+    console.log(`[Instagram Reel] Created Reel container ID: ${creationId}. Polling for status...`);
+
+    // 3. Poll Instagram to ensure video container has finished processing
+    let attempts = 0;
+    let finished = false;
+    
+    // Video processing takes longer than images. Max 120 seconds wait (40 attempts * 3 seconds)
+    while (!finished && attempts < 40) {
+      attempts++;
+      await new Promise(resolve => setTimeout(resolve, 3000)); // wait 3s
+      
+      try {
+        const statusRes = await axios.get(`https://graph.facebook.com/v20.0/${creationId}`, {
+          params: {
+            fields: 'status_code',
+            access_token: metaToken
+          }
+        });
+        
+        const statusCode = statusRes.data?.status_code;
+        console.log(`[Instagram Reel] Polling attempt ${attempts}: status_code = ${statusCode}`);
+        if (statusCode === 'FINISHED') {
+          finished = true;
+        } else if (statusCode === 'ERROR') {
+          throw new Error(`Instagram video processing failed for container ${creationId}`);
+        }
+      } catch (err: any) {
+        console.warn(`[Instagram Reel] Polling error on attempt ${attempts}:`, err.message);
+      }
+    }
+    
+    if (!finished) {
+      throw new Error(`Instagram container processing timed out for Reel container ${creationId}`);
+    }
+    
+    console.log(`[Instagram Reel] Reel container processed successfully. Publishing...`);
+
+    // 4. Publish the Reel post
+    const publishRes = await axios.post(`https://graph.facebook.com/v20.0/${igUserId}/media_publish`, {
+      creation_id: creationId,
+      access_token: metaToken
+    });
+
+    const postId = publishRes.data.id;
+    console.log(`[Instagram Reel] Published successfully. Post ID: ${postId}`);
+
+    // 5. Clean up Vercel Blob storage asynchronously after publishing
+    try {
+      await del(uploadedUrl, { token: vercelBlobToken });
+      console.log(`[Instagram Reel] Cleaned up Vercel Blob: ${uploadedUrl}`);
+    } catch (cleanupErr) {
+      console.warn('[Instagram Reel] Vercel Blob storage cleanup failed:', cleanupErr);
+    }
+
+    return res.json({ success: true, postId });
+  } catch (error: any) {
+    console.error('Instagram Reel Publishing Error:', error.response?.data || error.message);
+    
+    // Attempt cleanup on error
+    if (uploadedUrl) {
+      try {
+        await del(uploadedUrl, { token: vercelBlobToken });
+      } catch (e) {}
+    }
+
+    const apiErr = error.response?.data?.error?.message || error.message;
+    return res.status(500).json({ error: `Instagram Reel publishing failed: ${apiErr}` });
+  }
+});
+
+
 interface WordSegment {
   part: string;
   start: number;

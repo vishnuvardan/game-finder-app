@@ -53,6 +53,15 @@ export class ShortsCreatorComponent implements OnInit, OnDestroy {
   protected generatedVideoUrl: WritableSignal<string | null> = signal(null);
   protected exportError = signal('');
 
+  // Instagram Publish states
+  protected isPublishModalOpen = signal(false);
+  protected publishPassword = signal('');
+  protected publishStep = signal<'idle' | 'uploading' | 'publishing' | 'success' | 'error'>('idle');
+  protected publishProgressText = signal('');
+  protected publishSuccess = signal<string | null>(null);
+  protected errorMessage = signal<string | null>(null);
+  private exportedVideoBlob: Blob | null = null;
+
   // Audio preview reference
   private previewAudio: HTMLAudioElement | null = null;
   private syncTimerId: any;
@@ -416,6 +425,7 @@ export class ShortsCreatorComponent implements OnInit, OnDestroy {
         }
       );
 
+      this.exportedVideoBlob = finalVideoBlob;
       const videoUrl = URL.createObjectURL(finalVideoBlob);
       this.generatedVideoUrl.set(videoUrl);
       this.step.set('completed');
@@ -438,6 +448,69 @@ export class ShortsCreatorComponent implements OnInit, OnDestroy {
     }
   }
 
+  protected openPublishModal() {
+    this.publishPassword.set('');
+    this.publishStep.set('idle');
+    this.publishProgressText.set('');
+    this.errorMessage.set(null);
+    this.publishSuccess.set(null);
+    this.isPublishModalOpen.set(true);
+  }
+
+  protected closePublishModal() {
+    this.isPublishModalOpen.set(false);
+  }
+
+  protected async startInstagramPublish() {
+    const pwd = this.publishPassword().trim();
+    if (!pwd) {
+      this.errorMessage.set('Password is required to publish.');
+      this.publishStep.set('error');
+      return;
+    }
+
+    if (!this.exportedVideoBlob) {
+      this.errorMessage.set('No exported video found. Please render the video first.');
+      this.publishStep.set('error');
+      return;
+    }
+
+    this.publishStep.set('uploading');
+    this.publishProgressText.set('Preparing video for upload...');
+
+    try {
+      const reader = new FileReader();
+      reader.readAsDataURL(this.exportedVideoBlob);
+      reader.onloadend = () => {
+        const base64Video = reader.result as string;
+        
+        this.publishStep.set('publishing');
+        this.publishProgressText.set('Uploading Reel to Instagram... This can take up to 2 minutes as Instagram processes the video.');
+
+        const caption = `${this.shortsTitle()}\n\n${this.shortsScript()}\n\n#GamingReels #AIShorts #GamingContent`;
+
+        this.geminiClient.publishInstagramReel(base64Video, caption, pwd).subscribe({
+          next: (res) => {
+            this.publishStep.set('success');
+            this.publishProgressText.set('');
+            this.publishSuccess.set(`Published successfully! Post ID: ${res.postId}`);
+          },
+          error: (err) => {
+            this.publishStep.set('error');
+            const errMsg = err.error?.error || 'Failed to publish Reel to Instagram. Verify your password or credentials.';
+            this.errorMessage.set(errMsg);
+            this.publishProgressText.set('');
+          }
+        });
+      };
+    } catch (err: any) {
+      console.error(err);
+      this.publishStep.set('error');
+      this.errorMessage.set(err.message || 'An error occurred while preparing the video.');
+      this.publishProgressText.set('');
+    }
+  }
+
   // Reset wizard to upload
   protected resetCreator() {
     this.cleanupObjectURLs();
@@ -449,6 +522,9 @@ export class ShortsCreatorComponent implements OnInit, OnDestroy {
     this.ttsDuration.set(0);
     this.generatedVideoUrl.set(null);
     this.previewAudio = null;
+    this.exportedVideoBlob = null;
+    this.publishSuccess.set(null);
+    this.errorMessage.set(null);
     this.step.set('upload');
   }
 

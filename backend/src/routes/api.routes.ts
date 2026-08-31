@@ -471,9 +471,9 @@ router.post('/social/publish-instagram', async (req: Request, res: Response) => 
   const uploadedUrls: string[] = [];
 
   try {
-    // 1. Upload all base64 slides to Vercel Blob to get public URLs
-    for (let i = 0; i < images.length; i++) {
-      const dataUrl = images[i];
+    // 1. Parallel upload all base64 slides to Vercel Blob to get public URLs
+    console.log(`[Instagram Carousel] Uploading ${images.length} slide images to Vercel Blob in parallel...`);
+    const uploadPromises = images.map(async (dataUrl, i) => {
       const mimeMatch = dataUrl.match(/^data:(image\/\w+);base64,/);
       if (!mimeMatch) {
         throw new Error(`Slide ${i + 1} has invalid image format`);
@@ -484,17 +484,24 @@ router.post('/social/publish-instagram', async (req: Request, res: Response) => 
       const base64Data = dataUrl.replace(/^data:image\/\w+;base64,/, "");
       const buffer = Buffer.from(base64Data, 'base64');
       
-      // Upload using Vercel Blob with proper mime type and extension
       const blob = await put(`slide_${Date.now()}_${i}.${extension}`, buffer, {
         access: 'public',
         token: vercelBlobToken,
         contentType: mimeType
       });
-      
-      uploadedUrls.push(blob.url);
+      return { index: i, url: blob.url };
+    });
+
+    const uploadResults = await Promise.all(uploadPromises);
+    // Sort to guarantee correct slide ordering
+    uploadResults.sort((a, b) => a.index - b.index);
+    for (const res of uploadResults) {
+      uploadedUrls.push(res.url);
     }
+    console.log(`[Instagram Carousel] Successfully uploaded ${uploadedUrls.length} slides to Vercel Blob.`);
 
     // 2. Create Instagram container for each carousel item
+    console.log(`[Instagram Carousel] Creating ${uploadedUrls.length} child item containers on Instagram...`);
     const childrenIds: string[] = [];
     for (let i = 0; i < uploadedUrls.length; i++) {
       const url = uploadedUrls[i];
@@ -505,39 +512,51 @@ router.post('/social/publish-instagram', async (req: Request, res: Response) => 
       });
       childrenIds.push(itemRes.data.id);
     }
+    console.log(`[Instagram Carousel] Created child containers: ${childrenIds.join(', ')}`);
 
-    // 3. Poll Instagram to ensure all slide containers have finished processing
-    console.log(`[Instagram Publish] Created ${childrenIds.length} item containers. Waiting for processing...`);
-    for (const childId of childrenIds) {
+    // 3. Poll Instagram to ensure all slide child containers have finished processing
+    console.log(`[Instagram Carousel] Polling child containers for FINISHED status...`);
+    for (let i = 0; i < childrenIds.length; i++) {
+      const childId = childrenIds[i];
       let attempts = 0;
       let finished = false;
       
-      while (!finished && attempts < 15) { // max 30 seconds wait per slide
-        const statusRes = await axios.get(`https://graph.facebook.com/v20.0/${childId}`, {
-          params: {
-            fields: 'status_code',
-            access_token: metaToken
+      while (!finished && attempts < 20) { // max 40 seconds wait per slide
+        attempts++;
+        try {
+          const statusRes = await axios.get(`https://graph.facebook.com/v20.0/${childId}`, {
+            params: {
+              fields: 'status_code',
+              access_token: metaToken
+            }
+          });
+          
+          const statusCode = statusRes.data?.status_code;
+          if (statusCode === 'FINISHED') {
+            finished = true;
+          } else if (statusCode === 'ERROR') {
+            throw new Error(`Instagram image processing failed for item container ${childId}`);
           }
-        });
-        
-        const statusCode = statusRes.data?.status_code;
-        if (statusCode === 'FINISHED') {
-          finished = true;
-        } else if (statusCode === 'ERROR') {
-          throw new Error(`Instagram image processing failed for item container ${childId}`);
-        } else {
-          attempts++;
+        } catch (pollErr: any) {
+          if (pollErr.message && pollErr.message.includes('Instagram image processing failed')) {
+            throw pollErr;
+          }
+          console.warn(`[Instagram Carousel] Child ${childId} polling attempt ${attempts} warning:`, pollErr.message);
+        }
+
+        if (!finished) {
           await new Promise(resolve => setTimeout(resolve, 2000)); // wait 2s
         }
       }
       
       if (!finished) {
-        throw new Error(`Instagram container processing timed out for item ${childId}`);
+        throw new Error(`Instagram container processing timed out for item slide ${i + 1} (${childId})`);
       }
     }
-    console.log(`[Instagram Publish] All slide containers are FINISHED. Linking Carousel...`);
+    console.log(`[Instagram Carousel] All ${childrenIds.length} child containers are FINISHED.`);
 
     // 4. Create the Carousel container linking all slide items
+    console.log(`[Instagram Carousel] Creating parent CAROUSEL container...`);
     const carouselRes = await axios.post(`https://graph.facebook.com/v20.0/${igUserId}/media`, {
       media_type: 'CAROUSEL',
       children: childrenIds,
@@ -545,20 +564,61 @@ router.post('/social/publish-instagram', async (req: Request, res: Response) => 
       access_token: metaToken
     });
     const carouselCreationId = carouselRes.data.id;
+    console.log(`[Instagram Carousel] Created parent Carousel container ID: ${carouselCreationId}. Polling for readiness...`);
 
-    // 5. Publish the Carousel post
+    // 5. Poll parent Carousel container until FINISHED before attempting to publish
+    let carouselAttempts = 0;
+    let carouselFinished = false;
+
+    while (!carouselFinished && carouselAttempts < 25) { // max 50 seconds wait
+      carouselAttempts++;
+      await new Promise(resolve => setTimeout(resolve, 2000)); // wait 2s between polls
+      
+      try {
+        const carouselStatusRes = await axios.get(`https://graph.facebook.com/v20.0/${carouselCreationId}`, {
+          params: {
+            fields: 'status_code',
+            access_token: metaToken
+          }
+        });
+
+        const statusCode = carouselStatusRes.data?.status_code;
+        console.log(`[Instagram Carousel] Parent container polling attempt ${carouselAttempts}: status_code = ${statusCode}`);
+
+        if (statusCode === 'FINISHED') {
+          carouselFinished = true;
+        } else if (statusCode === 'ERROR') {
+          throw new Error(`Instagram Carousel container processing failed on Meta servers for ID ${carouselCreationId}`);
+        }
+      } catch (pollErr: any) {
+        if (pollErr.message && pollErr.message.includes('processing failed')) {
+          throw pollErr;
+        }
+        console.warn(`[Instagram Carousel] Parent container polling warning on attempt ${carouselAttempts}:`, pollErr.message);
+      }
+    }
+
+    if (!carouselFinished) {
+      throw new Error(`Instagram Carousel container processing timed out for container ${carouselCreationId}`);
+    }
+
+    console.log(`[Instagram Carousel] Parent container is FINISHED. Publishing Carousel to Instagram...`);
+
+    // 6. Publish the Carousel post
     const publishRes = await axios.post(`https://graph.facebook.com/v20.0/${igUserId}/media_publish`, {
       creation_id: carouselCreationId,
       access_token: metaToken
     });
 
     const postId = publishRes.data.id;
+    console.log(`[Instagram Carousel] Published successfully! Post ID: ${postId}`);
 
-    // 6. Clean up Vercel Blob storage asynchronously after publishing
+    // 7. Clean up Vercel Blob storage asynchronously after publishing
     try {
       await del(uploadedUrls, { token: vercelBlobToken });
+      console.log(`[Instagram Carousel] Cleaned up ${uploadedUrls.length} temporary images from Vercel Blob.`);
     } catch (cleanupErr) {
-      console.warn('Vercel Blob storage cleanup failed:', cleanupErr);
+      console.warn('[Instagram Carousel] Vercel Blob storage cleanup failed:', cleanupErr);
     }
 
     return res.json({ success: true, postId });
@@ -569,6 +629,7 @@ router.post('/social/publish-instagram', async (req: Request, res: Response) => 
     if (uploadedUrls.length > 0) {
       try {
         await del(uploadedUrls, { token: vercelBlobToken });
+        console.log(`[Instagram Carousel] Cleaned up temporary blob files after error.`);
       } catch (e) {}
     }
 

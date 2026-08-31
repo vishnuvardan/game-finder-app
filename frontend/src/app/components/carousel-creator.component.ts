@@ -353,6 +353,7 @@ export class CarouselCreatorComponent {
       return;
     }
 
+    this.errorMessage.set(null);
     this.publishStep.set('rendering');
     this.publishProgressText.set('Initializing canvas renderer...');
 
@@ -381,7 +382,7 @@ export class CarouselCreatorComponent {
       }
 
       this.publishStep.set('publishing');
-      this.publishProgressText.set('Uploading slides to storage & publishing post... (takes ~15-20 seconds)');
+      this.publishProgressText.set('Uploading slides to storage & waiting for Instagram to process carousel... (takes ~15-25 seconds)');
 
       this.gameService.publishInstagramCarousel(slideImages, this.caption(), pwd).subscribe({
         next: (res) => {

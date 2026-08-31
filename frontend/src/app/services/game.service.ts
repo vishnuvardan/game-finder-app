@@ -23,6 +23,7 @@ export interface CarouselResponse {
   caption?: string;
   coverImagePrompt?: string;
   coverImageUrl?: string;
+  imagePool?: string[];
 }
 
 export interface QuizQuestion {

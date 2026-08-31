@@ -64,6 +64,7 @@ export class CarouselCreatorComponent {
   protected readonly publishProgressText = signal<string>('');
   protected readonly publishSuccess = signal<string | null>(null);
   protected readonly generatedCoverUrl = signal<string | null>(null);
+  protected readonly imagePool = signal<string[]>([]);
   protected readonly useCoverImage = signal<boolean>(true);
   protected readonly customCoverUrl = signal<string>('');
   protected readonly customFirstSlideTitle = signal<string>('');
@@ -73,7 +74,7 @@ export class CarouselCreatorComponent {
     if (!this.useCoverImage()) {
       return null;
     }
-    return this.customCoverUrl() || this.selectedGame()?.coverUrl || this.generatedCoverUrl() || null;
+    return this.customCoverUrl() || this.slides()[0]?.mediaUrl || this.generatedCoverUrl() || this.selectedGame()?.coverUrl || null;
   });
 
   protected readonly hasCoverImage = computed(() => {
@@ -95,6 +96,46 @@ export class CarouselCreatorComponent {
       this.isCopied.set(true);
       setTimeout(() => this.isCopied.set(false), 2000);
     });
+  }
+
+  // Shuffle images across all slides from the pooled high-res Steam & IGDB assets
+  protected shuffleAllImages() {
+    const pool = this.imagePool();
+    if (!pool || pool.length === 0) return;
+
+    const shuffled = [...pool].sort(() => 0.5 - Math.random());
+    const updatedSlides = this.slides().map((slide, idx) => ({
+      ...slide,
+      mediaUrl: shuffled[idx % shuffled.length] || pool[idx % pool.length]
+    }));
+    this.slides.set(updatedSlides);
+    if (updatedSlides[0]?.mediaUrl) {
+      this.generatedCoverUrl.set(updatedSlides[0].mediaUrl);
+    }
+  }
+
+  // Cycle through the 30-50 high-res images specifically for the active slide
+  protected cycleActiveSlideImage() {
+    const pool = this.imagePool();
+    if (!pool || pool.length <= 1) return;
+
+    const activeIdx = this.activeSlideIndex();
+    const currentSlides = [...this.slides()];
+    const currentUrl = currentSlides[activeIdx]?.mediaUrl;
+
+    const poolIdx = pool.indexOf(currentUrl || '');
+    const nextPoolIdx = (poolIdx + 1) % pool.length;
+    const nextUrl = pool[nextPoolIdx];
+
+    currentSlides[activeIdx] = {
+      ...currentSlides[activeIdx],
+      mediaUrl: nextUrl
+    };
+    this.slides.set(currentSlides);
+
+    if (activeIdx === 0) {
+      this.generatedCoverUrl.set(nextUrl);
+    }
   }
 
   // Computed state validations
@@ -206,6 +247,7 @@ export class CarouselCreatorComponent {
           this.slides.set(res.slides);
           this.caption.set(res.caption || '');
           this.generatedCoverUrl.set(res.coverImageUrl || null);
+          this.imagePool.set(res.imagePool || []);
           this.state.set('preview');
         },
         error: (err) => {
@@ -232,6 +274,7 @@ export class CarouselCreatorComponent {
           this.slides.set(res.slides);
           this.caption.set(res.caption || '');
           this.generatedCoverUrl.set(res.coverImageUrl || null);
+          this.imagePool.set(res.imagePool || []);
           this.state.set('preview');
         },
         error: (err) => {

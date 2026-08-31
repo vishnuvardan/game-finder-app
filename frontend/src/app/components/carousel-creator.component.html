@@ -135,67 +135,43 @@
               [class]="'theme-' + theme() + ' ratio-' + aspectRatio()"
               [class.first-slide]="activeSlideIndex() === 0">
               
-              <!-- Blurred Game Background (hidden on first slide) -->
-              @if (activeSlideIndex() > 0) {
-                @if (slides()[activeSlideIndex()].mediaUrl) {
-                  <div class="slide-bg-cover" [style.background-image]="'url(' + slides()[activeSlideIndex()].mediaUrl + ')'"></div>
-                } @else if (getCoverUrl()) {
-                  <div class="slide-bg-cover" [style.background-image]="'url(' + getCoverUrl() + ')'"></div>
-                }
-                <div class="slide-overlay"></div>
-              } @else {
-                <div class="first-slide-bg"></div>
-              }
+              <!-- 100% Fullscreen Crisp Game Art -->
+              <div class="slide-fullscreen-bg" 
+                [style.background-image]="'url(' + (activeSlideIndex() === 0 ? (getCoverUrl() || slides()[0].mediaUrl) : (slides()[activeSlideIndex()].mediaUrl || getCoverUrl())) + ')'">
+              </div>
 
-              <div class="slide-card-content">
-                <!-- Slide Header -->
-                <div class="slide-card-header">
-                  <div class="slide-topic-badge">{{ selectedGame()?.name || 'GAMING NEWS' }}</div>
-                </div>
+              <!-- Multi-Stop Contrast Gradient Overlay -->
+              <div class="slide-gradient-overlay" [class.cover-overlay]="activeSlideIndex() === 0"></div>
 
+              <div class="slide-card-content" [class.cover-content]="activeSlideIndex() === 0">
                 @if (activeSlideIndex() === 0) {
-                  <!-- Slide 1: Cover Image & Bold Title below -->
-                  @if (useCoverImage()) {
-                    @if (getCoverUrl()) {
-                      <div class="first-slide-media">
-                        <div [style.background-image]="'url(' + getCoverUrl() + ')'" class="first-slide-image"></div>
-                      </div>
-                    } @else {
-                      <div class="first-slide-no-image-placeholder">
-                        <div class="abstract-accent-sphere"></div>
-                      </div>
-                    }
-                  }
-                  <div class="first-slide-title-wrapper">
-                    <h2 class="slide-card-title first-slide-title">{{ customFirstSlideTitle() || slides()[0].title }}</h2>
+                  <!-- Slide 1: IGN Editorial Style Cover Slide -->
+                  <div class="cover-top-header">
+                    <span class="cover-swipe-indicator">S W I P E &nbsp; ➔</span>
+                  </div>
+
+                  <div class="cover-title-container">
+                    <h1 class="cover-hero-title">{{ customFirstSlideTitle() || slides()[0].title }}</h1>
+                  </div>
+
+                  <div class="cover-bottom-footer">
                     @if (customFirstSlideSubtitle() || (slides()[0].bullets && slides()[0].bullets.length > 0)) {
-                      <div class="first-slide-subtitle-badge">
-                        {{ customFirstSlideSubtitle() || slides()[0].bullets[0] }}
+                      <div class="cover-subtitle-pill">
+                        ✨ {{ customFirstSlideSubtitle() || slides()[0].bullets[0] }}
                       </div>
                     }
                   </div>
                 } @else {
-                  <!-- Slide Title -->
-                  <h2 class="slide-card-title">{{ slides()[activeSlideIndex()].title }}</h2>
+                  <!-- Slides 2+: Fullscreen Game Art with Direct Gradient Floating Typography -->
+                  <div class="slide-body-container">
+                    <h2 class="slide-card-title">{{ slides()[activeSlideIndex()].title }}</h2>
 
-                  <!-- Slide Body (Bullets) -->
-                  <ul class="slide-card-bullets">
-                    @for (bullet of slides()[activeSlideIndex()].bullets; track bullet) {
-                      <li>{{ bullet }}</li>
-                    }
-                  </ul>
-                }
-
-                <!-- Slide Footnote/CTA -->
-                @if (activeSlideIndex() === slides().length - 1) {
-                  <div class="slide-card-footnote">
-                    💾 Save &nbsp;•&nbsp; ✈️ Share to friends
+                    <ul class="slide-card-bullets">
+                      @for (bullet of slides()[activeSlideIndex()].bullets; track bullet) {
+                        <li>{{ bullet }}</li>
+                      }
+                    </ul>
                   </div>
-                }
-
-                <!-- Watermark -->
-                @if (watermark()) {
-                  <div class="slide-card-watermark">{{ watermark() }}</div>
                 }
               </div>
             </div>
@@ -204,16 +180,23 @@
             <button class="nav-arrow right" (click)="nextSlide()" aria-label="Next Slide">›</button>
           </div>
 
-          <!-- Carousel Dots indicator -->
-          <div class="carousel-dots">
-            @for (slide of slides(); track $index) {
-              <button type="button" class="dot-btn" [class.active]="$index === activeSlideIndex()" 
-                (click)="goToSlide($index)" [aria-label]="'Go to slide ' + ($index + 1)"></button>
-            }
-          </div>
-
           <!-- Theme & Aspect Ratio Switchers Stacked -->
           <div class="carousel-under-controls-column">
+            <!-- High-Res Image Pool Shuffle & Cycle Controls -->
+            @if (imagePool().length > 1) {
+              <div class="form-group-compact image-shuffle-controls-box" style="margin-bottom: 0.75rem;">
+                <label class="form-label-compact">High-Res Game Media Pool ({{ imagePool().length }} images available)</label>
+                <div class="image-shuffle-btn-row">
+                  <button type="button" class="shuffle-btn-primary" (click)="shuffleAllImages()" title="Randomly shuffle unique screenshots across all slides">
+                    <span>🔀 Shuffle All Slides</span>
+                  </button>
+                  <button type="button" class="shuffle-btn-secondary" (click)="cycleActiveSlideImage()" title="Cycle to next high-res screenshot for this specific slide">
+                    <span>🔄 Change Slide {{ activeSlideIndex() + 1 }}</span>
+                  </button>
+                </div>
+              </div>
+            }
+
             <!-- Theme Switcher -->
             <div class="form-group-compact">
               <label class="form-label-compact">Theme Visual Style</label>
@@ -251,51 +234,39 @@
               </div>
             }
 
-            <!-- Replace First Slide Title -->
+            <!-- Custom Cover Title -->
             <div class="form-group-compact" style="margin-top: 0.75rem;">
-              <label class="form-label-compact" for="replace-title-input">Replace First Slide Title</label>
-              <input id="replace-title-input" type="text" class="select-input select-input-compact" style="cursor: text;"
+              <label class="form-label-compact" for="custom-first-title-input">Custom Cover Title</label>
+              <input id="custom-first-title-input" type="text" class="select-input select-input-compact" style="cursor: text;"
                 placeholder="Enter custom slide 1 title..." [ngModel]="customFirstSlideTitle()" (ngModelChange)="customFirstSlideTitle.set($event)" />
             </div>
 
-            <!-- Replace First Slide Subtitle -->
+            <!-- Custom Cover Subtitle -->
             <div class="form-group-compact" style="margin-top: 0.75rem;">
-              <label class="form-label-compact" for="replace-subtitle-input">Replace First Slide Subtitle</label>
-              <input id="replace-subtitle-input" type="text" class="select-input select-input-compact" style="cursor: text;"
+              <label class="form-label-compact" for="custom-first-subtitle-input">Custom Cover Subtitle / Hook</label>
+              <input id="custom-first-subtitle-input" type="text" class="select-input select-input-compact" style="cursor: text;"
                 placeholder="Enter custom slide 1 subtitle..." [ngModel]="customFirstSlideSubtitle()" (ngModelChange)="customFirstSlideSubtitle.set($event)" />
-            </div>
-
-            <!-- Social Handle Watermark Input -->
-            <div class="form-group-compact" style="margin-top: 0.75rem;">
-              <label class="form-label-compact" for="watermark-preview-input">Social Handle Watermark</label>
-              <input id="watermark-preview-input" type="text" class="select-input select-input-compact" style="cursor: text;"
-                placeholder="e.g. @yourname" [ngModel]="watermark()" (ngModelChange)="watermark.set($event)" />
             </div>
           </div>
         </div>
       </div>
 
-      <!-- RHS: Download & Controls Panel -->
-      <div class="preview-draft-column glass-panel">
-        <h3 class="controls-title">Insta-Gamer Controls</h3>
-        <p class="controls-desc">Your slides are ready! Navigate using the arrows or indicators, and export them as high-quality PNGs.</p>
+      <!-- RHS: Caption & Export Settings -->
+      <div class="preview-actions-column glass-panel">
+        <h3 class="panel-headline">Ready to Publish</h3>
+        <p class="panel-subheadline">Preview individual slides on the left or export the complete carousel deck.</p>
 
-        <!-- Social Caption Section -->
-        @if (caption()) {
-          <div class="caption-container">
-            <label class="form-label">Social Post Caption</label>
-            <div class="caption-box">
-              <p class="caption-text">{{ caption() }}</p>
-              <button type="button" class="copy-btn" (click)="copyCaption()">
-                <span>{{ isCopied() ? '✓ Copied!' : '📋 Copy Caption' }}</span>
-              </button>
-            </div>
+        <!-- Instagram Caption Box -->
+        <div class="form-group caption-box-wrapper">
+          <div class="caption-header-row">
+            <label class="form-label" for="carousel-caption-input">Generated Instagram Caption</label>
+            <button type="button" class="copy-btn-compact" (click)="copyCaption()">
+              <span>{{ isCopied() ? '✓ Copied' : '📋 Copy' }}</span>
+            </button>
           </div>
-        }
-
-
-
-
+          <textarea id="carousel-caption-input" class="caption-textarea" [ngModel]="caption()" (ngModelChange)="caption.set($event)"
+            placeholder="Edit caption..."></textarea>
+        </div>
 
         <div class="action-buttons-group">
           <!-- Download Active Slide -->
@@ -363,67 +334,43 @@
         [class]="'theme-' + theme() + ' ratio-' + aspectRatio()"
         [class.first-slide]="$index === 0">
         
-        <!-- Blurred Game Background -->
-        @if ($index > 0) {
-          @if (slide.mediaUrl) {
-            <div class="slide-bg-cover" [style.background-image]="'url(' + slide.mediaUrl + ')'"></div>
-          } @else if (getCoverUrl()) {
-            <div class="slide-bg-cover" [style.background-image]="'url(' + getCoverUrl() + ')'"></div>
-          }
-          <div class="slide-overlay"></div>
-        } @else {
-          <div class="first-slide-bg"></div>
-        }
+        <!-- 100% Fullscreen Crisp Game Art -->
+        <div class="slide-fullscreen-bg" 
+          [style.background-image]="'url(' + ($index === 0 ? (getCoverUrl() || slide.mediaUrl) : (slide.mediaUrl || getCoverUrl())) + ')'">
+        </div>
 
-        <div class="slide-card-content">
-          <!-- Slide Header -->
-          <div class="slide-card-header">
-            <div class="slide-topic-badge">{{ selectedGame()?.name || 'GAMING NEWS' }}</div>
-          </div>
+        <!-- Multi-Stop Contrast Gradient Overlay -->
+        <div class="slide-gradient-overlay" [class.cover-overlay]="$index === 0"></div>
 
+        <div class="slide-card-content" [class.cover-content]="$index === 0">
           @if ($index === 0) {
-            <!-- Slide 1: Cover Image & Bold Title below -->
-            @if (useCoverImage()) {
-              @if (getCoverUrl()) {
-                <div class="first-slide-media">
-                  <div [style.background-image]="'url(' + getCoverUrl() + ')'" class="first-slide-image"></div>
-                </div>
-              } @else {
-                <div class="first-slide-no-image-placeholder">
-                  <div class="abstract-accent-sphere"></div>
-                </div>
-              }
-            }
-            <div class="first-slide-title-wrapper">
-              <h2 class="slide-card-title first-slide-title">{{ customFirstSlideTitle() || slide.title }}</h2>
+            <!-- Slide 1: IGN Editorial Style Cover Slide -->
+            <div class="cover-top-header">
+              <span class="cover-swipe-indicator">S W I P E &nbsp; ➔</span>
+            </div>
+
+            <div class="cover-title-container">
+              <h1 class="cover-hero-title">{{ customFirstSlideTitle() || slide.title }}</h1>
+            </div>
+
+            <div class="cover-bottom-footer">
               @if (customFirstSlideSubtitle() || (slide.bullets && slide.bullets.length > 0)) {
-                <div class="first-slide-subtitle-badge">
-                  {{ customFirstSlideSubtitle() || slide.bullets[0] }}
+                <div class="cover-subtitle-pill">
+                  ✨ {{ customFirstSlideSubtitle() || slide.bullets[0] }}
                 </div>
               }
             </div>
           } @else {
-            <!-- Slide Title -->
-            <h2 class="slide-card-title">{{ slide.title }}</h2>
+            <!-- Slides 2+: Fullscreen Game Art with Direct Gradient Floating Typography -->
+            <div class="slide-body-container">
+              <h2 class="slide-card-title">{{ slide.title }}</h2>
 
-            <!-- Slide Body (Bullets) -->
-            <ul class="slide-card-bullets">
-              @for (bullet of slide.bullets; track bullet) {
-                <li>{{ bullet }}</li>
-              }
-            </ul>
-          }
-
-          <!-- Slide Footnote/CTA -->
-          @if ($index === slides().length - 1) {
-            <div class="slide-card-footnote">
-              💾 Save &nbsp;•&nbsp; ✈️ Share to friends
+              <ul class="slide-card-bullets">
+                @for (bullet of slide.bullets; track bullet) {
+                  <li>{{ bullet }}</li>
+                }
+              </ul>
             </div>
-          }
-
-          <!-- Watermark -->
-          @if (watermark()) {
-            <div class="slide-card-watermark">{{ watermark() }}</div>
           }
         </div>
       </div>

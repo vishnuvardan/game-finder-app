@@ -2,6 +2,7 @@ import { GoogleGenAI } from '@google/genai';
 import { config } from '../config';
 import axios from 'axios';
 import { steamService } from './steam.service';
+import { igdbService } from './igdb.service';
 
 // Initialize the Google Gen AI client
 const ai = new GoogleGenAI({ apiKey: config.gemini.apiKey });
@@ -53,6 +54,7 @@ export interface CarouselResponse {
   caption: string;
   coverImagePrompt?: string;
   coverImageUrl?: string;
+  imagePool?: string[];
 }
 
 export interface SubtitleSegment {
@@ -728,11 +730,72 @@ class GeminiService {
         throw new Error('Response is missing required slides array');
       }
 
-      const coverImageUrl = await this.getStockImageFallback(topic);
+      // Determine the best game query term
+      let gameQuery = gameName ? gameName.trim() : '';
+      if (!gameQuery && topic) {
+        // Extract potential game title from the first few words of topic
+        const topicWords = topic.split(/[\s,;:-]+/).filter(w => w.length > 1);
+        if (topicWords.length > 0) {
+          gameQuery = topicWords.slice(0, 3).join(' ');
+        }
+      }
+
+      console.log(`[GeminiService] Fetching dynamic image pool for gameQuery: "${gameQuery}" (Original topic: "${topic}")`);
+
+      let gameImages: string[] = [];
+
+      if (gameQuery) {
+        // 1. Fetch from Steam (1080p wallpapers & in-game screenshots)
+        try {
+          const steamImages = await steamService.getGameMediaAssets(gameQuery);
+          if (steamImages.length > 0) {
+            gameImages.push(...steamImages);
+          }
+        } catch (e: any) {
+          console.warn(`[GeminiService] Steam image fetch warning for "${gameQuery}":`, e.message);
+        }
+
+        // 2. Fetch from IGDB (official artworks & screenshots)
+        try {
+          const igdbImages = await igdbService.getGameImages(gameQuery);
+          if (igdbImages.length > 0) {
+            gameImages.push(...igdbImages);
+          }
+        } catch (e: any) {
+          console.warn(`[GeminiService] IGDB image fetch warning for "${gameQuery}":`, e.message);
+        }
+      }
+
+      // Deduplicate images while maintaining order
+      gameImages = Array.from(new Set(gameImages.filter(url => Boolean(url) && typeof url === 'string')));
+
+      // If still empty or no game match, fall back to Unsplash stock photos
+      if (gameImages.length === 0) {
+        const fallback = await this.getStockImageFallback(topic);
+        gameImages = [fallback];
+      }
+
+      console.log(`[GeminiService] Total distinct high-res images pooled: ${gameImages.length}. Distributing across ${parsed.slides.length} slides.`);
+
+      // Create a shuffled copy of the image pool for randomized distribution
+      const shuffledImages = [...gameImages].sort(() => 0.5 - Math.random());
+
+      // Distribute a unique distinct image to each slide
+      const enrichedSlides = parsed.slides.map((slide, index) => {
+        const mediaUrl = shuffledImages[index % shuffledImages.length] || gameImages[index % gameImages.length];
+        return {
+          ...slide,
+          mediaUrl
+        };
+      });
+
+      const coverImageUrl = enrichedSlides[0]?.mediaUrl || gameImages[0] || await this.getStockImageFallback(topic);
 
       return {
         ...parsed,
-        coverImageUrl
+        slides: enrichedSlides,
+        coverImageUrl,
+        imagePool: gameImages
       };
     } catch (error: any) {
       console.error('Error generating slides from Gemini:', error);

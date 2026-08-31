@@ -245,6 +245,58 @@ class SteamService {
 
     return resolvedDeals;
   }
+
+  /**
+   * Fetch a rich pool of high-res wallpapers, clean backgrounds, and in-game screenshots (1920x1080) for a game from Steam
+   */
+  public async getGameMediaAssets(query: string): Promise<string[]> {
+    if (!query || query.trim() === '') return [];
+
+    try {
+      console.log(`[SteamService] Searching Steam for media assets for query: "${query}"`);
+      const searchMatches = await this.searchGames(query.trim());
+      if (searchMatches.length === 0) {
+        console.log(`[SteamService] No Steam app matches for "${query}"`);
+        return [];
+      }
+
+      const topApp = searchMatches[0];
+      const appDetails = await this.getAppDetails(topApp.appid);
+      if (!appDetails) {
+        return [];
+      }
+
+      const mediaPool: string[] = [];
+
+      // 1. Clean raw background wallpaper (uncompressed 1080p/4K official key art)
+      if (appDetails.background_raw) {
+        mediaPool.push(appDetails.background_raw);
+      } else if (appDetails.background) {
+        mediaPool.push(appDetails.background);
+      }
+
+      // 2. High-res in-game screenshots (1920x1080)
+      if (Array.isArray(appDetails.screenshots)) {
+        for (const shot of appDetails.screenshots) {
+          if (shot?.path_full) {
+            mediaPool.push(shot.path_full);
+          }
+        }
+      }
+
+      // 3. Header storefront image
+      if (appDetails.header_image) {
+        mediaPool.push(appDetails.header_image);
+      }
+
+      console.log(`[SteamService] Retrieved ${mediaPool.length} high-res wallpapers & screenshots from Steam for "${topApp.name}" (AppID: ${topApp.appid})`);
+      return mediaPool;
+    } catch (err: any) {
+      console.warn(`[SteamService] Could not fetch media assets for "${query}":`, err.message);
+      return [];
+    }
+  }
 }
 
 export const steamService = new SteamService();
+

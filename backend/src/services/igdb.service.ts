@@ -138,6 +138,100 @@ class IGDBService {
   }
 
   /**
+   * Fetch all available high-res visual assets (cover, artworks, screenshots) for a game from IGDB
+   */
+  public async getGameImages(title: string): Promise<string[]> {
+    if (!title || title.trim() === '') return [];
+
+    try {
+      const token = await this.getAccessToken();
+      const cleanTitle = title.replace(/[\\"]/g, '\\$&');
+
+      const queryBody = `
+        fields name, cover.url, artworks.url, screenshots.url;
+        where name = "${cleanTitle}";
+        limit 1;
+      `;
+
+      let response = await axios.post<any[]>(
+        'https://api.igdb.com/v4/games',
+        queryBody,
+        {
+          headers: {
+            'Client-ID': config.igdb.clientId,
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'text/plain',
+          },
+        }
+      );
+
+      // If exact match didn't return results, try search query
+      if (!response.data || response.data.length === 0) {
+        const searchQueryBody = `
+          search "${cleanTitle}";
+          fields name, cover.url, artworks.url, screenshots.url;
+          limit 1;
+        `;
+        response = await axios.post<any[]>(
+          'https://api.igdb.com/v4/games',
+          searchQueryBody,
+          {
+            headers: {
+              'Client-ID': config.igdb.clientId,
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'text/plain',
+            },
+          }
+        );
+      }
+
+      if (!response.data || response.data.length === 0) {
+        return [];
+      }
+
+      const game = response.data[0];
+      const imageUrls: string[] = [];
+
+      const formatUrl = (rawUrl: string, size: string = 't_1080p'): string => {
+        let url = rawUrl;
+        if (url.startsWith('//')) {
+          url = 'https:' + url;
+        }
+        return url.replace('t_thumb', size);
+      };
+
+      // 1. Cover Art (1080p or cover_big)
+      if (game.cover?.url) {
+        imageUrls.push(formatUrl(game.cover.url, 't_1080p'));
+      }
+
+      // 2. Official Key Artworks (1080p)
+      if (Array.isArray(game.artworks)) {
+        for (const art of game.artworks) {
+          if (art?.url) {
+            imageUrls.push(formatUrl(art.url, 't_1080p'));
+          }
+        }
+      }
+
+      // 3. High-res In-Game Screenshots (1080p)
+      if (Array.isArray(game.screenshots)) {
+        for (const shot of game.screenshots) {
+          if (shot?.url) {
+            imageUrls.push(formatUrl(shot.url, 't_1080p'));
+          }
+        }
+      }
+
+      console.log(`[IGDBService] Retrieved ${imageUrls.length} high-res images for "${title}"`);
+      return imageUrls;
+    } catch (error: any) {
+      console.warn(`[IGDBService] Could not fetch images for "${title}":`, error?.message);
+      return [];
+    }
+  }
+
+  /**
    * Helper to parse and map raw IGDB results to the IGDBGame interface
    */
   private parseIGDBGames(rawGames: any[]): IGDBGame[] {
@@ -181,3 +275,4 @@ class IGDBService {
 }
 
 export const igdbService = new IGDBService();
+

@@ -53,25 +53,31 @@ export class GeminiClientService {
   /**
    * Call the Google AI Studio REST API directly from the browser using a custom key.
    */
-  async generateScriptDirect(promptTopic: string, apiKey: string, language: string = 'en'): Promise<ShortsScriptResponse> {
+  async generateScriptDirect(promptTopic: string, apiKey: string, language: string = 'en', tone: string = 'controversial'): Promise<ShortsScriptResponse> {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
     
     const isTamil = language === 'ta';
+    const isFriendly = tone === 'friendly' || tone === 'buddy';
+    
+    const audienceRule = isFriendly
+      ? (isTamil ? 'Address audience warmly as "nanba" (நண்பா).' : 'Address audience warmly as "friends".')
+      : 'Speak directly and naturally to the viewer without forcing repetitive address greetings.';
+
     const languagePrompt = isTamil 
-      ? 'Target language: 80% Tamil in Tamil script and 20% English words in Latin alphabet (modern conversational style). Address audience as "nanba" (நண்பா). Title in 80% Tamil + 20% English addressing nanba.'
-      : 'Target language: English. Address audience as "friends".';
+      ? `Target language: 80% Tamil in Tamil script and 20% English words in Latin alphabet (modern conversational style). ${audienceRule}`
+      : `Target language: English. ${audienceRule}`;
 
     const requestBody = {
       contents: [{
         parts: [{
-          text: `Create a viral, high-retention script about: "${promptTopic}". ${languagePrompt} Return structured JSON with clickbait title, script narration, and sequential subtitles.`
+          text: `Create a viral, high-retention script about: "${promptTopic}". Tone: ${tone}. ${languagePrompt} Return structured JSON with clickbait title, script narration, and sequential subtitles.`
         }]
       }],
       systemInstruction: {
         parts: [{
           text: isTamil
-            ? "You are an expert viral TikTok/Reels short-form scriptwriter for modern Tamil gaming and tech audiences. Given a user topic, produce high-retention text for a 30-50s Short video in exactly 80% Tamil script and 20% English words (standard English for jargon, game titles, numbers, and tech words). Address audience as 'nanba' / 'நண்பா'. Return STRICT JSON matching the schema."
-            : "You are an expert viral TikTok/Reels short-form scriptwriter. Given a user topic, produce high-tension text for a 30-50s Short video addressing audience as 'friends'. Return STRICT JSON matching the schema."
+            ? "You are an expert viral TikTok/Reels short-form scriptwriter for modern Tamil gaming and tech audiences. Given a user topic, produce high-retention text for a 30-50s Short video in exactly 80% Tamil script and 20% English words (standard English for jargon, game titles, numbers, and tech words). Return STRICT JSON matching the schema."
+            : "You are an expert viral TikTok/Reels short-form scriptwriter. Given a user topic, produce high-tension text for a 30-50s Short video. Return STRICT JSON matching the schema."
         }]
       },
       generationConfig: {

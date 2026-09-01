@@ -1031,28 +1031,83 @@ class GeminiService {
     const activeTone = tone || 'controversial';
     const isTamil = language === 'ta';
     
-    let toneDesc = 'high-tension clickbait/controversial';
+    let tonePromptInstructions = '';
+    let systemRoleInstruction = '';
+
     if (activeTone === 'detailed') {
-      toneDesc = 'educational, informative, and detailed breakdown';
+      systemRoleInstruction = isTamil
+        ? 'You are a master investigative gaming journalist and video essayist writing in conversational TAMIL (தமிழ்). Deliver structured, fascinating technical facts and deep insights with gripping storytelling.'
+        : 'You are a master investigative gaming journalist and video essayist. Deliver structured, fascinating facts, technical insights, and hidden secrets with gripping storytelling and authority.';
+      tonePromptInstructions = `
+TONE: Educational, Technical Deep-Dive & Investigative Analysis.
+- Hook: Start with a mind-blowing, little-known fact or technical breakdown question that hooks the viewer instantly.
+- Body: Deliver 3-4 concrete facts, performance metrics, or lore details with zero filler.
+- Outro: End with an insightful takeaway or thought-provoking question.`;
     } else if (activeTone === 'funny') {
-      toneDesc = 'humorous, meme-filled, and witty';
+      systemRoleInstruction = isTamil
+        ? 'You are a hilarious, meme-savvy gaming creator and streamer writing in conversational TAMIL (தமிழ்). Deliver sharp wit, gamer relatable humor, and witty punchlines.'
+        : 'You are a hilarious, meme-savvy gaming creator and streamer. Deliver sharp wit, gamer relatable humor, absurd comparisons, and witty punchlines.';
+      tonePromptInstructions = `
+TONE: Humorous, Sarcastic, Meme-Filled & Relatable.
+- Hook: Start with an absurd, funny gamer dilemma or exaggerated relatable truth.
+- Body: Deliver 3-4 witty jokes, sarcastic observations, or hilarious gamer memes about the topic.
+- Outro: End with a funny meme punchline or a question asking viewers to share their biggest fails.`;
     } else if (activeTone === 'hype') {
-      toneDesc = 'high-energy, epic hype, and enthusiastic';
+      systemRoleInstruction = isTamil
+        ? 'You are a high-octane esports caster and gaming hype-creator writing in conversational TAMIL (தமிழ்). Deliver explosive adrenaline, massive excitement, and hype.'
+        : 'You are a high-octane esports caster and gaming hype-creator. Deliver explosive adrenaline, massive excitement, and uncontainable energy.';
+      tonePromptInstructions = `
+TONE: High-Octane Hype, Adrenaline & Epic Energy.
+- Hook: An explosive, legendary statement celebrating game-changing news or unbeatable moments.
+- Body: High-energy countdown or feature breakdown with powerful verbs and epic pacing.
+- Outro: High-intensity call to action hyping up the launch or asking viewers if their hype is real.`;
+    } else if (activeTone === 'friendly' || activeTone === 'buddy') {
+      systemRoleInstruction = isTamil
+        ? 'You are a warm, casual, passionate gaming friend writing in conversational TAMIL (தமிழ்). Speak directly to your audience as "நண்பா" (nanba).'
+        : 'You are a warm, casual, passionate gaming friend. Speak warmly directly to your audience as "friends".';
+      tonePromptInstructions = `
+TONE: Warm, Friendly Couch-Co-op Buddy.
+- Audience Address: ${isTamil ? 'Address the audience warmly as "நண்பா" (nanba) throughout the script.' : 'Address the audience warmly as "friends" throughout the script.'}
+- Hook: A friendly, welcoming hook asking how the audience feels about the topic.
+- Body: Genuine, enthusiastic breakdown of why this matters and personal recommendations.
+- Outro: Warm outro inviting thoughts in the comments.`;
+    } else {
+      // Default: Controversial / Rage-Bait / High Tension Contrarian Expose
+      systemRoleInstruction = isTamil
+        ? 'You are an unfiltered, fearless, controversial gaming critic and investigative insider writing in modern conversational TAMIL (தமிழ்). You expose industry lies, overhyped scams, greedy corporate decisions, and controversial hot takes that trigger massive debate.'
+        : 'You are an unfiltered, fearless, controversial gaming critic and investigative insider. You expose industry lies, overhyped scams, greedy corporate decisions, and contrarian hot takes that trigger massive debate and intense engagement.';
+      tonePromptInstructions = `
+TONE: HIGH-TENSION CONTROVERSY, UNFILTERED RAGE-BAIT & CONTRARIAN EXPOSE.
+- Hook (0-3s): MUST be an aggressive, shocking, or contrarian hot take that challenges popular opinion or exposes a bitter truth (e.g., "Stop defending this game...", "The industry is lying to you about...", "Why this is the biggest scam in gaming...").
+- Body: Unpack 3-4 hard-hitting, uncomfortable facts, exposed anti-consumer moves, broken promises, or devastating arguments with high emotional tension and sharp urgency. Do NOT hold back or sound polite/diplomatic.
+- Outro (CTA): Drop a polarizing, high-stakes question that forces viewers to take a side in the comments and argue fiercely.`;
     }
 
+    const audienceRule = (activeTone === 'friendly' || activeTone === 'buddy')
+      ? (isTamil ? 'Audience Address: Address the audience warmly as "நண்பா" (nanba).' : 'Audience Address: Address the audience warmly as "friends".')
+      : 'Audience Address: Speak directly and naturally to the viewer (e.g. "you", "did you know", "listen to this"). Do NOT force repetitive filler names like "friends" or "nanba".';
+
     const langRule = isTamil
-      ? `Language: 80% Tamil in Tamil Unicode script (தமிழ் எழுத்துக்களில் எழுதவும், e.g. "நண்பா GTA 6 gameplay பாத்தீங்களா...") + 20% English words in English Latin letters (e.g. GTA 6, hair graphics, physics, console, update, secret). Do NOT write Tamil in romanized English letters (Tanglish phonetics).
-Audience Address: You MUST address the audience directly as "நண்பா" (nanba) in the hook, body points, and closing CTA.
-Length: Full 40-60s detailed fast narration (110-140 words minimum). Include hook, 3-4 detailed breakdown facts, and an ending question. Do NOT make it short.`
+      ? `Language: 80% Tamil in Tamil Unicode script (தமிழ் எழுத்துக்களில் எழுதவும், e.g. "GTA 6 gameplay-ல இந்த ஒரு விஷயத்தை கவனிச்சீங்களா...") + 20% English words in English Latin letters (e.g. GTA 6, graphics, console, ray tracing, microtransactions, flop, scam, hype). Do NOT write Tamil in romanized English letters (Tanglish phonetics).
+${audienceRule}
+Script Duration: 40-60 seconds (120-150 words total). Keep sentences punchy, fast, and high-retention.`
       : `Language: English.
-Audience Address: You MUST address the audience directly as "friends" in the hook, body points, and closing CTA.
-Length: Full 40-60s detailed fast narration (110-140 words minimum). Include hook, 3-4 detailed breakdown facts, and an ending question.`;
+${audienceRule}
+Script Duration: 40-60 seconds (120-150 words total). Keep sentences punchy, fast, and high-retention.`;
 
-    const prompt = `Create a viral ${toneDesc} 45-60s Reel/Short script about: "${promptTopic}".
+    const prompt = `Create a viral 45-60s Reel/Short script about: "${promptTopic}".
+
+${tonePromptInstructions}
+
 ${langRule}
-Return structured JSON with title, full script narration, and sequential subtitles (2-4 words each).`;
 
-    const systemInstruction = `You are an expert viral YouTube Shorts/Reels scriptwriter. Output STRICT JSON matching the schema. Always produce comprehensive 120-150 word scripts for 45-60s video duration.`;
+CRITICAL RULES:
+1. Pacing: Write rapid-fire, high-retention voiceover text designed for TikTok/YouTube Shorts.
+2. Structure: 1 Shocking Hook sentence + 3-4 punchy body breakdown points + 1 Polarizing ending question/CTA.
+3. Subtitles: Provide chronological subtitle segments (2-4 words each) covering every single word from 0.0 seconds to 45-60 seconds without gaps.
+4. Output STRICT JSON matching the schema.`;
+
+    const systemInstruction = `${systemRoleInstruction} Output STRICT JSON matching the schema. Always produce comprehensive 120-150 word scripts for 45-60s video duration.`;
 
     const schema = {
       type: 'OBJECT',
@@ -1060,14 +1115,14 @@ Return structured JSON with title, full script narration, and sequential subtitl
         title: {
           type: 'STRING',
           description: isTamil
-            ? 'Punchy hook title under 10 words in 80% Tamil + 20% English addressing nanba (நண்பா).'
-            : 'ALL-CAPS PUNCHY hook title under 10 words in English addressing friends.',
+            ? 'Punchy hook title under 10 words in 80% Tamil + 20% English.'
+            : 'ALL-CAPS PUNCHY hook title under 10 words in English.',
         },
         script: {
           type: 'STRING',
           description: isTamil
-            ? 'Full 45-60s (120-150 words) spoken speech in 80% Tamil script and 20% English words addressing audience as நண்பா. No brackets or stage directions.'
-            : 'Full 45-60s (120-150 words) spoken speech addressing audience as friends. No brackets or stage directions.',
+            ? 'Full 45-60s (120-150 words) spoken speech in 80% Tamil script and 20% English words. Natural conversational flow, no brackets or stage directions.'
+            : 'Full 45-60s (120-150 words) spoken speech in English. Natural high-retention flow, no brackets or stage directions.',
         },
         subtitles: {
           type: 'ARRAY',

@@ -48,8 +48,8 @@
         <div class="form-group">
           <div class="field-header">
             <label>🌐 Narration Language</label>
-            <span class="language-badge" *ngIf="scriptLanguage() === 'en'">Audience: "friends"</span>
-            <span class="language-badge tamil-badge" *ngIf="scriptLanguage() === 'ta'">80% தமிழ் + 20% English ("நண்பா")</span>
+            <span class="language-badge" *ngIf="scriptLanguage() === 'en'">English Narration</span>
+            <span class="language-badge tamil-badge" *ngIf="scriptLanguage() === 'ta'">80% தமிழ் + 20% English</span>
           </div>
           <div class="lang-selector-pills">
             <button 
@@ -72,12 +72,12 @@
         </div>
 
         <div class="form-group">
-          <label for="promptTopic">💡 {{ scriptLanguage() === 'ta' ? 'Topic / Hook (Tamil + English Reel)' : 'Controversy Topic / Hook' }}</label>
+          <label for="promptTopic">💡 {{ scriptLanguage() === 'ta' ? 'Topic / Hook (Tamil + English Reel)' : 'Topic / Video Hook' }}</label>
           <textarea 
             id="promptTopic" 
             [(ngModel)]="promptTopic" 
             [placeholder]="scriptLanguage() === 'ta' 
-              ? 'e.g. GTA 6 graphics and 30 FPS console lock, or why Elden Ring boss fight is too difficult... (Generates 80% Tamil + 20% English addressing nanba/நண்பா)' 
+              ? 'e.g. GTA 6 graphics and 30 FPS console lock, or why Elden Ring boss fight is too difficult... (Generates 80% Tamil + 20% English)' 
               : 'e.g. Why GTA 6 is secretly locked to 30 FPS on consoles, or Why Elden Ring DLC is too hard for casual gamers...'" 
             rows="3">
           </textarea>
@@ -102,9 +102,10 @@
           <label for="scriptTone">🎭 Script Tone</label>
           <select id="scriptTone" [(ngModel)]="scriptTone">
             <option value="controversial">🔥 Controversial (Rage-bait Hook)</option>
+            <option value="hype">⚡ Hype / Epic Energy</option>
             <option value="detailed">📚 Educational / Informative Details</option>
             <option value="funny">🎭 Humorous / Witty Memes</option>
-            <option value="hype">⚡ Hype / Epic Energy</option>
+            <option value="friendly">🤝 Friendly & Casual ("Friends" / "நண்பா")</option>
           </select>
         </div>
 

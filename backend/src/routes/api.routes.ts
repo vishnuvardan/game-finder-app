@@ -945,7 +945,8 @@ router.post('/shorts/proxy-tts', async (req: Request, res: Response) => {
       lang,
       rate,
       pitch,
-      saveSubtitles: true
+      saveSubtitles: true,
+      timeout: 60000 // 60 seconds timeout for long text synthesis in serverless environments
     });
     await tts.ttsPromise(text, tempFile);
 
@@ -1002,20 +1003,14 @@ router.post('/shorts/proxy-tts', async (req: Request, res: Response) => {
       subtitles: alignedSubs
     });
   } catch (error: any) {
-    console.error('TTS proxy generation error:', error.message);
-    // Cleanup on error if files exist
-    if (fs.existsSync(tempFile)) {
-      try {
-        fs.unlinkSync(tempFile);
-      } catch (e) {}
-    }
-    const subFile = tempFile + '.json';
-    if (fs.existsSync(subFile)) {
-      try {
-        fs.unlinkSync(subFile);
-      } catch (e) {}
-    }
-    return res.status(500).json({ error: error.message });
+    const errorDetail = error?.message || (typeof error === 'string' ? error : JSON.stringify(error)) || 'TTS synthesis failed';
+    console.error('TTS proxy generation error:', errorDetail);
+    try {
+      if (fs.existsSync(tempFile)) fs.unlinkSync(tempFile);
+      const subFile = tempFile + '.json';
+      if (fs.existsSync(subFile)) fs.unlinkSync(subFile);
+    } catch (_) {}
+    return res.status(500).json({ error: errorDetail });
   }
 });
 

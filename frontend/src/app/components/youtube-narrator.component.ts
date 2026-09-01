@@ -264,6 +264,24 @@ export class YoutubeNarratorComponent {
     });
   }
 
+  private async getBase64Image(url: string): Promise<string> {
+    if (!url || url.startsWith('data:')) return url;
+    try {
+      const proxyUrl = this.gameService.getProxiedImageUrl(url);
+      const resp = await fetch(proxyUrl);
+      if (!resp.ok) throw new Error(`Proxy status: ${resp.status}`);
+      const blob = await resp.blob();
+      return new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(blob);
+      });
+    } catch (err) {
+      console.warn(`[Base64 Image Preloader] Could not convert image "${url}", using raw URL:`, err);
+      return url;
+    }
+  }
+
   /**
    * Reshuffle thumbnail background photo
    */
@@ -281,11 +299,26 @@ export class YoutubeNarratorComponent {
     if (!element) return;
 
     try {
+      // Preload current background image as base64 to prevent canvas cross-origin taint
+      const currentUrl = this.currentThumbnailImage();
+      const backdropEl = element.querySelector('.thumbnail-backdrop-img') as HTMLElement | null;
+      let originalBg = '';
+      if (backdropEl && currentUrl) {
+        originalBg = backdropEl.style.backgroundImage;
+        const b64 = await this.getBase64Image(currentUrl);
+        backdropEl.style.backgroundImage = `url(${b64})`;
+      }
+
       const dataUrl = await toPng(element, {
         quality: 1.0,
         pixelRatio: 2.0, // 1280x720 crystal clear rendering
         cacheBust: false,
       });
+
+      // Restore background
+      if (backdropEl && originalBg) {
+        backdropEl.style.backgroundImage = originalBg;
+      }
 
       const safeTitle = (this.youtubeTitle() || 'thumbnail').replace(/[^a-z0-9]/gi, '_').toLowerCase();
       const link = document.createElement('a');

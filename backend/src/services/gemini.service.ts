@@ -597,12 +597,107 @@ class GeminiService {
     );
   }
 
-  public async getStockImageFallback(topic: string): Promise<string> {
+  /**
+   * Fetches high-resolution images from Google Images Search via Serper API
+   */
+  public async fetchGoogleImages(query: string, count: number = 15): Promise<string[]> {
+    if (!config.serper.apiKey) {
+      console.warn('[Serper API] No SERPER_API_KEY configured in environment');
+      return [];
+    }
+
+    try {
+      // Clean query and append optimal quality keywords for gaming/visuals
+      const cleanQuery = query.replace(/[^\w\s-]/g, ' ').trim();
+      const searchQuery = `${cleanQuery} gaming 4k wallpaper`;
+      console.log(`[Serper API] Querying Google Images for: "${searchQuery}" (count: ${count})...`);
+
+      const response = await axios.post(
+        'https://google.serper.dev/images',
+        {
+          q: searchQuery,
+          num: Math.max(count, 10),
+        },
+        {
+          headers: {
+            'X-API-KEY': config.serper.apiKey,
+            'Content-Type': 'application/json',
+          },
+          timeout: 6000,
+        }
+      );
+
+      const images: any[] = response.data?.images || [];
+      const urls: string[] = [];
+
+      for (const img of images) {
+        if (img.imageUrl && typeof img.imageUrl === 'string' && img.imageUrl.startsWith('http')) {
+          urls.push(img.imageUrl);
+        } else if (img.thumbnailUrl && typeof img.thumbnailUrl === 'string') {
+          urls.push(img.thumbnailUrl);
+        }
+      }
+
+      console.log(`[Serper API] Successfully fetched ${urls.length} images from Google Images`);
+      return urls;
+    } catch (err: any) {
+      console.error('[Serper API] Error fetching Google Images:', err.response?.data || err.message);
+      return [];
+    }
+  }
+
+  /**
+   * Fallback to Unsplash photos if needed
+   */
+  private async fetchUnsplashImages(topic: string, count: number = 10): Promise<string[]> {
+    if (!config.unsplash.accessKey) return [];
+    try {
+      const response = await axios.get('https://api.unsplash.com/search/photos', {
+        params: {
+          query: `gaming ${topic}`,
+          client_id: config.unsplash.accessKey,
+          per_page: Math.min(count, 20),
+          orientation: 'landscape',
+        },
+        timeout: 4000,
+      });
+
+      const results = response.data?.results;
+      if (Array.isArray(results) && results.length > 0) {
+        return results
+          .map((photo: any) => {
+            if (photo.urls?.raw) {
+              return `${photo.urls.raw}&w=1080&h=1080&fit=crop&q=80`;
+            }
+            return photo.urls?.regular || photo.urls?.full;
+          })
+          .filter(Boolean);
+      }
+    } catch (err: any) {
+      console.warn(`[Unsplash API] Error fetching unsplash images:`, err.message);
+    }
+    return [];
+  }
+
+  /**
+   * Comprehensive multi-tier image pool retrieval
+   */
+  public async getImagePoolForTopic(topic: string, count: number = 15): Promise<string[]> {
+    // Tier 1: Google Images Search via Serper
+    const googleImages = await this.fetchGoogleImages(topic, count);
+    if (googleImages.length > 0) {
+      return googleImages;
+    }
+
+    // Tier 2: Unsplash Photos API
+    console.log(`[Image Pool] Google Search returned 0 images. Falling back to Unsplash for topic: "${topic}"`);
+    const unsplashImages = await this.fetchUnsplashImages(topic, count);
+    if (unsplashImages.length > 0) {
+      return unsplashImages;
+    }
+
+    // Tier 3: Curated Dynamic Fallback URL
     const lowerTopic = topic.toLowerCase();
-    
-    console.log(`[Unsplash Fallback] Matching local curated keywords for topic: "${topic}"`);
-    
-    // Extract the best query keyword based on simple rules
     let queryKeyword = 'gaming';
     if (lowerTopic.includes('xbox') || lowerTopic.includes('microsoft')) {
       queryKeyword = 'xbox';
@@ -619,51 +714,20 @@ class GeminiService {
     } else if (lowerTopic.includes('neon') || lowerTopic.includes('rgb') || lowerTopic.includes('cyberpunk')) {
       queryKeyword = 'cyberpunk-neon';
     } else {
-      // Clean query search term from the topic itself (e.g. "ps6 leaks" -> "ps6")
       const words = topic.split(/\s+/).filter(w => w.length > 2 && !w.toLowerCase().includes('leak') && !w.toLowerCase().includes('rumor') && !w.toLowerCase().includes('news') && !w.toLowerCase().includes('update') && !w.toLowerCase().includes('info'));
       if (words.length > 0) {
         queryKeyword = words.slice(0, 2).join('-');
       }
     }
 
-    // Generate a random seed signature to prevent browser caching of redirects
     const sig = Math.floor(Math.random() * 10000);
     const backupUrl = `https://images.unsplash.com/featured/1080x1080/?gaming,${encodeURIComponent(queryKeyword)}&sig=${sig}`;
+    return [backupUrl];
+  }
 
-    // Try fetching from Unsplash API using access keys
-    if (config.unsplash.accessKey) {
-      try {
-        console.log(`[Unsplash API] Querying Unsplash Search API for "${queryKeyword}"...`);
-        const response = await axios.get('https://api.unsplash.com/search/photos', {
-          params: {
-            query: `gaming ${queryKeyword}`, // focus on gaming related images
-            client_id: config.unsplash.accessKey,
-            per_page: 15,
-            orientation: 'squarish'
-          },
-          timeout: 4000
-        });
-
-        const results = response.data?.results;
-        if (results && Array.isArray(results) && results.length > 0) {
-          const randomIndex = Math.floor(Math.random() * results.length);
-          const photo = results[randomIndex];
-          let imgUrl = photo.urls?.regular;
-          if (photo.urls?.raw) {
-            imgUrl = `${photo.urls.raw}&w=1080&h=1080&fit=crop&q=80`;
-          }
-          if (imgUrl) {
-            console.log(`[Unsplash API] Successfully fetched image from API: ${imgUrl}`);
-            return imgUrl;
-          }
-        }
-      } catch (err: any) {
-        console.warn(`[Unsplash API] API request failed (falling back to backup URL):`, err.message);
-      }
-    }
-
-    console.log(`[Unsplash Fallback] Using backup dynamic URL: ${backupUrl}`);
-    return backupUrl;
+  public async getStockImageFallback(topic: string): Promise<string> {
+    const pool = await this.getImagePoolForTopic(topic, 1);
+    return pool[0] || `https://images.unsplash.com/featured/1080x1080/?gaming`;
   }
 
   public async generateSlides(
@@ -803,18 +867,28 @@ class GeminiService {
         }
       }
 
+      // If we don't have enough images (or topic-only search with no game), fetch from Google Images via Serper
+      if (gameImages.length < 5) {
+        const queryForGoogle = gameName ? `${gameName} ${topic}` : topic;
+        console.log(`[GeminiService] Fetching Google Images for query: "${queryForGoogle}"`);
+        const googleImages = await this.fetchGoogleImages(queryForGoogle, 15);
+        if (googleImages.length > 0) {
+          gameImages.push(...googleImages);
+        }
+      }
+
       // Deduplicate images while maintaining order
       gameImages = Array.from(new Set(gameImages.filter(url => Boolean(url) && typeof url === 'string')));
 
-      // If still empty or no game match, fall back to Unsplash stock photos
+      // If still empty, fall back to general stock image pool
       if (gameImages.length === 0) {
-        const fallback = await this.getStockImageFallback(topic);
-        gameImages = [fallback];
+        const fallbackPool = await this.getImagePoolForTopic(topic, 15);
+        gameImages = fallbackPool;
       }
 
       console.log(`[GeminiService] Total distinct high-res images pooled: ${gameImages.length}. Distributing across ${parsed.slides.length} slides.`);
 
-      // Create a shuffled copy of the image pool for randomized distribution
+      // Create a shuffled copy of the image pool for randomized distribution across slides
       const shuffledImages = [...gameImages].sort(() => 0.5 - Math.random());
 
       // Distribute a unique distinct image to each slide
@@ -826,7 +900,7 @@ class GeminiService {
         };
       });
 
-      const coverImageUrl = enrichedSlides[0]?.mediaUrl || gameImages[0] || await this.getStockImageFallback(topic);
+      const coverImageUrl = enrichedSlides[0]?.mediaUrl || gameImages[0] || (await this.getStockImageFallback(topic));
 
       return {
         ...parsed,
@@ -938,12 +1012,14 @@ class GeminiService {
         };
       });
 
-      const coverImageUrl = deals[0]?.headerImage || await this.getStockImageFallback('steam');
+      const coverImageUrl = deals[0]?.headerImage || (await this.getStockImageFallback('steam'));
+      const dealsImagePool = Array.from(new Set(deals.map((d: any) => d.headerImage).filter(Boolean)));
 
       return {
         ...parsed,
         slides: enrichedSlides,
-        coverImageUrl
+        coverImageUrl,
+        imagePool: dealsImagePool
       };
     } catch (error: any) {
       console.error('Error generating Steam Deals slides from Gemini:', error);
@@ -1131,11 +1207,20 @@ ${isTamil ? 'CRITICAL REQUIREMENT: The entire output (youtubeTitle, youtubeDescr
         }
       }
 
+      if (imagePool.length < 5) {
+        const queryForGoogle = gameTitle ? `${gameTitle} ${topic}` : topic;
+        console.log(`[GeminiService] Fetching Google Images for YouTube script query: "${queryForGoogle}"`);
+        const googleImages = await this.fetchGoogleImages(queryForGoogle, 15);
+        if (googleImages.length > 0) {
+          imagePool.push(...googleImages);
+        }
+      }
+
       imagePool = Array.from(new Set(imagePool.filter(url => Boolean(url) && typeof url === 'string')));
 
       if (imagePool.length === 0) {
-        const fallback = await this.getStockImageFallback(topic);
-        imagePool = [fallback];
+        const fallbackPool = await this.getImagePoolForTopic(topic, 15);
+        imagePool = fallbackPool;
       }
 
       const shuffledPool = [...imagePool].sort(() => 0.5 - Math.random());

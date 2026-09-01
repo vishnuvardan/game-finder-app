@@ -307,7 +307,7 @@ export class CarouselCreatorComponent {
   private async getBase64Image(url: string): Promise<string> {
     if (!url || url.startsWith('data:')) return url;
     try {
-      const proxyUrl = `http://localhost:3000/api/proxy-image?url=${encodeURIComponent(url)}`;
+      const proxyUrl = this.gameService.getProxiedImageUrl(url);
       const resp = await fetch(proxyUrl);
       if (!resp.ok) throw new Error(`Proxy status: ${resp.status}`);
       const blob = await resp.blob();

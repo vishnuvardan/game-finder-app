@@ -217,9 +217,10 @@ router.get('/proxy-image', async (req: Request, res: Response) => {
 
   let hostname = '';
   let targetUrl = url;
+  let parsedUrl: URL;
 
   try {
-    const parsedUrl = new URL(url);
+    parsedUrl = new URL(url);
     hostname = parsedUrl.hostname.toLowerCase();
     
     // Normalize target URL to use https for security if possible
@@ -230,62 +231,71 @@ router.get('/proxy-image', async (req: Request, res: Response) => {
     return res.status(400).json({ error: 'Invalid URL format' });
   }
 
-  // Allow trusted game image domains (Steam, IGDB, Unsplash, etc.)
-  const isAllowedHost = 
-    hostname === 'steamcdn-a.akamaihd.net' ||
-    hostname === 'steamcommunity-a.akamaihd.net' ||
-    hostname === 'media.steampowered.com' ||
-    hostname === 'cdn.steamstatic.com' ||
-    hostname.endsWith('.steamstatic.com') ||
-    hostname === 'steamcommunity.com' ||
-    hostname.endsWith('.steamcommunity.com') ||
-    hostname === 'images.igdb.com' ||
-    hostname.endsWith('.igdb.com') ||
-    hostname === 'images.unsplash.com' ||
-    hostname.endsWith('.unsplash.com') ||
-    hostname === 'placehold.co' ||
-    hostname.endsWith('.akamaihd.net');
+  // Validate protocol
+  if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+    return res.status(400).json({ error: 'Only HTTP/HTTPS URLs are supported' });
+  }
 
-  if (!isAllowedHost) {
-    return res.status(403).json({ error: `Untrusted image domain: ${hostname}` });
+  // Prevent SSRF against private/local networks
+  if (
+    hostname === 'localhost' ||
+    hostname === '127.0.0.1' ||
+    hostname === '0.0.0.0' ||
+    hostname.startsWith('192.168.') ||
+    hostname.startsWith('10.') ||
+    hostname.startsWith('172.16.') ||
+    hostname.endsWith('.local')
+  ) {
+    return res.status(403).json({ error: 'Local network access is restricted' });
   }
 
   const requestHeaders = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8'
   };
 
   try {
     const response = await axios.get(targetUrl, {
       responseType: 'arraybuffer',
-      timeout: 5000,
-      headers: requestHeaders
+      timeout: 8000,
+      headers: requestHeaders,
+      maxRedirects: 5
     });
 
     const contentTypeHeader = response.headers['content-type'];
-    const contentType = typeof contentTypeHeader === 'string' ? contentTypeHeader : 'image/png';
+    const contentType = typeof contentTypeHeader === 'string' && contentTypeHeader.includes('image')
+      ? contentTypeHeader
+      : 'image/jpeg';
+
     res.setHeader('Content-Type', contentType);
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Cache-Control', 'public, max-age=86400');
     return res.send(response.data);
   } catch (error: any) {
     console.error('Image proxy error fetching:', targetUrl, error.message);
-    // If fetching targetUrl failed, retry with original url
-    try {
-      const response = await axios.get(url, {
-        responseType: 'arraybuffer',
-        timeout: 5000,
-        headers: requestHeaders
-      });
-      const contentTypeHeader = response.headers['content-type'];
-      const contentType = typeof contentTypeHeader === 'string' ? contentTypeHeader : 'image/png';
-      res.setHeader('Content-Type', contentType);
-      res.setHeader('Access-Control-Allow-Origin', '*');
-      res.setHeader('Cache-Control', 'public, max-age=86400');
-      return res.send(response.data);
-    } catch (retryError: any) {
-      console.error('Image proxy retry error fetching:', url, retryError.message);
-      return res.status(500).json({ error: 'Failed to proxy image' });
+    // If targetUrl failed, retry once with raw url if different
+    if (targetUrl !== url) {
+      try {
+        const response = await axios.get(url, {
+          responseType: 'arraybuffer',
+          timeout: 8000,
+          headers: requestHeaders,
+          maxRedirects: 5
+        });
+        const contentTypeHeader = response.headers['content-type'];
+        const contentType = typeof contentTypeHeader === 'string' && contentTypeHeader.includes('image')
+          ? contentTypeHeader
+          : 'image/jpeg';
+        res.setHeader('Content-Type', contentType);
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Cache-Control', 'public, max-age=86400');
+        return res.send(response.data);
+      } catch (retryError: any) {
+        console.error('Image proxy retry error fetching:', url, retryError.message);
+        return res.status(500).json({ error: 'Failed to proxy image' });
+      }
     }
+    return res.status(500).json({ error: 'Failed to proxy image' });
   }
 });
 

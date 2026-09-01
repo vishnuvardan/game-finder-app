@@ -806,70 +806,11 @@ interface SubtitlePhrase {
   end: number;
 }
 
-function alignSubtitles(phrases: SubtitlePhrase[], words: WordSegment[]): SubtitlePhrase[] {
-  if (!words || words.length === 0) return phrases;
-
-  const aligned: SubtitlePhrase[] = [];
-  let wordIdx = 0;
-
-  for (let i = 0; i < phrases.length; i++) {
-    const phrase = phrases[i];
-    const phraseWords = phrase.text.split(/\s+/).filter(w => w.trim().length > 0);
-    const numWordsToConsume = phraseWords.length;
-
-    if (numWordsToConsume === 0 || wordIdx >= words.length) {
-      aligned.push({ ...phrase });
-      continue;
-    }
-
-    const startWord = words[wordIdx];
-    const phraseStartMs = startWord.start;
-
-    let endWord = words[wordIdx];
-    for (let j = 0; j < numWordsToConsume; j++) {
-      if (wordIdx < words.length) {
-        endWord = words[wordIdx];
-        wordIdx++;
-      }
-    }
-
-    const phraseEndMs = endWord.end;
-
-    aligned.push({
-      text: phrase.text,
-      start: phraseStartMs / 1000,
-      end: phraseEndMs / 1000
-    });
-  }
-
-  // Adjust overlapping or gaps
-  if (aligned.length > 0) {
-    aligned[0].start = 0;
-  }
-
-  for (let i = 0; i < aligned.length - 1; i++) {
-    const current = aligned[i];
-    const next = aligned[i + 1];
-
-    if (next.start < current.end) {
-      next.start = current.end;
-    } else if (current.end < next.start) {
-      const gap = next.start - current.end;
-      if (gap <= 1.5) {
-        current.end = next.start;
-      }
-    }
-  }
-
-  // Force the last subtitle to extend to the very end of the last word
-  if (aligned.length > 0 && words.length > 0) {
-    aligned[aligned.length - 1].end = words[words.length - 1].end / 1000;
-  }
-
-  return aligned;
-}
-
-function buildTamilSubtitlesFromWords(words: WordSegment[]): SubtitlePhrase[] {
+/**
+ * Builds frame-perfect, synchronized subtitle cards directly from EdgeTTS physical word timestamps.
+ * Works seamlessly for all voices and languages (English, Tamil, British, etc.) with zero drift.
+ */
+function buildPreciseSubtitlesFromWords(words: WordSegment[]): SubtitlePhrase[] {
   if (!words || words.length === 0) return [];
 
   const chunks: SubtitlePhrase[] = [];
@@ -888,11 +829,9 @@ function buildTamilSubtitlesFromWords(words: WordSegment[]): SubtitlePhrase[] {
     const nextWord = words[i + 1];
     const hasLongPauseNext = nextWord ? ((nextWord.start - w.end) > 250) : true;
     
-    // Chunk criteria: 2-3 words, punctuation mark, character length >= 20, or pause
-    const shouldBreak = currentChunk.length >= 3 || 
-                        isPunctuation || 
-                        currentChars >= 20 || 
-                        hasLongPauseNext || 
+    // Chunk criteria for readable TikTok/Shorts: 3-4 words max, punctuation mark, character length >= 22, or audio pause
+    const shouldBreak = currentChunk.length >= 4 || 
+                        (currentChunk.length >= 2 && (isPunctuation || currentChars >= 22 || hasLongPauseNext)) || 
                         i === words.length - 1;
 
     if (shouldBreak) {
@@ -909,17 +848,17 @@ function buildTamilSubtitlesFromWords(words: WordSegment[]): SubtitlePhrase[] {
     chunks[0].start = 0.0;
   }
 
-  // Smooth gaps between chunks so subtitles stay visible between brief pauses
+  // Smooth brief pauses (<= 0.4s) between subtitle cards so text displays continuously without flickering
   for (let i = 0; i < chunks.length - 1; i++) {
     const curr = chunks[i];
     const next = chunks[i + 1];
     const gap = next.start - curr.end;
-    if (gap > 0 && gap <= 0.45) {
+    if (gap > 0 && gap <= 0.4) {
       curr.end = next.start;
     }
   }
 
-  // Extend last subtitle to the very end of synthesized audio
+  // Extend last subtitle to the exact end of the synthesized speech
   if (chunks.length > 0 && words.length > 0) {
     chunks[chunks.length - 1].end = words[words.length - 1].end / 1000;
   }
@@ -939,12 +878,15 @@ router.post('/shorts/proxy-tts', async (req: Request, res: Response) => {
     return res.status(400).json({ error: 'text must be a non-empty string' });
   }
 
-  const voice = voiceSelection || 'en-US-ChristopherNeural';
+  const voice = voiceSelection || 'en-US-EricNeural';
   const isTamilVoice = voice.startsWith('ta-');
   const defaultRate = '+50%'; // Fast ~2x shorts narration pacing for both Tamil and English
   const rate = requestedRate || defaultRate;
   const pitch = requestedPitch || (isTamilVoice ? '-5Hz' : 'default');
-  const lang = isTamilVoice ? 'ta-IN' : 'en-US';
+
+  // Dynamically determine exact regional language code from voice prefix (e.g. 'en-US', 'en-GB', 'ta-IN', 'ta-LK')
+  const langParts = voice.split('-');
+  const lang = (langParts.length >= 2) ? `${langParts[0]}-${langParts[1]}` : (isTamilVoice ? 'ta-IN' : 'en-US');
 
   const tempDir = os.tmpdir();
   const tempFile = path.join(tempDir, `tts_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.mp3`);
@@ -967,33 +909,14 @@ router.post('/shorts/proxy-tts', async (req: Request, res: Response) => {
     const fileBuffer = fs.readFileSync(tempFile);
     const audioBase64 = fileBuffer.toString('base64');
 
-    // Align subtitles if possible
+    // Extract exact physical word timestamps from synthesizer and build synchronized subtitles
     let alignedSubs = subtitles || [];
     const subFile = tempFile + '.json';
     if (fs.existsSync(subFile)) {
       try {
         const subContent = fs.readFileSync(subFile, 'utf8');
         const words = JSON.parse(subContent);
-        
-        if (isTamilVoice) {
-          // For Tamil: synthesize exact word-level timing directly from audio engine
-          alignedSubs = buildTamilSubtitlesFromWords(words);
-        } else if (subtitles && subtitles.length > 0) {
-          // For English: align subtitle phrases with words
-          alignedSubs = alignSubtitles(subtitles, words);
-        } else {
-          // Auto-generate phrases of 3 words each
-          const phraseSize = 3;
-          const autoPhrases = [];
-          for (let i = 0; i < words.length; i += phraseSize) {
-            const chunk = words.slice(i, i + phraseSize);
-            const chunkText = chunk.map((w: any) => w.part.trim()).join(' ');
-            const start = chunk[0].start / 1000;
-            const end = chunk[chunk.length - 1].end / 1000;
-            autoPhrases.push({ text: chunkText, start, end });
-          }
-          alignedSubs = autoPhrases;
-        }
+        alignedSubs = buildPreciseSubtitlesFromWords(words);
       } catch (err) {
         console.error('Error parsing subtitle file:', err);
       } finally {

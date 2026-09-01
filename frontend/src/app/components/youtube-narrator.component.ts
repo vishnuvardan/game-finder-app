@@ -176,6 +176,40 @@ export class YoutubeNarratorComponent {
     return parts.join('\n');
   });
 
+  // Computed Full Complete YouTube Package (Title, Description, Hashtags, Scripts)
+  protected readonly fullPackageText = computed(() => {
+    const title = this.youtubeTitle()?.trim() || '';
+    const desc = this.youtubeDescription()?.trim() || '';
+    
+    const rawTags = this.tags() || [];
+    const hashtagsFormatted = rawTags
+      .map(tag => tag.trim().startsWith('#') ? tag.trim() : `#${tag.trim()}`)
+      .filter(Boolean)
+      .join(' ');
+
+    const script = this.fullScriptText()?.trim() || '';
+
+    const parts: string[] = [];
+
+    if (title) {
+      parts.push(`Title:\n${title}`);
+    }
+
+    if (desc) {
+      parts.push(`Description:\n${desc}`);
+    }
+
+    if (hashtagsFormatted) {
+      parts.push(`Hashtags:\n${hashtagsFormatted}`);
+    }
+
+    if (script) {
+      parts.push(`Scripts:\n${script}`);
+    }
+
+    return parts.join('\n\n');
+  });
+
   // Total Script Word Count & Duration
   protected readonly totalWordCount = computed(() => {
     const text = this.fullScriptText();
@@ -527,7 +561,7 @@ export class YoutubeNarratorComponent {
   }
 
   protected copyMasterScript() {
-    navigator.clipboard.writeText(this.fullScriptText());
+    navigator.clipboard.writeText(this.fullPackageText());
     this.isCopiedScript.set(true);
     setTimeout(() => this.isCopiedScript.set(false), 2000);
   }

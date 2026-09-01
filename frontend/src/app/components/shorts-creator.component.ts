@@ -21,23 +21,29 @@ export class ShortsCreatorComponent implements OnInit, OnDestroy {
   // Input states
   protected promptTopic = signal('');
   protected scriptLanguage = signal<'en' | 'ta'>('en');
-  protected voiceSelection = signal('en-US-ChristopherNeural');
+  protected voiceSelection = signal('en-US-EricNeural');
   protected scriptTone = signal('controversial'); // Tone of the narration script
   protected gameVolume = signal(0.15); // Default game volume is 15%
 
-  // Voice catalogue definition
+  // Voice catalogue definition (Synchronized with YouTube Narrator)
   protected englishVoices = [
-    { id: 'en-US-ChristopherNeural', label: 'Christopher (US Male - Energetic)' },
-    { id: 'en-US-GuyNeural', label: 'Guy (US Male - Conversational)' },
-    { id: 'en-US-JennyNeural', label: 'Jenny (US Female - Clear)' },
-    { id: 'en-US-AriaNeural', label: 'Aria (US Female - Animated)' }
+    { id: 'en-US-EricNeural', label: '🔥 Eric (US Male - Energetic / YouTube - Deep Bass)' },
+    { id: 'en-US-ChristopherNeural', label: '🎙️ Christopher (US Male - Authoritative / Documentary)' },
+    { id: 'en-US-GuyNeural', label: '💬 Guy (US Male - Conversational)' },
+    { id: 'en-US-JennyNeural', label: '🌸 Jenny (US Female - Natural / Warm)' },
+    { id: 'en-US-AriaNeural', label: '⚡ Aria (US Female - Dynamic Storyteller)' },
+    { id: 'en-GB-RyanNeural', label: '🇬🇧 Ryan (UK Male - British Accent)' },
+    { id: 'en-GB-SoniaNeural', label: '🇬🇧 Sonia (UK Female - British Accent)' }
   ];
 
   protected tamilVoices = [
-    { id: 'ta-IN-ValluvarNeural', label: '👑 Valluvar (Deep BASS Male - Recommended)' },
-    { id: 'ta-LK-KumarNeural', label: '🎙️ Kumar (Deep & Resonant Male)' },
-    { id: 'ta-SG-AnbuNeural', label: '⚡ Anbu (Dynamic & Punchy Male)' },
-    { id: 'ta-IN-PallaviNeural', label: '🌸 Pallavi (Expressive & Clear Female)' }
+    { id: 'ta-IN-ValluvarNeural', label: '👑 வள்ளுவர் / Valluvar (Deep BASS Male India - Recommended)' },
+    { id: 'ta-IN-PallaviNeural', label: '🌸 பல்லவி / Pallavi (Expressive & Clear Female India)' },
+    { id: 'ta-LK-KumarNeural', label: '🎙️ குமார் / Kumar (Deep & Resonant Male Sri Lanka)' },
+    { id: 'ta-LK-SaranyaNeural', label: '✨ சரண்யா / Saranya (Clear Female Sri Lanka)' },
+    { id: 'ta-MY-SuryaNeural', label: '⚡ சூர்யா / Surya (Dynamic Male Malaysia)' },
+    { id: 'ta-SG-VenbaNeural', label: '🌺 வெண்பா / Venba (Melodious Female Singapore)' },
+    { id: 'ta-SG-AnbuNeural', label: '🔥 அன்பு / Anbu (Punchy Male Singapore)' }
   ];
   
   // File uploads
@@ -116,7 +122,7 @@ export class ShortsCreatorComponent implements OnInit, OnDestroy {
     if (lang === 'ta') {
       this.voiceSelection.set('ta-IN-ValluvarNeural'); // Default to Deep BASS voice
     } else {
-      this.voiceSelection.set('en-US-ChristopherNeural');
+      this.voiceSelection.set('en-US-EricNeural'); // Default to Eric (YouTube Deep Bass)
     }
   }
 

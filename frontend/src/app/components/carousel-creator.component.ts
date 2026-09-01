@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { GameService, IGDBGame, CarouselSlide } from '../services/game.service';
 import { AutocompleteInput } from './autocomplete-input';
+import { toPng, toJpeg } from 'html-to-image';
 import html2canvas from 'html2canvas';
 
 type PageState = 'intake' | 'generating' | 'preview';
@@ -303,7 +304,25 @@ export class CarouselCreatorComponent {
     this.activeSlideIndex.set(index);
   }
 
-  // Image exports
+  private async getBase64Image(url: string): Promise<string> {
+    if (!url || url.startsWith('data:')) return url;
+    try {
+      const proxyUrl = `http://localhost:3000/api/proxy-image?url=${encodeURIComponent(url)}`;
+      const resp = await fetch(proxyUrl);
+      if (!resp.ok) throw new Error(`Proxy status: ${resp.status}`);
+      const blob = await resp.blob();
+      return new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(blob);
+      });
+    } catch (err) {
+      console.warn(`[Base64 Image Preloader] Could not convert image "${url}", using raw URL:`, err);
+      return url;
+    }
+  }
+
+  // Image exports using native GPU SVG foreignObject engine (html-to-image)
   private async triggerDownload(elementId: string, filename: string): Promise<boolean> {
     const cardElement = document.getElementById(elementId);
     if (!cardElement) {
@@ -311,17 +330,14 @@ export class CarouselCreatorComponent {
       return false;
     }
 
-    const options = {
-      useCORS: true,
-      allowTaint: false,
-      logging: false,
-      backgroundColor: null,
-      scale: 3.375, // High-res export (320px * 3.375 = 1080px wide)
-    };
-
     try {
-      const canvas = await html2canvas(cardElement, options);
-      const imgData = canvas.toDataURL('image/png');
+      // Use html-to-image for pristine vector font anti-aliasing and native image rendering
+      const imgData = await toPng(cardElement, {
+        quality: 1.0,
+        pixelRatio: 3.375, // 1080px native crisp output
+        cacheBust: false,
+      });
+
       const link = document.createElement('a');
       link.download = filename;
       link.href = imgData;
@@ -330,8 +346,28 @@ export class CarouselCreatorComponent {
       document.body.removeChild(link);
       return true;
     } catch (err) {
-      console.error('HTML2Canvas rendering error:', err);
-      return false;
+      console.warn('html-to-image error, trying canvas fallback:', err);
+      try {
+        const canvas = await html2canvas(cardElement, {
+          useCORS: true,
+          allowTaint: true,
+          logging: false,
+          backgroundColor: '#070913',
+          scale: 3.375,
+          imageTimeout: 20000,
+        });
+        const imgData = canvas.toDataURL('image/png');
+        const link = document.createElement('a');
+        link.download = filename;
+        link.href = imgData;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        return true;
+      } catch (fallbackErr) {
+        console.error('All rendering options failed:', fallbackErr);
+        return false;
+      }
     }
   }
 
@@ -341,6 +377,15 @@ export class CarouselCreatorComponent {
     const index = this.activeSlideIndex();
     const safeName = gameName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
     const filename = `${safeName}-slide-${index + 1}.png`;
+
+    // Convert active slide image to base64 first to guarantee 100% raw high-res fidelity
+    const currentSlides = [...this.slides()];
+    if (currentSlides[index]?.mediaUrl && !currentSlides[index].mediaUrl.startsWith('data:')) {
+      const b64 = await this.getBase64Image(currentSlides[index].mediaUrl);
+      currentSlides[index] = { ...currentSlides[index], mediaUrl: b64 };
+      this.slides.set(currentSlides);
+      await new Promise((r) => setTimeout(r, 150));
+    }
 
     const success = await this.triggerDownload(`offscreen-slide-${index}`, filename);
     if (!success) {
@@ -356,13 +401,29 @@ export class CarouselCreatorComponent {
     const safeName = gameName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
     const totalSlides = this.slides().length;
 
+    // Pre-convert all slide images to Base64 data URLs in parallel
+    const currentSlides = [...this.slides()];
+    const convertedSlides = await Promise.all(
+      currentSlides.map(async (slide) => {
+        if (slide.mediaUrl && !slide.mediaUrl.startsWith('data:')) {
+          const b64 = await this.getBase64Image(slide.mediaUrl);
+          return { ...slide, mediaUrl: b64 };
+        }
+        return slide;
+      })
+    );
+    this.slides.set(convertedSlides);
+    if (convertedSlides[0]?.mediaUrl) {
+      this.generatedCoverUrl.set(convertedSlides[0].mediaUrl);
+    }
+    await new Promise((r) => setTimeout(r, 200));
+
     let successCount = 0;
 
     for (let i = 0; i < totalSlides; i++) {
       const elementId = `offscreen-slide-${i}`;
       const filename = `${safeName}-carousel-slide-${i + 1}.png`;
       
-      // Delay slightly between downloads to prevent browser blocking multiple downloads
       await new Promise((resolve) => setTimeout(resolve, 300));
       const success = await this.triggerDownload(elementId, filename);
       if (success) successCount++;
@@ -398,14 +459,33 @@ export class CarouselCreatorComponent {
 
     this.errorMessage.set(null);
     this.publishStep.set('rendering');
-    this.publishProgressText.set('Initializing canvas renderer...');
+    this.publishProgressText.set('Pre-loading full-resolution image assets into memory...');
 
     try {
       const totalSlides = this.slides().length;
+
+      // Pre-convert all slide images to Base64 data URLs in parallel so html2canvas renders with 100% crystal-clear fidelity
+      const currentSlides = [...this.slides()];
+      const convertedSlides = await Promise.all(
+        currentSlides.map(async (slide) => {
+          if (slide.mediaUrl && !slide.mediaUrl.startsWith('data:')) {
+            const b64 = await this.getBase64Image(slide.mediaUrl);
+            return { ...slide, mediaUrl: b64 };
+          }
+          return slide;
+        })
+      );
+      this.slides.set(convertedSlides);
+      if (convertedSlides[0]?.mediaUrl) {
+        this.generatedCoverUrl.set(convertedSlides[0].mediaUrl);
+      }
+      // Give browser 250ms to repaint DOM with high-res base64 textures
+      await new Promise((r) => setTimeout(r, 250));
+
       const slideImages: string[] = [];
 
       for (let i = 0; i < totalSlides; i++) {
-        this.publishProgressText.set(`Rendering slide ${i + 1} of ${totalSlides}...`);
+        this.publishProgressText.set(`Rendering slide ${i + 1} of ${totalSlides} in studio quality...`);
         const cardElement = document.getElementById(`offscreen-slide-${i}`);
         if (!cardElement) {
           throw new Error(`Slide element "offscreen-slide-${i}" was not found. Please wait.`);
@@ -413,15 +493,27 @@ export class CarouselCreatorComponent {
         
         await new Promise((resolve) => setTimeout(resolve, 150));
         
-        const canvas = await html2canvas(cardElement, {
-          useCORS: true,
-          allowTaint: false,
-          logging: false,
-          backgroundColor: '#070913', // Solid dark slate background to prevent transparency rendering issues in JPEGs
-          scale: 3.375, // High-res export
-        });
+        let imgData: string;
+        try {
+          imgData = await toJpeg(cardElement, {
+            quality: 0.98,
+            pixelRatio: 3.375,
+            backgroundColor: '#070913',
+          });
+        } catch (e) {
+          console.warn('html-to-image jpeg failed, using canvas fallback:', e);
+          const canvas = await html2canvas(cardElement, {
+            useCORS: true,
+            allowTaint: true,
+            logging: false,
+            backgroundColor: '#070913',
+            scale: 3.375,
+            imageTimeout: 20000,
+          });
+          imgData = canvas.toDataURL('image/jpeg', 0.98);
+        }
         
-        slideImages.push(canvas.toDataURL('image/jpeg', 0.92));
+        slideImages.push(imgData);
       }
 
       this.publishStep.set('publishing');

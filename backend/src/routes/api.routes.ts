@@ -230,7 +230,7 @@ router.get('/proxy-image', async (req: Request, res: Response) => {
     return res.status(400).json({ error: 'Invalid URL format' });
   }
 
-  // Allow trusted steam image domains
+  // Allow trusted game image domains (Steam, IGDB, Unsplash, etc.)
   const isAllowedHost = 
     hostname === 'steamcdn-a.akamaihd.net' ||
     hostname === 'steamcommunity-a.akamaihd.net' ||
@@ -239,11 +239,15 @@ router.get('/proxy-image', async (req: Request, res: Response) => {
     hostname.endsWith('.steamstatic.com') ||
     hostname === 'steamcommunity.com' ||
     hostname.endsWith('.steamcommunity.com') ||
+    hostname === 'images.igdb.com' ||
+    hostname.endsWith('.igdb.com') ||
     hostname === 'images.unsplash.com' ||
-    hostname === 'placehold.co';
+    hostname.endsWith('.unsplash.com') ||
+    hostname === 'placehold.co' ||
+    hostname.endsWith('.akamaihd.net');
 
   if (!isAllowedHost) {
-    return res.status(403).json({ error: 'Untrusted image domain' });
+    return res.status(403).json({ error: `Untrusted image domain: ${hostname}` });
   }
 
   const requestHeaders = {

@@ -222,8 +222,8 @@ export class CanvasRecorderService {
             ctx.drawImage(videoEl, 0, vY, 1080, vHeight);
           }
 
-          // Render Top Title (Impact Meme style - fixed top safe zone at y=380)
-          ctx.font = '900 72px Impact, "Arial Black", sans-serif';
+          // Render Top Title (Impact / Tamil bold style - fixed top safe zone at y=380)
+          ctx.font = '900 72px Impact, "Noto Sans Tamil", "Baloo Thambi 2", "Nirmala UI", "Arial Black", sans-serif';
           ctx.textAlign = 'center';
           ctx.fillStyle = '#FFFFFF';
           ctx.strokeStyle = '#000000';
@@ -235,7 +235,7 @@ export class CanvasRecorderService {
           // Find active subtitle and render at fixed bottom safe zone (y=1480)
           const activeSub = subtitles.find(sub => elapsed >= sub.start && elapsed <= sub.end);
           if (activeSub) {
-            ctx.font = '800 64px "Impact", "Arial Black", sans-serif';
+            ctx.font = '800 64px Impact, "Noto Sans Tamil", "Baloo Thambi 2", "Nirmala UI", "Arial Black", sans-serif';
             ctx.fillStyle = '#FFE600'; // Meme yellow for subtitle highlight
             ctx.strokeStyle = '#000000';
             ctx.lineWidth = 10;

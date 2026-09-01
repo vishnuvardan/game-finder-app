@@ -424,14 +424,14 @@ router.post('/slides/steam-deals', async (req: Request, res: Response) => {
  * Proxy endpoint to call Gemini API with Node server's key, returning script/subtitles.
  */
 router.post('/shorts/proxy-gemini', async (req: Request, res: Response) => {
-  const { promptTopic, tone } = req.body;
+  const { promptTopic, tone, language } = req.body;
 
   if (!promptTopic || typeof promptTopic !== 'string' || promptTopic.trim() === '') {
     return res.status(400).json({ error: 'promptTopic must be a non-empty string' });
   }
 
   try {
-    const result = await geminiService.generateShortsScript(promptTopic, tone);
+    const result = await geminiService.generateShortsScript(promptTopic, tone, language);
     return res.json(result);
   } catch (error: any) {
     console.error('Shorts script generation proxy error:', error.message);
@@ -859,26 +859,92 @@ function alignSubtitles(phrases: SubtitlePhrase[], words: WordSegment[]): Subtit
   return aligned;
 }
 
+function buildTamilSubtitlesFromWords(words: WordSegment[]): SubtitlePhrase[] {
+  if (!words || words.length === 0) return [];
+
+  const chunks: SubtitlePhrase[] = [];
+  let currentChunk: WordSegment[] = [];
+  let currentChars = 0;
+
+  for (let i = 0; i < words.length; i++) {
+    const w = words[i];
+    const cleanWord = w.part.trim();
+    if (!cleanWord) continue;
+
+    currentChunk.push(w);
+    currentChars += cleanWord.length;
+
+    const isPunctuation = /[.?!,;:]$/.test(cleanWord);
+    const nextWord = words[i + 1];
+    const hasLongPauseNext = nextWord ? ((nextWord.start - w.end) > 250) : true;
+    
+    // Chunk criteria: 2-3 words, punctuation mark, character length >= 20, or pause
+    const shouldBreak = currentChunk.length >= 3 || 
+                        isPunctuation || 
+                        currentChars >= 20 || 
+                        hasLongPauseNext || 
+                        i === words.length - 1;
+
+    if (shouldBreak) {
+      const text = currentChunk.map(x => x.part.trim()).join(' ');
+      const start = currentChunk[0].start / 1000;
+      const end = currentChunk[currentChunk.length - 1].end / 1000;
+      chunks.push({ text, start, end });
+      currentChunk = [];
+      currentChars = 0;
+    }
+  }
+
+  if (chunks.length > 0) {
+    chunks[0].start = 0.0;
+  }
+
+  // Smooth gaps between chunks so subtitles stay visible between brief pauses
+  for (let i = 0; i < chunks.length - 1; i++) {
+    const curr = chunks[i];
+    const next = chunks[i + 1];
+    const gap = next.start - curr.end;
+    if (gap > 0 && gap <= 0.45) {
+      curr.end = next.start;
+    }
+  }
+
+  // Extend last subtitle to the very end of synthesized audio
+  if (chunks.length > 0 && words.length > 0) {
+    chunks[chunks.length - 1].end = words[words.length - 1].end / 1000;
+  }
+
+  return chunks;
+}
+
 /**
  * POST /api/shorts/proxy-tts
  * Payload: { text: string, subtitles?: Array, voiceSelection?: string }
  * Proxy endpoint to generate TTS audio and aligned word-level subtitles, returning a JSON response.
  */
 router.post('/shorts/proxy-tts', async (req: Request, res: Response) => {
-  const { text, subtitles, voiceSelection } = req.body;
+  const { text, subtitles, voiceSelection, rate: requestedRate, pitch: requestedPitch } = req.body;
 
   if (!text || typeof text !== 'string' || text.trim() === '') {
     return res.status(400).json({ error: 'text must be a non-empty string' });
   }
 
   const voice = voiceSelection || 'en-US-ChristopherNeural';
+  const isTamilVoice = voice.startsWith('ta-');
+  const defaultRate = '+50%'; // Fast ~2x shorts narration pacing for both Tamil and English
+  const rate = requestedRate || defaultRate;
+  const pitch = requestedPitch || (isTamilVoice ? '-5Hz' : 'default');
+  const lang = isTamilVoice ? 'ta-IN' : 'en-US';
+
   const tempDir = os.tmpdir();
   const tempFile = path.join(tempDir, `tts_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.mp3`);
 
   try {
     const tts = new EdgeTTS({ 
       voice,
-      rate: '+50%',
+      lang,
+      rate,
+      pitch,
       saveSubtitles: true
     });
     await tts.ttsPromise(text, tempFile);
@@ -898,7 +964,11 @@ router.post('/shorts/proxy-tts', async (req: Request, res: Response) => {
         const subContent = fs.readFileSync(subFile, 'utf8');
         const words = JSON.parse(subContent);
         
-        if (subtitles && subtitles.length > 0) {
+        if (isTamilVoice) {
+          // For Tamil: synthesize exact word-level timing directly from audio engine
+          alignedSubs = buildTamilSubtitlesFromWords(words);
+        } else if (subtitles && subtitles.length > 0) {
+          // For English: align subtitle phrases with words
           alignedSubs = alignSubtitles(subtitles, words);
         } else {
           // Auto-generate phrases of 3 words each

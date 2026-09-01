@@ -44,23 +44,57 @@
 
       <!-- Right side: Prompts & Synthesizer settings -->
       <div class="grid-section settings-section">
+        <!-- Language Selector -->
         <div class="form-group">
-          <label for="promptTopic">💡 Controversy Topic / Hook</label>
+          <div class="field-header">
+            <label>🌐 Narration Language</label>
+            <span class="language-badge" *ngIf="scriptLanguage() === 'en'">Audience: "friends"</span>
+            <span class="language-badge tamil-badge" *ngIf="scriptLanguage() === 'ta'">80% தமிழ் + 20% English ("நண்பா")</span>
+          </div>
+          <div class="lang-selector-pills">
+            <button 
+              type="button" 
+              class="lang-pill-btn" 
+              [class.active]="scriptLanguage() === 'en'"
+              (click)="onLanguageChange('en')">
+              <span class="flag">🇺🇸</span>
+              <span class="name">English</span>
+            </button>
+            <button 
+              type="button" 
+              class="lang-pill-btn" 
+              [class.active]="scriptLanguage() === 'ta'"
+              (click)="onLanguageChange('ta')">
+              <span class="flag">🇮🇳</span>
+              <span class="name">Tamil (தமிழ்)</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="promptTopic">💡 {{ scriptLanguage() === 'ta' ? 'Topic / Hook (Tamil + English Reel)' : 'Controversy Topic / Hook' }}</label>
           <textarea 
             id="promptTopic" 
             [(ngModel)]="promptTopic" 
-            placeholder="e.g. Why GTA 6 is secretly locked to 30 FPS on consoles, or Why Elden Ring DLC is too hard for casual gamers..." 
+            [placeholder]="scriptLanguage() === 'ta' 
+              ? 'e.g. GTA 6 graphics and 30 FPS console lock, or why Elden Ring boss fight is too difficult... (Generates 80% Tamil + 20% English addressing nanba/நண்பா)' 
+              : 'e.g. Why GTA 6 is secretly locked to 30 FPS on consoles, or Why Elden Ring DLC is too hard for casual gamers...'" 
             rows="3">
           </textarea>
         </div>
 
         <div class="form-group">
-          <label for="voiceSelection">🗣️ Narration Voice</label>
+          <div class="field-header">
+            <label for="voiceSelection">🗣️ Narration Voice</label>
+            <span class="voice-hint" *ngIf="scriptLanguage() === 'ta'">Deep Bass voice preferred</span>
+          </div>
           <select id="voiceSelection" [(ngModel)]="voiceSelection">
-            <option value="en-US-ChristopherNeural">Christopher (US Male - Energetic)</option>
-            <option value="en-US-GuyNeural">Guy (US Male - Conversational)</option>
-            <option value="en-US-JennyNeural">Jenny (US Female - Clear)</option>
-            <option value="en-US-AriaNeural">Aria (US Female - Animated)</option>
+            <ng-container *ngIf="scriptLanguage() === 'en'">
+              <option *ngFor="let voice of englishVoices" [value]="voice.id">{{ voice.label }}</option>
+            </ng-container>
+            <ng-container *ngIf="scriptLanguage() === 'ta'">
+              <option *ngFor="let voice of tamilVoices" [value]="voice.id">{{ voice.label }}</option>
+            </ng-container>
           </select>
         </div>
 

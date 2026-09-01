@@ -20,9 +20,25 @@ export class ShortsCreatorComponent implements OnInit, OnDestroy {
 
   // Input states
   protected promptTopic = signal('');
+  protected scriptLanguage = signal<'en' | 'ta'>('en');
   protected voiceSelection = signal('en-US-ChristopherNeural');
   protected scriptTone = signal('controversial'); // Tone of the narration script
   protected gameVolume = signal(0.15); // Default game volume is 15%
+
+  // Voice catalogue definition
+  protected englishVoices = [
+    { id: 'en-US-ChristopherNeural', label: 'Christopher (US Male - Energetic)' },
+    { id: 'en-US-GuyNeural', label: 'Guy (US Male - Conversational)' },
+    { id: 'en-US-JennyNeural', label: 'Jenny (US Female - Clear)' },
+    { id: 'en-US-AriaNeural', label: 'Aria (US Female - Animated)' }
+  ];
+
+  protected tamilVoices = [
+    { id: 'ta-IN-ValluvarNeural', label: '👑 Valluvar (Deep BASS Male - Recommended)' },
+    { id: 'ta-LK-KumarNeural', label: '🎙️ Kumar (Deep & Resonant Male)' },
+    { id: 'ta-SG-AnbuNeural', label: '⚡ Anbu (Dynamic & Punchy Male)' },
+    { id: 'ta-IN-PallaviNeural', label: '🌸 Pallavi (Expressive & Clear Female)' }
+  ];
   
   // File uploads
   protected videoFile: WritableSignal<File | null> = signal(null);
@@ -94,6 +110,16 @@ export class ShortsCreatorComponent implements OnInit, OnDestroy {
     this.cleanupObjectURLs();
   }
 
+  // Switch script language and default to the best corresponding voice
+  protected onLanguageChange(lang: 'en' | 'ta') {
+    this.scriptLanguage.set(lang);
+    if (lang === 'ta') {
+      this.voiceSelection.set('ta-IN-ValluvarNeural'); // Default to Deep BASS voice
+    } else {
+      this.voiceSelection.set('en-US-ChristopherNeural');
+    }
+  }
+
   // Handle local video selection
   protected onVideoSelected(event: Event) {
     const input = event.target as HTMLInputElement;
@@ -121,8 +147,6 @@ export class ShortsCreatorComponent implements OnInit, OnDestroy {
     }
   }
 
-
-
   // Orchestrate Gemini Script + TTS synthesis
   protected async generateScriptAndNarration() {
     if (!this.uploadedVideoUrl()) {
@@ -130,7 +154,7 @@ export class ShortsCreatorComponent implements OnInit, OnDestroy {
       return;
     }
     if (!this.promptTopic().trim()) {
-      alert('Please enter a topic prompt for the rage-bait narrative.');
+      alert('Please enter a topic prompt for the narrative.');
       return;
     }
 
@@ -138,8 +162,12 @@ export class ShortsCreatorComponent implements OnInit, OnDestroy {
     this.exportError.set('');
 
     try {
-      // Call backend proxy to generate script and subtitles with chosen tone
-      const result = await this.geminiClient.generateScriptProxy(this.promptTopic(), this.scriptTone()).toPromise() as ShortsScriptResponse;
+      // Call backend proxy to generate script and subtitles with chosen tone and language
+      const result = await this.geminiClient.generateScriptProxy(
+        this.promptTopic(), 
+        this.scriptTone(), 
+        this.scriptLanguage()
+      ).toPromise() as ShortsScriptResponse;
 
       this.shortsTitle.set(result.title);
       this.shortsScript.set(result.script);
@@ -432,8 +460,9 @@ export class ShortsCreatorComponent implements OnInit, OnDestroy {
 
       // Auto trigger browser download using sanitized title as filename
       const extension = finalVideoBlob.type.includes('mp4') ? 'mp4' : 'webm';
-      const sanitizedTitle = this.shortsTitle().trim().replace(/[^a-zA-Z0-9_ -]/g, '');
-      const fileName = sanitizedTitle || 'viral_short';
+      const sanitizedTitle = this.shortsTitle().trim().replace(/[<>:"/\\|?*\x00-\x1F]/g, '').slice(0, 60);
+      const defaultName = this.scriptLanguage() === 'ta' ? 'tamil_reel' : 'viral_short';
+      const fileName = sanitizedTitle || defaultName;
       const a = document.createElement('a');
       a.href = videoUrl;
       a.download = `${fileName}.${extension}`;

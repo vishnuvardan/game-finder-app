@@ -951,74 +951,61 @@ class GeminiService {
     }
   }
 
-  public async generateShortsScript(promptTopic: string, tone?: string): Promise<ShortsScriptResponse> {
+  public async generateShortsScript(promptTopic: string, tone?: string, language?: string): Promise<ShortsScriptResponse> {
     const activeTone = tone || 'controversial';
+    const isTamil = language === 'ta';
     
-    let tonePrompt = '';
-    let toneSystemInstruction = '';
-    
+    let toneDesc = 'high-tension clickbait/controversial';
     if (activeTone === 'detailed') {
-      tonePrompt = `Create a viral, high-retention educational and informative detailed explanation script about: "${promptTopic}". No controversy or rage-bait, focus on helpfulness and interesting details.`;
-      toneSystemInstruction = 
-        "You are an expert viral TikTok/Reels short-form educational and informative scriptwriter. " +
-        "Given a user topic, produce highly engaging, informative, and detailed breakdown text for a 30-50s Short video. Focus on interesting facts, mechanics, and trivia. " +
-        "Return STRICT JSON matching the schema. The subtitles array MUST contain chronological subtitle phrases, " +
-        "each with a 'text' string (2-4 words) and sequential 'start' and 'end' times in seconds covering the script from 0.0 to around 30-50 seconds.";
+      toneDesc = 'educational, informative, and detailed breakdown';
     } else if (activeTone === 'funny') {
-      tonePrompt = `Create a viral, high-retention humorous and witty script filled with jokes and gaming memes about: "${promptTopic}".`;
-      toneSystemInstruction = 
-        "You are an expert viral TikTok/Reels short-form gaming humorist and comedy scriptwriter. " +
-        "Given a user topic, produce highly funny, sarcastic, and meme-filled text for a 30-50s Short video. Keep the tone playful, energetic, and witty. " +
-        "Return STRICT JSON matching the schema. The subtitles array MUST contain chronological subtitle phrases, " +
-        "each with a 'text' string (2-4 words) and sequential 'start' and 'end' times in seconds covering the script from 0.0 to around 30-50 seconds.";
+      toneDesc = 'humorous, meme-filled, and witty';
     } else if (activeTone === 'hype') {
-      tonePrompt = `Create a viral, high-retention high-energy hype script about: "${promptTopic}".`;
-      toneSystemInstruction = 
-        "You are an expert viral TikTok/Reels short-form energetic announcer scriptwriter. " +
-        "Given a user topic, produce highly motivational, enthusiastic, and epic hype text for a 30-50s Short video. Use strong, exciting vocab and keep energy maxed out. " +
-        "Return STRICT JSON matching the schema. The subtitles array MUST contain chronological subtitle phrases, " +
-        "each with a 'text' string (2-4 words) and sequential 'start' and 'end' times in seconds covering the script from 0.0 to around 30-50 seconds.";
-    } else {
-      // Default: controversial
-      tonePrompt = `Create a viral, high-retention controversial script about: "${promptTopic}".`;
-      toneSystemInstruction = 
-        "You are an expert viral TikTok/Reels short-form scriptwriter. " +
-        "Given a user topic, produce high-tension, controversial clickbait/rage-bait text for a 30-50s Short video. " +
-        "Return STRICT JSON matching the schema. The subtitles array MUST contain chronological subtitle phrases, " +
-        "each with a 'text' string (2-4 words) and sequential 'start' and 'end' times in seconds covering the script from 0.0 to around 30-50 seconds.";
+      toneDesc = 'high-energy, epic hype, and enthusiastic';
     }
 
-    const prompt = `
-      ${tonePrompt}
-      Return a structured JSON with title, script narration, and sequential subtitles.
-    `;
+    const langRule = isTamil
+      ? `Language: 80% Tamil in Tamil Unicode script (தமிழ் எழுத்துக்களில் எழுதவும், e.g. "நண்பா GTA 6 gameplay பாத்தீங்களா...") + 20% English words in English Latin letters (e.g. GTA 6, hair graphics, physics, console, update, secret). Do NOT write Tamil in romanized English letters (Tanglish phonetics).
+Audience Address: You MUST address the audience directly as "நண்பா" (nanba) in the hook, body points, and closing CTA.
+Length: Full 40-60s detailed fast narration (110-140 words minimum). Include hook, 3-4 detailed breakdown facts, and an ending question. Do NOT make it short.`
+      : `Language: English.
+Audience Address: You MUST address the audience directly as "friends" in the hook, body points, and closing CTA.
+Length: Full 40-60s detailed fast narration (110-140 words minimum). Include hook, 3-4 detailed breakdown facts, and an ending question.`;
 
-    const systemInstruction = toneSystemInstruction;
+    const prompt = `Create a viral ${toneDesc} 45-60s Reel/Short script about: "${promptTopic}".
+${langRule}
+Return structured JSON with title, full script narration, and sequential subtitles (2-4 words each).`;
+
+    const systemInstruction = `You are an expert viral YouTube Shorts/Reels scriptwriter. Output STRICT JSON matching the schema. Always produce comprehensive 120-150 word scripts for 45-60s video duration.`;
 
     const schema = {
       type: 'OBJECT',
       properties: {
         title: {
           type: 'STRING',
-          description: 'ALL-CAPS PUNCHY hook or title under 10 words.',
+          description: isTamil
+            ? 'Punchy hook title under 10 words in 80% Tamil + 20% English addressing nanba (நண்பா).'
+            : 'ALL-CAPS PUNCHY hook title under 10 words in English addressing friends.',
         },
         script: {
           type: 'STRING',
-          description: 'Full 30-50s continuous speech text for voice synthesis. Do NOT include any brackets, stage directions, or actions. Every single spoken word must be represented in the subtitles.',
+          description: isTamil
+            ? 'Full 45-60s (120-150 words) spoken speech in 80% Tamil script and 20% English words addressing audience as நண்பா. No brackets or stage directions.'
+            : 'Full 45-60s (120-150 words) spoken speech addressing audience as friends. No brackets or stage directions.',
         },
         subtitles: {
           type: 'ARRAY',
-          description: 'Chronological subtitle segments covering every single word of the script in order. The first segment MUST start at 0.0 seconds. There should be no gaps between consecutive segments.',
+          description: 'Chronological subtitle segments covering every single word of the script in order. The first segment MUST start at 0.0 seconds.',
           items: {
             type: 'OBJECT',
             properties: {
               text: {
                 type: 'STRING',
-                description: 'The subtitle phrase (2-4 words). Must match spoken words exactly.',
+                description: 'The subtitle phrase (2-4 words).',
               },
               start: {
                 type: 'NUMBER',
-                description: 'Start time in seconds. First segment MUST start at 0.0.',
+                description: 'Start time in seconds.',
               },
               end: {
                 type: 'NUMBER',

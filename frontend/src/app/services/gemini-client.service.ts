@@ -30,15 +30,16 @@ export class GeminiClientService {
 
   constructor(private http: HttpClient) {}
 
-  generateScriptProxy(promptTopic: string, tone: string): Observable<ShortsScriptResponse> {
+  generateScriptProxy(promptTopic: string, tone: string, language: string = 'en'): Observable<ShortsScriptResponse> {
     return this.http.post<ShortsScriptResponse>(`${this.apiUrl}/shorts/proxy-gemini`, {
       promptTopic,
-      tone
+      tone,
+      language
     });
   }
 
-  generateTtsProxy(text: string, subtitles: SubtitleSegment[], voiceSelection: string): Observable<{ audio: string, subtitles: SubtitleSegment[] }> {
-    return this.http.post<{ audio: string, subtitles: SubtitleSegment[] }>(`${this.apiUrl}/shorts/proxy-tts`, { text, subtitles, voiceSelection });
+  generateTtsProxy(text: string, subtitles: SubtitleSegment[], voiceSelection: string, rate?: string, pitch?: string): Observable<{ audio: string, subtitles: SubtitleSegment[] }> {
+    return this.http.post<{ audio: string, subtitles: SubtitleSegment[] }>(`${this.apiUrl}/shorts/proxy-tts`, { text, subtitles, voiceSelection, rate, pitch });
   }
 
   publishInstagramReel(video: string, caption: string, password?: string): Observable<{ success: boolean, postId: string }> {
@@ -52,18 +53,25 @@ export class GeminiClientService {
   /**
    * Call the Google AI Studio REST API directly from the browser using a custom key.
    */
-  async generateScriptDirect(promptTopic: string, apiKey: string): Promise<ShortsScriptResponse> {
+  async generateScriptDirect(promptTopic: string, apiKey: string, language: string = 'en'): Promise<ShortsScriptResponse> {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
     
+    const isTamil = language === 'ta';
+    const languagePrompt = isTamil 
+      ? 'Target language: 80% Tamil in Tamil script and 20% English words in Latin alphabet (modern conversational style). Address audience as "nanba" (நண்பா). Title in 80% Tamil + 20% English addressing nanba.'
+      : 'Target language: English. Address audience as "friends".';
+
     const requestBody = {
       contents: [{
         parts: [{
-          text: `Create a viral, high-retention controversial script about: "${promptTopic}". Return structured JSON with clickbait title, script narration, and sequential subtitles.`
+          text: `Create a viral, high-retention script about: "${promptTopic}". ${languagePrompt} Return structured JSON with clickbait title, script narration, and sequential subtitles.`
         }]
       }],
       systemInstruction: {
         parts: [{
-          text: "You are an expert viral TikTok/Reels short-form scriptwriter. Given a user topic, produce high-tension, controversial clickbait/rage-bait text for a 30-50s Short video. Return STRICT JSON matching the schema. The subtitles array MUST contain chronological subtitle phrases, each with a 'text' string (2-4 words) and sequential 'start' and 'end' times in seconds covering the script from 0.0 to around 30-50 seconds."
+          text: isTamil
+            ? "You are an expert viral TikTok/Reels short-form scriptwriter for modern Tamil gaming and tech audiences. Given a user topic, produce high-retention text for a 30-50s Short video in exactly 80% Tamil script and 20% English words (standard English for jargon, game titles, numbers, and tech words). Address audience as 'nanba' / 'நண்பா'. Return STRICT JSON matching the schema."
+            : "You are an expert viral TikTok/Reels short-form scriptwriter. Given a user topic, produce high-tension text for a 30-50s Short video addressing audience as 'friends'. Return STRICT JSON matching the schema."
         }]
       },
       generationConfig: {

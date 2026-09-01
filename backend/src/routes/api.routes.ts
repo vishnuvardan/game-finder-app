@@ -949,4 +949,148 @@ router.post('/shorts/proxy-tts', async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * POST /api/narrator/generate
+ * Generates a full YouTube video script, SEO metadata, thumbnail headline, and sections.
+ */
+router.post('/narrator/generate', async (req: Request, res: Response) => {
+  try {
+    const { topic, gameTitle, domain, tone, language, targetMinutes } = req.body;
+
+    if (!topic || typeof topic !== 'string' || topic.trim() === '') {
+      return res.status(400).json({ error: 'topic must be a non-empty string' });
+    }
+
+    const script = await geminiService.generateYoutubeScript({
+      topic,
+      gameTitle,
+      domain,
+      tone,
+      language,
+      targetMinutes: Number(targetMinutes) || 8
+    });
+
+    return res.json(script);
+  } catch (error: any) {
+    console.error('YouTube script generation error:', error);
+    return res.status(500).json({ error: error.message || 'Failed to generate YouTube script' });
+  }
+});
+
+/**
+ * POST /api/narrator/regenerate-section
+ * Rewrites or expands a specific section of the script based on user hint.
+ */
+router.post('/narrator/regenerate-section', async (req: Request, res: Response) => {
+  try {
+    const { topic, sectionTitle, currentContent, hint, tone, language } = req.body;
+
+    if (!topic || !sectionTitle) {
+      return res.status(400).json({ error: 'topic and sectionTitle are required' });
+    }
+
+    const section = await geminiService.regenerateScriptSection({
+      topic,
+      sectionTitle,
+      currentContent,
+      hint,
+      tone,
+      language
+    });
+
+    return res.json(section);
+  } catch (error: any) {
+    console.error('Section regeneration error:', error);
+    return res.status(500).json({ error: error.message || 'Failed to regenerate section' });
+  }
+});
+
+/**
+ * Helper to chunk text into sentence-aware blocks of max ~700 characters
+ * to avoid WebSocket timeouts on long-form scripts.
+ */
+function splitTextIntoChunks(text: string, maxChunkLen: number = 700): string[] {
+  // Clean up any brackets like [INTRO], [POINT 1] that might confuse TTS
+  const cleanText = text.replace(/\[[^\]]+\]/g, '').trim();
+  const sentences = cleanText.match(/[^.!?\n]+[.!?\n]+/g) || [cleanText];
+  const chunks: string[] = [];
+  let currentChunk = '';
+
+  for (const sentence of sentences) {
+    const trimmed = sentence.trim();
+    if (!trimmed) continue;
+    if ((currentChunk + ' ' + trimmed).length > maxChunkLen && currentChunk.length > 0) {
+      chunks.push(currentChunk.trim());
+      currentChunk = trimmed;
+    } else {
+      currentChunk = currentChunk ? `${currentChunk} ${trimmed}` : trimmed;
+    }
+  }
+
+  if (currentChunk.trim().length > 0) {
+    chunks.push(currentChunk.trim());
+  }
+
+  return chunks.length > 0 ? chunks : [cleanText];
+}
+
+/**
+ * POST /api/narrator/tts
+ * Synthesizes long-form narration audio into an MP3 file with chunked processing for English & Tamil.
+ */
+router.post('/narrator/tts', async (req: Request, res: Response) => {
+  const { text, voice, rate } = req.body;
+
+  if (!text || typeof text !== 'string' || text.trim() === '') {
+    return res.status(400).json({ error: 'text must be a non-empty string' });
+  }
+
+  // Detect language or use chosen voice
+  const chosenVoice = voice || (text.match(/[\u0B80-\u0BFF]/) ? 'ta-IN-ValluvarNeural' : 'en-US-ChristopherNeural');
+  const chosenRate = rate || '+0%'; // Default 1.0X speed
+  const tempDir = os.tmpdir();
+
+  try {
+    const chunks = splitTextIntoChunks(text, 700);
+    console.log(`[Narrator TTS] Synthesizing ${chunks.length} chunks for voice "${chosenVoice}"...`);
+    const audioBuffers: Buffer[] = [];
+
+    for (let i = 0; i < chunks.length; i++) {
+      const chunk = chunks[i];
+      const chunkFile = path.join(tempDir, `tts_${Date.now()}_${i}_${Math.random().toString(36).substr(2, 6)}.mp3`);
+      
+      const tts = new EdgeTTS({
+        voice: chosenVoice,
+        rate: chosenRate,
+        saveSubtitles: false,
+        timeout: 30000
+      });
+
+      await tts.ttsPromise(chunk, chunkFile);
+
+      if (fs.existsSync(chunkFile)) {
+        const buf = fs.readFileSync(chunkFile);
+        audioBuffers.push(buf);
+        try { fs.unlinkSync(chunkFile); } catch (e) {}
+      }
+    }
+
+    if (audioBuffers.length === 0) {
+      throw new Error('Failed to generate audio chunks from synthesizer');
+    }
+
+    const finalBuffer = Buffer.concat(audioBuffers);
+    const audioBase64 = finalBuffer.toString('base64');
+
+    return res.json({
+      audio: audioBase64,
+      voice: chosenVoice,
+      rate: chosenRate
+    });
+  } catch (error: any) {
+    console.error('Narrator TTS generation error:', error);
+    return res.status(500).json({ error: error.message || 'Failed to synthesize narration audio' });
+  }
+});
+
 export default router;

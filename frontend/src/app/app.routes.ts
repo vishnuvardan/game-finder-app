@@ -5,6 +5,7 @@ import { TrophySearchComponent } from './components/trophy-search.component';
 import { GameDetailComponent } from './components/game-detail.component';
 import { CarouselCreatorComponent } from './components/carousel-creator.component';
 import { ShortsCreatorComponent } from './components/shorts-creator.component';
+import { YoutubeNarratorComponent } from './components/youtube-narrator.component';
 
 export const routes: Routes = [
   { path: '', component: TrophySearchComponent },
@@ -14,5 +15,6 @@ export const routes: Routes = [
   { path: 'game/:appid', component: GameDetailComponent },
   { path: 'carousel', component: CarouselCreatorComponent },
   { path: 'shorts', component: ShortsCreatorComponent },
+  { path: 'narrator', component: YoutubeNarratorComponent },
   { path: '**', redirectTo: '' },
 ];

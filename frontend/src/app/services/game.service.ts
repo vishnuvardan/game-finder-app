@@ -238,4 +238,69 @@ export class GameService {
       password
     });
   }
+
+  /**
+   * Generate long-form YouTube video script, SEO metadata, thumbnail headline, and sections
+   */
+  generateYoutubeScript(params: GenerateYoutubeScriptParams): Observable<YoutubeScriptResponse> {
+    return this.http.post<YoutubeScriptResponse>(`${this.apiUrl}/narrator/generate`, params);
+  }
+
+  /**
+   * Regenerate or write a specific section of a YouTube script
+   */
+  regenerateScriptSection(params: RegenerateSectionParams): Observable<{ title: string; content: string; estimatedSeconds: number; visualCue?: string }> {
+    return this.http.post<{ title: string; content: string; estimatedSeconds: number; visualCue?: string }>(`${this.apiUrl}/narrator/regenerate-section`, params);
+  }
+
+  /**
+   * Synthesize voiceover audio for YouTube script narration
+   */
+  synthesizeNarratorAudio(text: string, voice?: string, rate?: string): Observable<NarratorTTSResponse> {
+    return this.http.post<NarratorTTSResponse>(`${this.apiUrl}/narrator/tts`, { text, voice, rate });
+  }
 }
+
+export interface YoutubeScriptSection {
+  id: string;
+  title: string;
+  content: string;
+  estimatedSeconds?: number;
+  visualCue?: string;
+}
+
+export interface YoutubeScriptResponse {
+  youtubeTitle: string;
+  youtubeDescription: string;
+  thumbnailHeadline: string;
+  sections: YoutubeScriptSection[];
+  callToAction: string;
+  imagePool?: string[];
+  tags?: string[];
+  thumbnailImageUrl?: string;
+}
+
+export interface GenerateYoutubeScriptParams {
+  topic: string;
+  gameTitle?: string;
+  domain?: string;
+  tone?: string;
+  language?: 'en' | 'ta';
+  targetMinutes?: number;
+}
+
+export interface RegenerateSectionParams {
+  topic: string;
+  sectionTitle: string;
+  currentContent?: string;
+  hint?: string;
+  tone?: string;
+  language?: 'en' | 'ta';
+}
+
+export interface NarratorTTSResponse {
+  audio: string;
+  voice: string;
+  rate: string;
+}
+

@@ -69,6 +69,43 @@ export interface ShortsScriptResponse {
   subtitles: SubtitleSegment[];
 }
 
+export interface YoutubeScriptSection {
+  id: string;
+  title: string;
+  content: string;
+  estimatedSeconds?: number;
+  visualCue?: string;
+}
+
+export interface YoutubeScriptResponse {
+  youtubeTitle: string;
+  youtubeDescription: string;
+  thumbnailHeadline: string;
+  sections: YoutubeScriptSection[];
+  callToAction: string;
+  imagePool?: string[];
+  tags?: string[];
+  thumbnailImageUrl?: string;
+}
+
+export interface GenerateYoutubeScriptParams {
+  topic: string;
+  gameTitle?: string;
+  domain?: string;
+  tone?: string;
+  language?: 'en' | 'ta';
+  targetMinutes?: number;
+}
+
+export interface RegenerateSectionParams {
+  topic: string;
+  sectionTitle: string;
+  currentContent?: string;
+  hint?: string;
+  tone?: string;
+  language?: 'en' | 'ta';
+}
+
 class GeminiService {
   /**
    * Helper to execute models.generateContent with automatic model fallback for quota/rate-limit errors.
@@ -1007,6 +1044,169 @@ class GeminiService {
     } catch (error: any) {
       console.error('Error generating Shorts script from Gemini:', error);
       throw new Error(`Failed to generate Shorts script: ${error.message}`);
+    }
+  }
+
+  /**
+   * Generates a comprehensive long-form (5-10 min) YouTube video audio script,
+   * SEO title/description, clickbait thumbnail text, and modular editable sections.
+   */
+  public async generateYoutubeScript(params: GenerateYoutubeScriptParams): Promise<YoutubeScriptResponse> {
+    const { topic, gameTitle, domain = 'Gaming', tone = 'Engaging & Storytelling', language = 'en', targetMinutes = 8 } = params;
+    
+    if (!topic || topic.trim() === '') {
+      throw new Error('Topic is required for YouTube script generation');
+    }
+
+    const isTamil = language === 'ta';
+    const targetWordCount = Math.max(700, Math.min(1500, targetMinutes * 140));
+
+    const prompt = `
+Generate a comprehensive, high-retention long-form YouTube video script for a ${targetMinutes}-minute video (~${targetWordCount} words).
+
+Video Details:
+- Core Topic/Prompt: "${topic}"
+- Domain/Genre: "${domain}"
+${gameTitle ? `- Specific Game/Subject: "${gameTitle}"` : ''}
+- Narration Tone: "${tone}"
+- Language: ${isTamil ? 'TAMIL (தமிழ்)' : 'English'}
+- Target Duration: ${targetMinutes} Minutes (~${targetWordCount} words)
+
+Requirements:
+1. YouTube Title: Write a high-CTR, SEO-optimized title (Under 70 characters, clickable, curiosity-inducing).
+2. YouTube Description: Write a formatted YouTube video description with a captivating opening hook, brief outline with chapter timestamps placeholders, and 5-8 relevant hashtags.
+3. Thumbnail Headline: Write a punchy, clickbaity 3-5 word headline for the 16:9 thumbnail graphic.
+4. Modular Script Sections: Structure the video into 5 to 8 distinct chapters/sections:
+   - Section 1 MUST be the Intro / Cold Hook (sets the stakes, presents the core mystery/question, ~60-90 seconds).
+   - Sections 2 to N-1 MUST be substantive in-depth points, evidence, analysis, or lore breakdowns (detailed paragraphs with conversational flow, concrete details, and storytelling flair, ~60-120 seconds each).
+   - Include visual cues describing what should be shown on screen in the visualCue field.
+5. Call to Action / Outro: An engaging closing statement that poses a question to the viewers to drive comments, and reminds them to like and subscribe.
+6. Tags: 8 to 15 comma-separated YouTube keyword tags.
+
+${isTamil ? 'CRITICAL REQUIREMENT: The entire output (youtubeTitle, youtubeDescription, thumbnailHeadline, section titles, section narration content, and callToAction) MUST be written in natural, fluent TAMIL script (தமிழ் எழுத்துக்களில்).' : ''}
+`;
+
+    const systemInstruction = isTamil 
+      ? `You are an elite YouTube creator and video essayist writing top-tier long-form scripts in TAMIL (தமிழ்). Your writing is captivating, well-paced, highly informative, and structured for seamless voiceover narration. Output strictly in JSON matching the schema.`
+      : `You are an elite YouTube creator and documentary essayist. You write top-tier long-form scripts with high audience retention, conversational rhythm, rich storytelling, and engaging pacing. Output strictly in JSON matching the schema.`;
+
+    const schema = {
+      type: 'OBJECT',
+      properties: {
+        youtubeTitle: { type: 'STRING', description: 'High-CTR YouTube video title.' },
+        youtubeDescription: { type: 'STRING', description: 'SEO-rich video description with summary, chapters, and hashtags.' },
+        thumbnailHeadline: { type: 'STRING', description: 'Clickbaity 3-5 word headline for thumbnail image.' },
+        tags: { type: 'ARRAY', items: { type: 'STRING' }, description: 'SEO keyword tags for YouTube.' },
+        sections: {
+          type: 'ARRAY',
+          items: {
+            type: 'OBJECT',
+            properties: {
+              id: { type: 'STRING', description: 'Unique section ID e.g. "intro", "point_1", "point_2"...' },
+              title: { type: 'STRING', description: 'Chapter / Section header title.' },
+              content: { type: 'STRING', description: 'The complete voiceover narration script for this section (in-depth paragraph(s)).' },
+              estimatedSeconds: { type: 'NUMBER', description: 'Estimated spoken duration in seconds.' },
+              visualCue: { type: 'STRING', description: 'Suggested video clip / b-roll to show on screen.' },
+            },
+            required: ['id', 'title', 'content', 'estimatedSeconds'],
+          },
+        },
+        callToAction: { type: 'STRING', description: 'Outro voiceover asking viewers to comment, like, and subscribe.' },
+      },
+      required: ['youtubeTitle', 'youtubeDescription', 'thumbnailHeadline', 'sections', 'callToAction'],
+    };
+
+    try {
+      const responseText = await this.generateContentWithFallback(prompt, systemInstruction, schema);
+      const parsed: YoutubeScriptResponse = JSON.parse(responseText);
+
+      if (!parsed.youtubeTitle || !parsed.sections || !Array.isArray(parsed.sections) || parsed.sections.length === 0) {
+        throw new Error('Invalid YouTube script structure from AI');
+      }
+
+      // Fetch high-res imagery for thumbnails
+      let imagePool: string[] = [];
+      const gameQuery = (gameTitle || topic).trim();
+
+      if (domain.toLowerCase().includes('gaming') || gameTitle) {
+        try {
+          const steamImages = await steamService.getGameMediaAssets(gameQuery);
+          if (steamImages.length > 0) imagePool.push(...steamImages);
+        } catch (e: any) {
+          console.warn(`[GeminiService] Steam image fetch warning:`, e.message);
+        }
+
+        try {
+          const igdbImages = await igdbService.getGameImages(gameQuery);
+          if (igdbImages.length > 0) imagePool.push(...igdbImages);
+        } catch (e: any) {
+          console.warn(`[GeminiService] IGDB image fetch warning:`, e.message);
+        }
+      }
+
+      imagePool = Array.from(new Set(imagePool.filter(url => Boolean(url) && typeof url === 'string')));
+
+      if (imagePool.length === 0) {
+        const fallback = await this.getStockImageFallback(topic);
+        imagePool = [fallback];
+      }
+
+      const shuffledPool = [...imagePool].sort(() => 0.5 - Math.random());
+      const thumbnailImageUrl = shuffledPool[0] || imagePool[0];
+
+      return {
+        ...parsed,
+        imagePool: shuffledPool,
+        thumbnailImageUrl
+      };
+    } catch (error: any) {
+      console.error('Error generating YouTube script from Gemini:', error);
+      throw new Error(`Failed to generate YouTube script: ${error.message}`);
+    }
+  }
+
+  /**
+   * Regenerates or writes a single section of a YouTube script based on user hint/instruction
+   */
+  public async regenerateScriptSection(params: RegenerateSectionParams): Promise<{ title: string; content: string; estimatedSeconds: number; visualCue?: string }> {
+    const { topic, sectionTitle, currentContent, hint, tone = 'Engaging & Storytelling', language = 'en' } = params;
+    const isTamil = language === 'ta';
+
+    const prompt = `
+Regenerate or write a specific section for a YouTube video script.
+
+Topic: "${topic}"
+Section Title: "${sectionTitle}"
+${currentContent ? `Current Version:\n${currentContent}\n` : ''}
+${hint ? `User Instructions / Modification Hint: "${hint}"\n` : ''}
+Tone: "${tone}"
+Language: ${isTamil ? 'TAMIL (தமிழ்)' : 'English'}
+
+Write a rich, detailed voiceover paragraph (~100 to 250 words) specifically for this section.
+${isTamil ? 'Output MUST be written in natural, fluent TAMIL (தமிழ்).' : ''}
+`;
+
+    const systemInstruction = isTamil
+      ? 'You are an elite YouTube scriptwriter writing in TAMIL (தமிழ்). Rewrite this section with high energy and conversational flow. Output JSON.'
+      : 'You are an elite YouTube scriptwriter. Rewrite this section with captivating voiceover rhythm, concrete details, and high engagement. Output JSON.';
+
+    const schema = {
+      type: 'OBJECT',
+      properties: {
+        title: { type: 'STRING', description: 'Updated section title.' },
+        content: { type: 'STRING', description: 'The complete voiceover narration script for this section.' },
+        estimatedSeconds: { type: 'NUMBER', description: 'Estimated duration in seconds.' },
+        visualCue: { type: 'STRING', description: 'Visual b-roll cue.' },
+      },
+      required: ['title', 'content', 'estimatedSeconds'],
+    };
+
+    try {
+      const responseText = await this.generateContentWithFallback(prompt, systemInstruction, schema);
+      return JSON.parse(responseText);
+    } catch (error: any) {
+      console.error('Error regenerating script section:', error);
+      throw new Error(`Failed to regenerate script section: ${error.message}`);
     }
   }
 }

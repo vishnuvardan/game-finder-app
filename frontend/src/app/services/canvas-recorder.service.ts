@@ -64,6 +64,7 @@ export class CanvasRecorderService {
     duration: number,
     gameVolume: number,
     videoZoom: number = 0,
+    fps: number = 60,
     onProgress: (progress: number) => void
   ): Promise<Blob> {
     return new Promise(async (resolve, reject) => {
@@ -115,8 +116,9 @@ export class CanvasRecorderService {
         ttsSource.connect(ttsGain);
         ttsGain.connect(dest);
 
-        // 5. Combine Canvas Video Track and Audio Destination Track
-        const canvasStream = canvas.captureStream(30); // 30 FPS
+        // 5. Combine Canvas Video Track (configured FPS) and Audio Destination Track
+        const targetFps = fps > 0 ? fps : 60;
+        const canvasStream = canvas.captureStream(targetFps);
         const audioTracks = dest.stream.getAudioTracks();
         const combinedStream = new MediaStream([
           ...canvasStream.getVideoTracks(),
@@ -133,10 +135,12 @@ export class CanvasRecorderService {
           mimeType = 'video/webm';
         }
 
-        console.log(`Starting export using MIME type: ${mimeType}`);
+        // Higher bitrate for 60 FPS (14 Mbps) vs 30 FPS (8.5 Mbps) for crisp high-action gameplay
+        const videoBitrate = targetFps >= 60 ? 14000000 : 8500000;
+        console.log(`Starting export at ${targetFps} FPS using MIME type: ${mimeType} with bitrate: ${videoBitrate / 1000000} Mbps`);
         const mediaRecorder = new MediaRecorder(combinedStream, {
           mimeType,
-          videoBitsPerSecond: 8500000, // 8.5 Mbps high-definition bitrate for crisp video detail
+          videoBitsPerSecond: videoBitrate,
           audioBitsPerSecond: 128000   // 128 kbps for high-quality audio
         });
         const chunks: Blob[] = [];

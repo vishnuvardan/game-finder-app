@@ -25,6 +25,7 @@ export class ShortsCreatorComponent implements OnInit, OnDestroy {
   protected scriptTone = signal('controversial'); // Tone of the narration script
   protected gameVolume = signal(0.15); // Default game volume is 15%
   protected videoZoom = signal(0); // 0% = default contain, 100% = full screen vertical fill
+  protected targetFps = signal<30 | 60>(60); // 30 FPS or 60 FPS output framerate
 
   // Voice catalogue definition (Synchronized with YouTube Narrator)
   protected englishVoices = [
@@ -307,6 +308,10 @@ export class ShortsCreatorComponent implements OnInit, OnDestroy {
     this.videoZoom.set(Math.max(0, Math.min(100, Math.round(zoom))));
   }
 
+  protected setFps(fps: 30 | 60) {
+    this.targetFps.set(fps);
+  }
+
   private startSyncLoop() {
     this.stopSyncLoop();
     
@@ -474,6 +479,7 @@ export class ShortsCreatorComponent implements OnInit, OnDestroy {
         this.ttsDuration(),
         this.gameVolume(),
         this.videoZoom(),
+        this.targetFps(),
         (progress) => {
           this.exportProgress.set(Math.round(progress));
         }
@@ -601,6 +607,7 @@ export class ShortsCreatorComponent implements OnInit, OnDestroy {
     this.publishSuccess.set(null);
     this.errorMessage.set(null);
     this.videoZoom.set(0);
+    this.targetFps.set(60);
     this.step.set('upload');
   }
 

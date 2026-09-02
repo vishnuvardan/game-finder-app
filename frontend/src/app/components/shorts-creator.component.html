@@ -177,6 +177,31 @@
         </div>
 
         <div class="panel-section">
+          <div class="slider-header">
+            <h3>⚡ Framerate (FPS)</h3>
+            <span class="zoom-badge" [class.fill-badge]="targetFps() === 60">{{ targetFps() }} FPS {{ targetFps() === 60 ? 'Ultra-Smooth' : 'Standard' }}</span>
+          </div>
+          <div class="fps-toggle-pills">
+            <button 
+              type="button" 
+              class="fps-pill-btn" 
+              [class.active]="targetFps() === 30" 
+              (click)="setFps(30)">
+              <span class="fps-name">🎬 30 FPS</span>
+              <span class="fps-desc">Smaller file</span>
+            </button>
+            <button 
+              type="button" 
+              class="fps-pill-btn" 
+              [class.active]="targetFps() === 60" 
+              (click)="setFps(60)">
+              <span class="fps-name">⚡ 60 FPS</span>
+              <span class="fps-desc">Ultra-smooth</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="panel-section">
           <h3>🔊 Game Video Volume: {{ getRoundedVolume() }}%</h3>
           <input 
             type="range" 
@@ -236,7 +261,7 @@
     <div class="loading-container">
       <div class="spinner-ring"></div>
       <h3>Rendering Meme Short...</h3>
-      <p>Mixing audio streams and drawing 1080x1920 canvas frames at 30 FPS in-browser.</p>
+      <p>Mixing audio streams and drawing 1080x1920 canvas frames at {{ targetFps() }} FPS in-browser.</p>
       
       <div class="progress-bar-container">
         <div class="progress-bar-fill" [style.width.%]="exportProgress()"></div>

@@ -294,7 +294,7 @@
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 16px;
   padding: 24px;
-  max-height: 580px;
+  max-height: 620px;
   box-sizing: border-box;
 }
 
@@ -747,6 +747,57 @@
   border-color: #00f2fe;
   color: #00f2fe;
   box-shadow: 0 0 10px rgba(0, 242, 254, 0.25);
+}
+
+/* Framerate FPS Toggle Pills */
+.fps-toggle-pills {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.fps-pill-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 8px 12px;
+  background: rgba(30, 41, 59, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.fps-pill-btn:hover {
+  background: rgba(51, 65, 85, 0.7);
+  color: #f8fafc;
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.fps-pill-btn.active {
+  background: linear-gradient(135deg, rgba(0, 242, 254, 0.18), rgba(79, 172, 254, 0.22));
+  border-color: #00f2fe;
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(0, 242, 254, 0.25);
+}
+
+.fps-pill-btn .fps-name {
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.fps-pill-btn .fps-desc {
+  font-size: 0.7rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.fps-pill-btn.active .fps-desc {
+  color: #00f2fe;
 }
 
 /* Instagram Publish Modal Styling */

@@ -51,23 +51,6 @@ export class CanvasRecorderService {
     }
   }
 
-  private getLinesCount(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): number {
-    const words = text.split(' ');
-    let line = '';
-    let count = 0;
-    for (let n = 0; n < words.length; n++) {
-      const testLine = line + words[n] + ' ';
-      const metrics = ctx.measureText(testLine);
-      if (metrics.width > maxWidth && n > 0) {
-        count++;
-        line = words[n] + ' ';
-      } else {
-        line = testLine;
-      }
-    }
-    count++;
-    return count;
-  }
 
   /**
    * Render offscreen and capture stream using MediaRecorder.

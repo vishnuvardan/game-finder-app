@@ -1,2 +1,20 @@
+# Dependencies
+node_modules/
+backend/node_modules/
+frontend/node_modules/
+
+# Build outputs
+dist/
+backend/dist/
+frontend/dist/
+.angular/
+
+# Environment files
+.env
 backend/.env
-backend/dist
+frontend/.env
+*.env.local
+
+# OS & Editor
+.DS_Store
+Thumbs.db

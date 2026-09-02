@@ -15,7 +15,11 @@ app.use(express.urlencoded({ limit: '150mb', extended: true }));
 // Register API routes under /api
 app.use('/api', apiRouter);
 
-// Health check endpoint
+// Root and health check endpoints
+app.get('/', (req, res) => {
+  res.json({ status: 'healthy', service: 'game-finder-backend', timestamp: new Date().toISOString() });
+});
+
 app.get('/health', (req, res) => {
   res.json({ status: 'healthy', timestamp: new Date().toISOString() });
 });

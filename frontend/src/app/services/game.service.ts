@@ -249,8 +249,8 @@ export class GameService {
   /**
    * Regenerate or write a specific section of a YouTube script
    */
-  regenerateScriptSection(params: RegenerateSectionParams): Observable<{ title: string; content: string; estimatedSeconds: number; visualCue?: string }> {
-    return this.http.post<{ title: string; content: string; estimatedSeconds: number; visualCue?: string }>(`${this.apiUrl}/narrator/regenerate-section`, params);
+  regenerateScriptSection(params: RegenerateSectionParams): Observable<{ title: string; content: string; estimatedSeconds: number; visualCue?: string; bulletPoints?: string[]; imageQuery?: string; }> {
+    return this.http.post<{ title: string; content: string; estimatedSeconds: number; visualCue?: string; bulletPoints?: string[]; imageQuery?: string; }>(`${this.apiUrl}/narrator/regenerate-section`, params);
   }
 
   /**
@@ -259,6 +259,33 @@ export class GameService {
   synthesizeNarratorAudio(text: string, voice?: string, rate?: string): Observable<NarratorTTSResponse> {
     return this.http.post<NarratorTTSResponse>(`${this.apiUrl}/narrator/tts`, { text, voice, rate });
   }
+
+  /**
+   * Search and fetch Serper Google Images for a specific scene
+   */
+  fetchSceneImages(query: string, count: number = 10): Observable<{ images: string[] }> {
+    return this.http.post<{ images: string[] }>(`${this.apiUrl}/narrator/fetch-scene-images`, { query, count });
+  }
+}
+
+export interface SubtitleSegment {
+  text: string;
+  start: number;
+  end: number;
+}
+
+export interface VideoScene {
+  id: string;
+  sectionId: string;
+  chapterTitle: string;
+  startTime: number;
+  endTime: number;
+  duration: number;
+  bulletPoints: string[];
+  imageQuery: string;
+  imageUrl: string;
+  imagePool?: string[];
+  visualCue?: string;
 }
 
 export interface YoutubeScriptSection {
@@ -267,6 +294,10 @@ export interface YoutubeScriptSection {
   content: string;
   estimatedSeconds?: number;
   visualCue?: string;
+  bulletPoints?: string[];
+  imageQuery?: string;
+  imageUrl?: string;
+  imagePool?: string[];
 }
 
 export interface YoutubeScriptResponse {
@@ -302,5 +333,7 @@ export interface NarratorTTSResponse {
   audio: string;
   voice: string;
   rate: string;
+  subtitles?: SubtitleSegment[];
 }
+
 

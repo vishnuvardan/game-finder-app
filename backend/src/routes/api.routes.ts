@@ -1040,7 +1040,8 @@ function splitTextIntoChunks(text: string, maxChunkLen: number = 700): string[] 
 
 /**
  * POST /api/narrator/tts
- * Synthesizes long-form narration audio into an MP3 file with chunked processing for English & Tamil.
+ * Synthesizes long-form narration audio into an MP3 file with chunked processing for English & Tamil,
+ * and extracts frame-accurate aligned subtitles.
  */
 router.post('/narrator/tts', async (req: Request, res: Response) => {
   const { text, voice, rate } = req.body;
@@ -1052,12 +1053,18 @@ router.post('/narrator/tts', async (req: Request, res: Response) => {
   // Detect language or use chosen voice
   const chosenVoice = voice || (text.match(/[\u0B80-\u0BFF]/) ? 'ta-IN-ValluvarNeural' : 'en-US-ChristopherNeural');
   const chosenRate = rate || '+0%'; // Default 1.0X speed
+  const isTamilVoice = chosenVoice.startsWith('ta-');
+  const langParts = chosenVoice.split('-');
+  const lang = (langParts.length >= 2) ? `${langParts[0]}-${langParts[1]}` : (isTamilVoice ? 'ta-IN' : 'en-US');
+
   const tempDir = os.tmpdir();
 
   try {
     const chunks = splitTextIntoChunks(text, 700);
     console.log(`[Narrator TTS] Synthesizing ${chunks.length} chunks for voice "${chosenVoice}"...`);
     const audioBuffers: Buffer[] = [];
+    const allWords: WordSegment[] = [];
+    let cumulativeTimeOffsetMs = 0;
 
     for (let i = 0; i < chunks.length; i++) {
       const chunk = chunks[i];
@@ -1065,9 +1072,10 @@ router.post('/narrator/tts', async (req: Request, res: Response) => {
       
       const tts = new EdgeTTS({
         voice: chosenVoice,
+        lang,
         rate: chosenRate,
-        saveSubtitles: false,
-        timeout: 30000
+        saveSubtitles: true,
+        timeout: 45000
       });
 
       await tts.ttsPromise(chunk, chunkFile);
@@ -1075,6 +1083,31 @@ router.post('/narrator/tts', async (req: Request, res: Response) => {
       if (fs.existsSync(chunkFile)) {
         const buf = fs.readFileSync(chunkFile);
         audioBuffers.push(buf);
+
+        // Parse word subtitles for this chunk
+        const subFile = chunkFile + '.json';
+        if (fs.existsSync(subFile)) {
+          try {
+            const subContent = fs.readFileSync(subFile, 'utf8');
+            const words: WordSegment[] = JSON.parse(subContent);
+            if (Array.isArray(words) && words.length > 0) {
+              for (const w of words) {
+                allWords.push({
+                  part: w.part,
+                  start: w.start + cumulativeTimeOffsetMs,
+                  end: w.end + cumulativeTimeOffsetMs
+                });
+              }
+              const lastWord = words[words.length - 1];
+              cumulativeTimeOffsetMs += lastWord.end;
+            }
+          } catch (subErr) {
+            console.warn(`[Narrator TTS] Warning parsing subfile ${subFile}:`, subErr);
+          } finally {
+            try { fs.unlinkSync(subFile); } catch (e) {}
+          }
+        }
+
         try { fs.unlinkSync(chunkFile); } catch (e) {}
       }
     }
@@ -1085,9 +1118,11 @@ router.post('/narrator/tts', async (req: Request, res: Response) => {
 
     const finalBuffer = Buffer.concat(audioBuffers);
     const audioBase64 = finalBuffer.toString('base64');
+    const alignedSubs = buildPreciseSubtitlesFromWords(allWords);
 
     return res.json({
       audio: audioBase64,
+      subtitles: alignedSubs,
       voice: chosenVoice,
       rate: chosenRate
     });
@@ -1097,4 +1132,25 @@ router.post('/narrator/tts', async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * POST /api/narrator/fetch-scene-images
+ * Fetches Google Images via Serper for a specific scene or chapter search query
+ */
+router.post('/narrator/fetch-scene-images', async (req: Request, res: Response) => {
+  const { query, count = 10 } = req.body;
+
+  if (!query || typeof query !== 'string' || query.trim() === '') {
+    return res.status(400).json({ error: 'query parameter is required' });
+  }
+
+  try {
+    const images = await geminiService.fetchGoogleImages(query.trim(), Number(count) || 10);
+    return res.json({ images });
+  } catch (error: any) {
+    console.error('Fetch scene images error:', error);
+    return res.status(500).json({ error: error.message || 'Failed to fetch scene images' });
+  }
+});
+
 export default router;
+

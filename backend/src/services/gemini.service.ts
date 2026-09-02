@@ -75,6 +75,24 @@ export interface YoutubeScriptSection {
   content: string;
   estimatedSeconds?: number;
   visualCue?: string;
+  bulletPoints?: string[];
+  imageQuery?: string;
+  imageUrl?: string;
+  imagePool?: string[];
+}
+
+export interface VideoScene {
+  id: string;
+  sectionId: string;
+  chapterTitle: string;
+  startTime: number;
+  endTime: number;
+  duration: number;
+  bulletPoints: string[];
+  imageQuery: string;
+  imageUrl: string;
+  imagePool?: string[];
+  visualCue?: string;
 }
 
 export interface YoutubeScriptResponse {
@@ -1198,10 +1216,12 @@ Requirements:
    - Section 1 MUST be the Intro / Cold Hook (sets the stakes, presents the core mystery/question, ~60-90 seconds).
    - Sections 2 to N-1 MUST be substantive in-depth points, evidence, analysis, or lore breakdowns (detailed paragraphs with conversational flow, concrete details, and storytelling flair, ~60-120 seconds each).
    - Include visual cues describing what should be shown on screen in the visualCue field.
+   - For EACH section, provide 2-3 punchy, concise bullet points (under 8-10 words each) in the bulletPoints field summarizing the core takeaways to display on the 1080p video canvas.
+   - For EACH section, provide a specific image search query in imageQuery (e.g. "${gameTitle || topic} cinematic artwork 4k").
 5. Call to Action / Outro: An engaging closing statement that poses a question to the viewers to drive comments, and reminds them to like and subscribe.
 6. Tags: 8 to 15 comma-separated YouTube keyword tags.
 
-${isTamil ? 'CRITICAL REQUIREMENT: The entire output (youtubeTitle, youtubeDescription, thumbnailHeadline, section titles, section narration content, and callToAction) MUST be written in natural, fluent TAMIL script (தமிழ் எழுத்துக்களில்).' : ''}
+${isTamil ? 'CRITICAL REQUIREMENT: The entire output (youtubeTitle, youtubeDescription, thumbnailHeadline, section titles, section narration content, bulletPoints, and callToAction) MUST be written in natural, fluent TAMIL script (தமிழ் எழுத்துக்களில்).' : ''}
 `;
 
     const systemInstruction = isTamil 
@@ -1225,8 +1245,14 @@ ${isTamil ? 'CRITICAL REQUIREMENT: The entire output (youtubeTitle, youtubeDescr
               content: { type: 'STRING', description: 'The complete voiceover narration script for this section (in-depth paragraph(s)).' },
               estimatedSeconds: { type: 'NUMBER', description: 'Estimated spoken duration in seconds.' },
               visualCue: { type: 'STRING', description: 'Suggested video clip / b-roll to show on screen.' },
+              bulletPoints: {
+                type: 'ARRAY',
+                items: { type: 'STRING' },
+                description: '2-3 concise bullet points summarizing key takeaways of this section.'
+              },
+              imageQuery: { type: 'STRING', description: 'Targeted Google Images search query for this chapter visual.' },
             },
-            required: ['id', 'title', 'content', 'estimatedSeconds'],
+            required: ['id', 'title', 'content', 'estimatedSeconds', 'bulletPoints'],
           },
         },
         callToAction: { type: 'STRING', description: 'Outro voiceover asking viewers to comment, like, and subscribe.' },
@@ -1242,7 +1268,7 @@ ${isTamil ? 'CRITICAL REQUIREMENT: The entire output (youtubeTitle, youtubeDescr
         throw new Error('Invalid YouTube script structure from AI');
       }
 
-      // Fetch high-res imagery for thumbnails
+      // Fetch high-res imagery for thumbnails and scenes
       let imagePool: string[] = [];
       const gameQuery = (gameTitle || topic).trim();
 
@@ -1281,8 +1307,25 @@ ${isTamil ? 'CRITICAL REQUIREMENT: The entire output (youtubeTitle, youtubeDescr
       const shuffledPool = [...imagePool].sort(() => 0.5 - Math.random());
       const thumbnailImageUrl = shuffledPool[0] || imagePool[0];
 
+      // Assign context-aware images to each section
+      const enrichedSections = parsed.sections.map((sec, idx) => {
+        const poolIndex = idx % shuffledPool.length;
+        const defaultBullets = isTamil
+          ? ['முக்கியமான கருத்துக்கள்', 'ஆழமான பார்வை', 'சுவாரஸ்யமான தகவல்கள்']
+          : ['Key insight breakdown', 'Detailed analysis', 'Core community takeaway'];
+
+        return {
+          ...sec,
+          bulletPoints: (sec.bulletPoints && sec.bulletPoints.length > 0) ? sec.bulletPoints : defaultBullets,
+          imageQuery: sec.imageQuery || `${gameQuery} ${sec.title}`,
+          imageUrl: shuffledPool[poolIndex] || thumbnailImageUrl,
+          imagePool: shuffledPool,
+        };
+      });
+
       return {
         ...parsed,
+        sections: enrichedSections,
         imagePool: shuffledPool,
         thumbnailImageUrl
       };
@@ -1295,7 +1338,7 @@ ${isTamil ? 'CRITICAL REQUIREMENT: The entire output (youtubeTitle, youtubeDescr
   /**
    * Regenerates or writes a single section of a YouTube script based on user hint/instruction
    */
-  public async regenerateScriptSection(params: RegenerateSectionParams): Promise<{ title: string; content: string; estimatedSeconds: number; visualCue?: string }> {
+  public async regenerateScriptSection(params: RegenerateSectionParams): Promise<{ title: string; content: string; estimatedSeconds: number; visualCue?: string; bulletPoints?: string[]; imageQuery?: string }> {
     const { topic, sectionTitle, currentContent, hint, tone = 'Engaging & Storytelling', language = 'en' } = params;
     const isTamil = language === 'ta';
 
@@ -1309,7 +1352,10 @@ ${hint ? `User Instructions / Modification Hint: "${hint}"\n` : ''}
 Tone: "${tone}"
 Language: ${isTamil ? 'TAMIL (தமிழ்)' : 'English'}
 
-Write a rich, detailed voiceover paragraph (~100 to 250 words) specifically for this section.
+Requirements:
+1. Write a rich, detailed voiceover paragraph (~100 to 250 words) specifically for this section.
+2. Provide 2-3 concise bullet points (under 10 words each) for infographic display.
+3. Provide an image search query for this chapter.
 ${isTamil ? 'Output MUST be written in natural, fluent TAMIL (தமிழ்).' : ''}
 `;
 
@@ -1324,8 +1370,14 @@ ${isTamil ? 'Output MUST be written in natural, fluent TAMIL (தமிழ்).'
         content: { type: 'STRING', description: 'The complete voiceover narration script for this section.' },
         estimatedSeconds: { type: 'NUMBER', description: 'Estimated duration in seconds.' },
         visualCue: { type: 'STRING', description: 'Visual b-roll cue.' },
+        bulletPoints: {
+          type: 'ARRAY',
+          items: { type: 'STRING' },
+          description: '2-3 concise bullet points summarizing key takeaways.'
+        },
+        imageQuery: { type: 'STRING', description: 'Image search query.' }
       },
-      required: ['title', 'content', 'estimatedSeconds'],
+      required: ['title', 'content', 'estimatedSeconds', 'bulletPoints'],
     };
 
     try {

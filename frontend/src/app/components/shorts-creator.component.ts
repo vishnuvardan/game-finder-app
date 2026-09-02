@@ -24,6 +24,7 @@ export class ShortsCreatorComponent implements OnInit, OnDestroy {
   protected voiceSelection = signal('en-US-EricNeural');
   protected scriptTone = signal('controversial'); // Tone of the narration script
   protected gameVolume = signal(0.15); // Default game volume is 15%
+  protected videoZoom = signal(0); // 0% = default contain, 100% = full screen vertical fill
 
   // Voice catalogue definition (Synchronized with YouTube Narrator)
   protected englishVoices = [
@@ -101,6 +102,15 @@ export class ShortsCreatorComponent implements OnInit, OnDestroy {
     const start = this.selectedStartTime();
     if (total <= 0) return 0;
     return Math.min(100 - this.windowWidthPercent(), (start / total) * 100);
+  });
+
+  // Calculate live preview CSS scale based on video aspect ratio and zoom percentage
+  protected previewScale = computed(() => {
+    const w = this.videoWidth();
+    const h = this.videoHeight();
+    const maxScale = (w > 0 && h > 0) ? Math.max(1, (1920 * w) / (1080 * h)) : (1920 / 607.5);
+    const zoom = Math.max(0, Math.min(100, this.videoZoom()));
+    return 1 + (zoom / 100) * (maxScale - 1);
   });
 
   constructor(
@@ -288,6 +298,15 @@ export class ShortsCreatorComponent implements OnInit, OnDestroy {
     return Math.round(this.gameVolume() * 100);
   }
 
+  protected onZoomChanged(zoom: number | string) {
+    const val = typeof zoom === 'string' ? parseFloat(zoom) : zoom;
+    this.videoZoom.set(isNaN(val) ? 0 : Math.max(0, Math.min(100, Math.round(val))));
+  }
+
+  protected setZoom(zoom: number) {
+    this.videoZoom.set(Math.max(0, Math.min(100, Math.round(zoom))));
+  }
+
   private startSyncLoop() {
     this.stopSyncLoop();
     
@@ -454,6 +473,7 @@ export class ShortsCreatorComponent implements OnInit, OnDestroy {
         this.selectedStartTime(),
         this.ttsDuration(),
         this.gameVolume(),
+        this.videoZoom(),
         (progress) => {
           this.exportProgress.set(Math.round(progress));
         }
@@ -560,6 +580,7 @@ export class ShortsCreatorComponent implements OnInit, OnDestroy {
     this.exportedVideoBlob = null;
     this.publishSuccess.set(null);
     this.errorMessage.set(null);
+    this.videoZoom.set(0);
     this.step.set('upload');
   }
 

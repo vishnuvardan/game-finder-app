@@ -132,7 +132,7 @@
 
           <!-- Video viewport container -->
           <div class="sim-viewport">
-            <video #previewVideo [src]="uploadedVideoUrl()" loop muted playsinline class="bg-video"></video>
+            <video #previewVideo [src]="uploadedVideoUrl()" loop muted playsinline class="bg-video" [style.transform]="'scale(' + previewScale() + ')'"></video>
             <!-- Floating play button overlay -->
             <button class="play-overlay" (click)="togglePlay()">
               <span *ngIf="!isPlaying()">▶</span>
@@ -152,6 +152,28 @@
         <div class="panel-section">
           <h3>📝 Edit Title</h3>
           <input type="text" [(ngModel)]="shortsTitle" class="title-input">
+        </div>
+
+        <div class="panel-section">
+          <div class="slider-header">
+            <h3>🔍 Video Zoom: {{ videoZoom() }}%</h3>
+            <span class="zoom-badge" *ngIf="videoZoom() === 0">Default Fit</span>
+            <span class="zoom-badge fill-badge" *ngIf="videoZoom() === 100">Full 9:16 Fill</span>
+            <span class="zoom-badge custom-badge" *ngIf="videoZoom() > 0 && videoZoom() < 100">Custom Zoom</span>
+          </div>
+          <input 
+            type="range" 
+            min="0" 
+            max="100" 
+            step="1" 
+            [ngModel]="videoZoom()" 
+            (ngModelChange)="onZoomChanged($event)"
+            class="zoom-slider">
+          <div class="slider-presets">
+            <button type="button" class="preset-btn" [class.active]="videoZoom() === 0" (click)="setZoom(0)">0% (Default)</button>
+            <button type="button" class="preset-btn" [class.active]="videoZoom() === 50" (click)="setZoom(50)">50%</button>
+            <button type="button" class="preset-btn" [class.active]="videoZoom() === 100" (click)="setZoom(100)">100% (Full Fill)</button>
+          </div>
         </div>
 
         <div class="panel-section">

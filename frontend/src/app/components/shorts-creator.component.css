@@ -294,7 +294,7 @@
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 16px;
   padding: 24px;
-  max-height: 520px;
+  max-height: 580px;
   box-sizing: border-box;
 }
 
@@ -449,6 +449,8 @@
   height: auto;
   max-height: 100%;
   object-fit: contain;
+  transform-origin: center center;
+  transition: transform 0.12s ease-out;
 }
 
 .play-overlay {
@@ -670,6 +672,81 @@
   accent-color: #00f2fe;
   background: rgba(15, 23, 42, 0.6);
   cursor: pointer;
+}
+
+.slider-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.slider-header h3 {
+  margin: 0;
+}
+
+.zoom-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 12px;
+  background: rgba(0, 242, 254, 0.12);
+  color: #00f2fe;
+  border: 1px solid rgba(0, 242, 254, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.zoom-badge.fill-badge {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border-color: rgba(16, 185, 129, 0.4);
+}
+
+.zoom-badge.custom-badge {
+  background: rgba(251, 191, 36, 0.15);
+  color: #fbbf24;
+  border-color: rgba(251, 191, 36, 0.4);
+}
+
+.zoom-slider {
+  width: 100%;
+  margin: 6px 0 8px 0;
+  accent-color: #00f2fe;
+  background: rgba(15, 23, 42, 0.6);
+  cursor: pointer;
+}
+
+.slider-presets {
+  display: flex;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.preset-btn {
+  flex: 1;
+  padding: 5px 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: rgba(30, 41, 59, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.preset-btn:hover {
+  background: rgba(51, 65, 85, 0.7);
+  color: #f8fafc;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.preset-btn.active {
+  background: rgba(0, 242, 254, 0.2);
+  border-color: #00f2fe;
+  color: #00f2fe;
+  box-shadow: 0 0 10px rgba(0, 242, 254, 0.25);
 }
 
 /* Instagram Publish Modal Styling */

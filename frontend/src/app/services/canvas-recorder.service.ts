@@ -63,6 +63,7 @@ export class CanvasRecorderService {
     startTime: number,
     duration: number,
     gameVolume: number,
+    videoZoom: number = 0,
     onProgress: (progress: number) => void
   ): Promise<Blob> {
     return new Promise(async (resolve, reject) => {
@@ -190,19 +191,31 @@ export class CanvasRecorderService {
           ctx.fillRect(0, 0, 1080, 1920);
 
           // Calculate centered contain video dimensions inside 1080x1920 canvas
-          let vHeight = 607.5;
+          let baseWidth = 1080;
+          let baseHeight = 607.5;
           if (videoEl.videoWidth > 0) {
             const aspect = videoEl.videoHeight / videoEl.videoWidth;
-            vHeight = aspect * 1080;
+            baseHeight = aspect * 1080;
           }
-          if (vHeight > 1920) {
-            vHeight = 1920;
+          if (baseHeight > 1920) {
+            baseHeight = 1920;
           }
+
+          // Calculate scale factor: zoom 0 = default contain, zoom 100 = full 9:16 vertical fill
+          const maxScale = (videoEl.videoWidth > 0 && videoEl.videoHeight > 0)
+            ? Math.max(1, (1920 * videoEl.videoWidth) / (1080 * videoEl.videoHeight))
+            : (1920 / 607.5);
+          const clampedZoom = Math.max(0, Math.min(100, videoZoom));
+          const currentScale = 1 + (clampedZoom / 100) * (maxScale - 1);
+
+          const vWidth = baseWidth * currentScale;
+          const vHeight = baseHeight * currentScale;
+          const vX = (1080 - vWidth) / 2;
           const vY = (1920 - vHeight) / 2;
 
-          // Render Video (centered)
+          // Render Video (centered with zoom applied)
           if (videoEl.videoWidth > 0) {
-            ctx.drawImage(videoEl, 0, vY, 1080, vHeight);
+            ctx.drawImage(videoEl, vX, vY, vWidth, vHeight);
           }
 
           // Render Top Title (Impact / Tamil bold style - fixed top safe zone at y=380)

@@ -527,7 +527,7 @@ export class CarouselCreatorComponent {
         },
         error: (err) => {
           this.publishStep.set('error');
-          const errMsg = err.error?.error || 'Failed to publish to Instagram. Verify your password or credentials.';
+          const errMsg = this.parseErrorMessage(err, 'Failed to publish to Instagram. Verify your password or credentials.');
           this.errorMessage.set(errMsg);
           this.publishProgressText.set('');
         }
@@ -539,6 +539,26 @@ export class CarouselCreatorComponent {
       this.errorMessage.set(err.message || 'An error occurred while compiling slides for Instagram.');
       this.publishProgressText.set('');
     }
+  }
+
+  private parseErrorMessage(err: any, fallback: string): string {
+    if (!err) return fallback;
+    if (typeof err === 'string') return err;
+    if (err.status === 413) {
+      return 'Slide payload is too large for the hosting server limit (Vercel max 4.5MB).';
+    }
+    if (err.status === 504) {
+      return 'Server timeout: Instagram carousel processing took longer than the Vercel serverless function timeout limit.';
+    }
+    if (typeof err.error === 'string') return err.error;
+    if (err.error?.error) {
+      return typeof err.error.error === 'string' ? err.error.error : (err.error.error.message || JSON.stringify(err.error.error));
+    }
+    if (err.error?.message) {
+      return typeof err.error.message === 'string' ? err.error.message : JSON.stringify(err.error.message);
+    }
+    if (err.message) return err.message;
+    return fallback;
   }
 
   protected startOver() {

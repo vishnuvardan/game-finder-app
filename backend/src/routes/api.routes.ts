@@ -647,7 +647,10 @@ router.post('/social/publish-instagram', async (req: Request, res: Response) => 
       } catch (e) {}
     }
 
-    const apiErr = error.response?.data?.error?.message || error.message;
+    const apiErr = error.response?.data?.error?.message 
+      || (typeof error.response?.data?.error === 'string' ? error.response?.data?.error : '') 
+      || error.message 
+      || 'Unknown error';
     return res.status(500).json({ error: `Instagram publishing failed: ${apiErr}` });
   }
 });
@@ -788,7 +791,10 @@ router.post('/social/publish-instagram-reel', async (req: Request, res: Response
       } catch (e) {}
     }
 
-    const apiErr = error.response?.data?.error?.message || error.message;
+    const apiErr = error.response?.data?.error?.message 
+      || (typeof error.response?.data?.error === 'string' ? error.response?.data?.error : '') 
+      || error.message 
+      || 'Unknown error';
     return res.status(500).json({ error: `Instagram Reel publishing failed: ${apiErr}` });
   }
 });

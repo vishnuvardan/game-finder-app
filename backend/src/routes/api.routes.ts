@@ -887,7 +887,7 @@ function getMp3DurationMs(buffer: Buffer): number {
  * Builds frame-perfect, synchronized subtitle cards directly from EdgeTTS physical word timestamps.
  * Works seamlessly for all voices and languages (English, Tamil, British, etc.) with zero drift.
  */
-function buildPreciseSubtitlesFromWords(words: WordSegment[]): SubtitlePhrase[] {
+function buildPreciseSubtitlesFromWords(words: WordSegment[], totalAudioDurationSec?: number): SubtitlePhrase[] {
   if (!words || words.length === 0) return [];
 
   const chunks: SubtitlePhrase[] = [];
@@ -904,11 +904,11 @@ function buildPreciseSubtitlesFromWords(words: WordSegment[]): SubtitlePhrase[] 
 
     const isPunctuation = /[.?!,;:]$/.test(cleanWord);
     const nextWord = words[i + 1];
-    const hasLongPauseNext = nextWord ? ((nextWord.start - w.end) > 250) : true;
+    const hasLongPauseNext = nextWord ? ((nextWord.start - w.end) > 300) : true;
     
-    // Chunk criteria: 3-4 words max, punctuation mark, character length >= 22, or audio pause
+    // Chunk criteria: 3-4 words max, punctuation mark, character length >= 20, or audio pause
     const shouldBreak = currentChunk.length >= 4 || 
-                        (currentChunk.length >= 2 && (isPunctuation || currentChars >= 22 || hasLongPauseNext)) || 
+                        (currentChunk.length >= 2 && (isPunctuation || currentChars >= 20 || hasLongPauseNext)) || 
                         i === words.length - 1;
 
     if (shouldBreak) {
@@ -921,13 +921,24 @@ function buildPreciseSubtitlesFromWords(words: WordSegment[]): SubtitlePhrase[] 
     }
   }
 
-  // Smooth brief pauses (<= 0.25s) between subtitle cards so text displays continuously without flickering
+  // Seamless Shorts pacing: bridge pauses (up to 0.85s) between subtitle cards so text displays continuously
+  // without jarring flickers between words, perfectly matching modern Reels/Shorts caption style.
   for (let i = 0; i < chunks.length - 1; i++) {
     const curr = chunks[i];
     const next = chunks[i + 1];
     const gap = next.start - curr.end;
-    if (gap > 0 && gap <= 0.25) {
+    if (gap > 0 && gap <= 0.85) {
       curr.end = next.start;
+    } else if (gap > 0.85) {
+      curr.end = Math.min(next.start, curr.end + 0.4);
+    }
+  }
+
+  // Extend the last chunk slightly to end of audio if provided
+  if (chunks.length > 0 && totalAudioDurationSec && totalAudioDurationSec > chunks[chunks.length - 1].end) {
+    const last = chunks[chunks.length - 1];
+    if (totalAudioDurationSec - last.end <= 1.0) {
+      last.end = totalAudioDurationSec;
     }
   }
 
@@ -936,7 +947,7 @@ function buildPreciseSubtitlesFromWords(words: WordSegment[]): SubtitlePhrase[] 
 
 /**
  * POST /api/shorts/proxy-tts
- * Payload: { text: string, subtitles?: Array, voiceSelection?: string }
+ * Payload: { text: string, subtitles?: Array, voiceSelection?: string, rate?: string, pitch?: string }
  * Proxy endpoint to generate TTS audio and aligned word-level subtitles, returning a JSON response.
  */
 router.post('/shorts/proxy-tts', async (req: Request, res: Response) => {
@@ -946,11 +957,18 @@ router.post('/shorts/proxy-tts', async (req: Request, res: Response) => {
     return res.status(400).json({ error: 'text must be a non-empty string' });
   }
 
-  const voice = voiceSelection || 'en-US-EricNeural';
+  const voice = voiceSelection || (text.match(/[\u0B80-\u0BFF]/) ? 'ta-IN-ValluvarNeural' : 'en-US-ChristopherNeural');
   const isTamilVoice = voice.startsWith('ta-');
-  const defaultRate = '+50%'; // Fast ~2x shorts narration pacing for both Tamil and English
-  const rate = requestedRate || defaultRate;
-  const pitch = requestedPitch || (isTamilVoice ? '-5Hz' : 'default');
+  const isBassMaleVoice = (voice === 'en-US-ChristopherNeural' || voice === 'ta-IN-ValluvarNeural');
+
+  // Rate: +30% default rate for punchy, high-retention shorts pacing
+  let rate = requestedRate || '+30%';
+  if (rate && !rate.startsWith('+') && !rate.startsWith('-') && rate.endsWith('%')) {
+    rate = `+${rate}`;
+  }
+
+  // Pitch: -20Hz for deep bass male (Christopher / Valluvar), default for female / others
+  const pitch = requestedPitch !== undefined && requestedPitch !== '' ? requestedPitch : (isBassMaleVoice ? '-20Hz' : 'default');
 
   // Dynamically determine exact regional language code from voice prefix (e.g. 'en-US', 'en-GB', 'ta-IN', 'ta-LK')
   const langParts = voice.split('-');
@@ -960,6 +978,7 @@ router.post('/shorts/proxy-tts', async (req: Request, res: Response) => {
   const tempFile = path.join(tempDir, `tts_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.mp3`);
 
   try {
+    console.log(`[Shorts TTS] Synthesizing audio: voice="${voice}", rate="${rate}", pitch="${pitch}"...`);
     const tts = new EdgeTTS({ 
       voice,
       lang,
@@ -976,15 +995,20 @@ router.post('/shorts/proxy-tts', async (req: Request, res: Response) => {
 
     const fileBuffer = fs.readFileSync(tempFile);
     const audioBase64 = fileBuffer.toString('base64');
+    const audioDurationMs = getMp3DurationMs(fileBuffer);
+    const audioDurationSec = audioDurationMs / 1000;
 
     // Extract exact physical word timestamps from synthesizer and build synchronized subtitles
-    let alignedSubs = subtitles || [];
+    let alignedSubs: SubtitlePhrase[] = [];
     const subFile = tempFile + '.json';
     if (fs.existsSync(subFile)) {
       try {
         const subContent = fs.readFileSync(subFile, 'utf8');
         const words = JSON.parse(subContent);
-        alignedSubs = buildPreciseSubtitlesFromWords(words);
+        if (Array.isArray(words) && words.length > 0) {
+          alignedSubs = buildPreciseSubtitlesFromWords(words, audioDurationSec);
+          console.log(`[Shorts TTS] Extracted ${words.length} physical words -> ${alignedSubs.length} aligned subtitle cards (audio duration: ${audioDurationSec.toFixed(2)}s)`);
+        }
       } catch (err) {
         console.error('Error parsing subtitle file:', err);
       } finally {
@@ -992,6 +1016,18 @@ router.post('/shorts/proxy-tts', async (req: Request, res: Response) => {
           if (err) console.error('Error deleting temp subtitle file:', err);
         });
       }
+    }
+
+    // Robust fallback: if physical words could not be extracted, align Gemini subtitles by scaling to audio duration
+    if (alignedSubs.length === 0 && Array.isArray(subtitles) && subtitles.length > 0) {
+      console.log(`[Shorts TTS] Subtitle fallback: Scaling ${subtitles.length} Gemini subtitle segments to match actual audio duration (${audioDurationSec.toFixed(2)}s)`);
+      const originalMaxEnd = Math.max(...subtitles.map((s: any) => s.end || 0), 1);
+      const scale = audioDurationSec / originalMaxEnd;
+      alignedSubs = subtitles.map((s: any) => ({
+        text: s.text,
+        start: Math.round(s.start * scale * 1000) / 1000,
+        end: Math.round(s.end * scale * 1000) / 1000,
+      }));
     }
 
     // Clean up temporary audio file asynchronously

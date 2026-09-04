@@ -21,31 +21,21 @@ export class ShortsCreatorComponent implements OnInit, OnDestroy {
   // Input states
   protected promptTopic = signal('');
   protected scriptLanguage = signal<'en' | 'ta'>('en');
-  protected voiceSelection = signal('en-US-EricNeural');
+  protected voiceSelection = signal('en-US-ChristopherNeural');
   protected scriptTone = signal('controversial'); // Tone of the narration script
   protected gameVolume = signal(0.15); // Default game volume is 15%
   protected videoZoom = signal(0); // 0% = default contain, 100% = full screen vertical fill
   protected targetFps = signal<30 | 60>(60); // 30 FPS or 60 FPS output framerate
 
-  // Voice catalogue definition (Synchronized with YouTube Narrator)
+  // Voice catalogue definition (2 voices per language: Deep Bass Male & Natural Female)
   protected englishVoices = [
-    { id: 'en-US-EricNeural', label: '🔥 Eric (US Male - Energetic / YouTube - Deep Bass)' },
-    { id: 'en-US-ChristopherNeural', label: '🎙️ Christopher (US Male - Authoritative / Documentary)' },
-    { id: 'en-US-GuyNeural', label: '💬 Guy (US Male - Conversational)' },
-    { id: 'en-US-JennyNeural', label: '🌸 Jenny (US Female - Natural / Warm)' },
-    { id: 'en-US-AriaNeural', label: '⚡ Aria (US Female - Dynamic Storyteller)' },
-    { id: 'en-GB-RyanNeural', label: '🇬🇧 Ryan (UK Male - British Accent)' },
-    { id: 'en-GB-SoniaNeural', label: '🇬🇧 Sonia (UK Female - British Accent)' }
+    { id: 'en-US-ChristopherNeural', label: '🎙️ Christopher (US Male - Deep Bass)' },
+    { id: 'en-US-JennyNeural', label: '🌸 Jenny (US Female - Natural & Clear)' }
   ];
 
   protected tamilVoices = [
-    { id: 'ta-IN-ValluvarNeural', label: '👑 வள்ளுவர் / Valluvar (Deep BASS Male India - Recommended)' },
-    { id: 'ta-IN-PallaviNeural', label: '🌸 பல்லவி / Pallavi (Expressive & Clear Female India)' },
-    { id: 'ta-LK-KumarNeural', label: '🎙️ குமார் / Kumar (Deep & Resonant Male Sri Lanka)' },
-    { id: 'ta-LK-SaranyaNeural', label: '✨ சரண்யா / Saranya (Clear Female Sri Lanka)' },
-    { id: 'ta-MY-SuryaNeural', label: '⚡ சூர்யா / Surya (Dynamic Male Malaysia)' },
-    { id: 'ta-SG-VenbaNeural', label: '🌺 வெண்பா / Venba (Melodious Female Singapore)' },
-    { id: 'ta-SG-AnbuNeural', label: '🔥 அன்பு / Anbu (Punchy Male Singapore)' }
+    { id: 'ta-IN-ValluvarNeural', label: '👑 வள்ளுவர் / Valluvar (Deep Bass Male)' },
+    { id: 'ta-IN-PallaviNeural', label: '🌸 பல்லவி / Pallavi (Clear Female)' }
   ];
   
   // File uploads
@@ -131,9 +121,9 @@ export class ShortsCreatorComponent implements OnInit, OnDestroy {
   protected onLanguageChange(lang: 'en' | 'ta') {
     this.scriptLanguage.set(lang);
     if (lang === 'ta') {
-      this.voiceSelection.set('ta-IN-ValluvarNeural'); // Default to Deep BASS voice
+      this.voiceSelection.set('ta-IN-ValluvarNeural'); // Default to Valluvar (Deep Bass)
     } else {
-      this.voiceSelection.set('en-US-EricNeural'); // Default to Eric (YouTube Deep Bass)
+      this.voiceSelection.set('en-US-ChristopherNeural'); // Default to Christopher (Deep Bass)
     }
   }
 
@@ -189,11 +179,18 @@ export class ShortsCreatorComponent implements OnInit, OnDestroy {
       this.shortsTitle.set(result.title);
       this.shortsScript.set(result.script);
 
+      // Fixed voice parameters: -20Hz pitch for Deep Bass Male, +30% rate for energetic shorts pace
+      const isBassMale = (this.voiceSelection() === 'en-US-ChristopherNeural' || this.voiceSelection() === 'ta-IN-ValluvarNeural');
+      const pitch = isBassMale ? '-20Hz' : 'default';
+      const rate = '+30%';
+
       // Fetch TTS Audio from backend proxy using chosen neural voice and inputting Gemini subtitles
       const ttsResponse = await this.geminiClient.generateTtsProxy(
         result.script, 
         result.subtitles || [], 
-        this.voiceSelection()
+        this.voiceSelection(),
+        rate,
+        pitch
       ).toPromise();
 
       if (!ttsResponse || !ttsResponse.audio) {

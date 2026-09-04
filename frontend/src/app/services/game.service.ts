@@ -16,6 +16,7 @@ export interface CarouselSlide {
   bullets: string[];
   footnote?: string;
   mediaUrl?: string;
+  imagePool?: string[];
 }
 
 export interface CarouselResponse {

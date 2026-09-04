@@ -47,6 +47,7 @@ export interface CarouselSlide {
   bullets: string[];
   footnote?: string;
   mediaUrl?: string;
+  imagePool?: string[];
 }
 
 export interface CarouselResponse {
@@ -1016,28 +1017,48 @@ class GeminiService {
         throw new Error('Response is missing required slides array');
       }
 
-      // Enrich slides with the corresponding game's header image as background mediaUrl
+      // Aggregate all high-res images across all deals
+      const allDealsImages: string[] = [];
+      for (const deal of deals) {
+        if (Array.isArray(deal.images) && deal.images.length > 0) {
+          allDealsImages.push(...deal.images);
+        }
+        if (deal.headerImage) {
+          allDealsImages.push(deal.headerImage);
+        }
+      }
+      const dealsImagePool = Array.from(new Set(allDealsImages.filter(Boolean)));
+
+      // Enrich slides with the corresponding game's screenshots and background mediaUrl
       const enrichedSlides = parsed.slides.map((slide, index) => {
         let mediaUrl = undefined;
+        let slidePool: string[] = [];
+
         if (index === 0) {
-          mediaUrl = deals[0]?.headerImage;
+          // Slide 1 is cover slide
+          const firstDeal = deals[0];
+          slidePool = firstDeal?.images?.length ? firstDeal.images : [firstDeal?.headerImage].filter(Boolean);
+          mediaUrl = slidePool[0] || firstDeal?.headerImage;
         } else if (index - 1 < deals.length) {
-          mediaUrl = deals[index - 1]?.headerImage;
+          const deal = deals[index - 1];
+          slidePool = deal?.images?.length ? deal.images : [deal?.headerImage].filter(Boolean);
+          mediaUrl = slidePool[0] || deal?.headerImage;
         }
+
         return {
           ...slide,
-          mediaUrl
+          mediaUrl,
+          imagePool: slidePool.length > 0 ? slidePool : dealsImagePool
         };
       });
 
-      const coverImageUrl = deals[0]?.headerImage || (await this.getStockImageFallback('steam'));
-      const dealsImagePool = Array.from(new Set(deals.map((d: any) => d.headerImage).filter(Boolean)));
+      const coverImageUrl = enrichedSlides[0]?.mediaUrl || deals[0]?.headerImage || (await this.getStockImageFallback('steam'));
 
       return {
         ...parsed,
         slides: enrichedSlides,
         coverImageUrl,
-        imagePool: dealsImagePool
+        imagePool: dealsImagePool.length > 0 ? dealsImagePool : Array.from(new Set(deals.map((d: any) => d.headerImage).filter(Boolean)))
       };
     } catch (error: any) {
       console.error('Error generating Steam Deals slides from Gemini:', error);

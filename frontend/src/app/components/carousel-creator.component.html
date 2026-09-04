@@ -143,6 +143,11 @@
               <!-- Multi-Stop Contrast Gradient Overlay -->
               <div class="slide-gradient-overlay" [class.cover-overlay]="activeSlideIndex() === 0"></div>
 
+              <!-- Quick Floating Select Image Button on Slide Card -->
+              <button type="button" class="slide-card-select-img-btn" (click)="openImagePicker(activeSlideIndex())" title="Choose from downloaded high-res game images">
+                <span>🖼️ Change Image</span>
+              </button>
+
               <div class="slide-card-content" [class.cover-content]="activeSlideIndex() === 0">
                 @if (activeSlideIndex() === 0) {
                   <!-- Slide 1: IGN Editorial Style Cover Slide -->
@@ -182,16 +187,15 @@
 
           <!-- Theme & Aspect Ratio Switchers Stacked -->
           <div class="carousel-under-controls-column">
-            <!-- High-Res Image Pool Shuffle & Cycle Controls -->
-            @if (imagePool().length > 1) {
-              <div class="form-group-compact image-shuffle-controls-box" style="margin-bottom: 0.75rem;">
-                <label class="form-label-compact">High-Res Game Media Pool ({{ imagePool().length }} images available)</label>
-                <div class="image-shuffle-btn-row">
-                  <button type="button" class="shuffle-btn-primary" (click)="shuffleAllImages()" title="Randomly shuffle unique screenshots across all slides">
-                    <span>🔀 Shuffle All Slides</span>
-                  </button>
-                  <button type="button" class="shuffle-btn-secondary" (click)="cycleActiveSlideImage()" title="Cycle to next high-res screenshot for this specific slide">
-                    <span>🔄 Change Slide {{ activeSlideIndex() + 1 }}</span>
+            <!-- High-Res Image Selector Control -->
+            @if (imagePool().length > 0 || (slides()[activeSlideIndex()]?.imagePool && slides()[activeSlideIndex()].imagePool!.length > 0)) {
+              <div class="form-group-compact image-select-controls-box" style="margin-bottom: 0.75rem;">
+                <label class="form-label-compact">Slide Visual / Artwork</label>
+                <div class="image-select-btn-wrapper">
+                  <button type="button" class="select-image-action-btn" (click)="openImagePicker(activeSlideIndex())" title="Choose from all downloaded high-res game screenshots and artworks">
+                    <span class="btn-icon">🖼️</span>
+                    <span class="btn-text">Select Image for Slide {{ activeSlideIndex() + 1 }}</span>
+                    <span class="image-count-badge">{{ (slides()[activeSlideIndex()]?.imagePool?.length || imagePool().length) }} Available</span>
                   </button>
                 </div>
               </div>
@@ -376,6 +380,85 @@
       </div>
     }
   </div>
+
+  <!-- ======================== SELECT IMAGE MODAL POPUP ======================== -->
+  @if (isImagePickerOpen()) {
+    <div class="picker-modal-backdrop" (click)="closeImagePicker()">
+      <div class="picker-modal-content glass-panel" (click)="$event.stopPropagation()">
+        
+        <!-- Modal Header -->
+        <div class="picker-modal-header">
+          <div class="picker-header-title-group">
+            <span class="picker-modal-badge">
+              🖼️ {{ generationMode() === 'steam' ? 'Steam Deals Media Gallery' : 'Downloaded Game Media Gallery' }}
+            </span>
+            <h3 class="picker-modal-title">
+              Select Image for Slide {{ activeEditingSlideIndex() + 1 }}
+            </h3>
+            <p class="picker-modal-subtitle">
+              {{ getActiveEditingSlideTitle() }}
+            </p>
+          </div>
+          <button type="button" class="picker-close-btn" (click)="closeImagePicker()" aria-label="Close modal">✕</button>
+        </div>
+
+        <!-- Filter tabs for Steam Deals if slide has specific pool -->
+        @if (hasSlideSpecificPool()) {
+          <div class="picker-tabs-row">
+            <button type="button" class="picker-tab-btn" [class.active]="imageFilterTab() === 'slide'" (click)="imageFilterTab.set('slide')">
+              🎮 Current Game Art ({{ currentEditingSlide()?.imagePool?.length || 0 }})
+            </button>
+            <button type="button" class="picker-tab-btn" [class.active]="imageFilterTab() === 'all'" (click)="imageFilterTab.set('all')">
+              🌐 All Deals Images ({{ imagePool().length }})
+            </button>
+          </div>
+        }
+
+        <!-- Gallery Grid of Downloaded Images -->
+        <div class="picker-modal-body">
+          @if (availableSlideImages().length === 0) {
+            <div class="picker-empty-state">
+              <span class="empty-icon">🖼️</span>
+              <p>No downloaded images available for this slide.</p>
+            </div>
+          } @else {
+            <div class="picker-images-grid">
+              @for (img of availableSlideImages(); track img; let i = $index) {
+                <div class="picker-image-card" 
+                  [class.selected]="currentSelectedSlideImage() === img"
+                  (click)="selectImageForSlide(img)">
+                  <img [src]="img" alt="Game artwork preview" loading="lazy" />
+                  
+                  @if (currentSelectedSlideImage() === img) {
+                    <div class="image-active-indicator">
+                      <span class="check-icon">✓</span>
+                      <span class="active-badge">Active</span>
+                    </div>
+                  } @else {
+                    <div class="image-select-hover-overlay">
+                      <span>✓ Select</span>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="picker-modal-footer">
+          <div class="picker-footer-info">
+            <span class="cached-pill">⚡ Loaded in Memory</span>
+            <span>{{ availableSlideImages().length }} high-res images available (0 additional API calls)</span>
+          </div>
+          <button type="button" class="glow-btn" (click)="closeImagePicker()" style="padding: 8px 24px;">
+            Done
+          </button>
+        </div>
+
+      </div>
+    </div>
+  }
 
   <!-- Instagram Publishing Modal Overlay -->
   @if (isPublishModalOpen()) {

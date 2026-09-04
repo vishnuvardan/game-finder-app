@@ -180,9 +180,34 @@ class SteamService {
           headline: item.headline || '',
           shortDescription: item.discounted
             ? `Currently on sale on Steam at a ${discountPercent}% discount! Only ₹${finalPrice} down from ₹${originalPrice}.`
-            : `Available on Steam for only ₹${finalPrice}.`
+            : `Available on Steam for only ₹${finalPrice}.`,
+          images: [] as string[]
         });
       }
+
+      // Fetch high-res screenshots and backgrounds for the featured games in parallel
+      await Promise.all(
+        games.map(async (game) => {
+          try {
+            const details = await this.getAppDetails(game.appid);
+            if (details) {
+              const gameScreenshots: string[] = [];
+              if (details.background_raw) gameScreenshots.push(details.background_raw);
+              else if (details.background) gameScreenshots.push(details.background);
+
+              if (Array.isArray(details.screenshots)) {
+                for (const shot of details.screenshots) {
+                  if (shot?.path_full) gameScreenshots.push(shot.path_full);
+                }
+              }
+              if (details.header_image) gameScreenshots.push(details.header_image);
+              game.images = Array.from(new Set(gameScreenshots.filter(Boolean)));
+            }
+          } catch (e: any) {
+            console.warn(`[SteamService] Could not fetch details for appid ${game.appid}:`, e?.message);
+          }
+        })
+      );
 
       return games;
     } catch (error: any) {
@@ -228,6 +253,16 @@ class SteamService {
         const originalPriceVal = priceOverview ? priceOverview.initial / 100 : 0;
         const finalPriceVal = priceOverview ? priceOverview.final / 100 : 0;
 
+        const gameScreenshots: string[] = [];
+        if (details.background_raw) gameScreenshots.push(details.background_raw);
+        else if (details.background) gameScreenshots.push(details.background);
+        if (Array.isArray(details.screenshots)) {
+          for (const shot of details.screenshots) {
+            if (shot?.path_full) gameScreenshots.push(shot.path_full);
+          }
+        }
+        if (details.header_image) gameScreenshots.push(details.header_image);
+
         resolvedDeals.push({
           appid: String(appid),
           name: details.name || match.name,
@@ -236,7 +271,8 @@ class SteamService {
           originalPrice: priceOverview ? `₹${originalPriceVal.toLocaleString('en-IN')}` : 'Free/TBD',
           finalPrice: priceOverview ? `₹${finalPriceVal.toLocaleString('en-IN')}` : 'Free/TBD',
           headerImage: details.header_image || `https://cdn.cloudflare.steamstatic.com/steam/apps/${appid}/header.jpg`,
-          shortDescription: details.short_description || `A popular game on Steam.`
+          shortDescription: details.short_description || `A popular game on Steam.`,
+          images: Array.from(new Set(gameScreenshots.filter(Boolean)))
         });
       } catch (err: any) {
         console.warn(`[SteamService] Failed to resolve details for game name "${trimmed}":`, err.message);

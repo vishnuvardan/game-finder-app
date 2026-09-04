@@ -99,44 +99,83 @@ export class CarouselCreatorComponent {
     });
   }
 
-  // Shuffle images across all slides from the pooled high-res Steam & IGDB assets
-  protected shuffleAllImages() {
-    const pool = this.imagePool();
-    if (!pool || pool.length === 0) return;
+  // Image Selection Modal State
+  protected readonly isImagePickerOpen = signal<boolean>(false);
+  protected readonly activeEditingSlideIndex = signal<number>(0);
+  protected readonly imageFilterTab = signal<'slide' | 'all'>('slide');
 
-    const shuffled = [...pool].sort(() => 0.5 - Math.random());
-    const updatedSlides = this.slides().map((slide, idx) => ({
-      ...slide,
-      mediaUrl: shuffled[idx % shuffled.length] || pool[idx % pool.length]
-    }));
-    this.slides.set(updatedSlides);
-    if (updatedSlides[0]?.mediaUrl) {
-      this.generatedCoverUrl.set(updatedSlides[0].mediaUrl);
+  // Computed pool of available images for the active editing slide
+  protected readonly currentEditingSlide = computed(() => {
+    const idx = this.activeEditingSlideIndex();
+    return this.slides()[idx] || null;
+  });
+
+  protected readonly hasSlideSpecificPool = computed(() => {
+    const slide = this.currentEditingSlide();
+    const globalPool = this.imagePool();
+    if (!slide?.imagePool || slide.imagePool.length === 0) return false;
+    // If the slide's pool is different from global pool, provide slide vs all tabs
+    return slide.imagePool.length !== globalPool.length;
+  });
+
+  protected readonly availableSlideImages = computed(() => {
+    const slide = this.currentEditingSlide();
+    const globalPool = this.imagePool();
+    const tab = this.imageFilterTab();
+
+    if (tab === 'slide' && slide?.imagePool && slide.imagePool.length > 0) {
+      return slide.imagePool;
     }
+    return globalPool.length > 0 ? globalPool : (slide?.imagePool || []);
+  });
+
+  protected readonly currentSelectedSlideImage = computed(() => {
+    const idx = this.activeEditingSlideIndex();
+    if (idx === 0) {
+      return this.getCoverUrl() || this.slides()[0]?.mediaUrl || null;
+    }
+    return this.slides()[idx]?.mediaUrl || null;
+  });
+
+  // Open modal strictly reading in-memory loaded images (0 extra API hits)
+  protected openImagePicker(slideIndex?: number) {
+    const idx = slideIndex !== undefined ? slideIndex : this.activeSlideIndex();
+    this.activeEditingSlideIndex.set(idx);
+    this.imageFilterTab.set('slide');
+    this.isImagePickerOpen.set(true);
   }
 
-  // Cycle through the 30-50 high-res images specifically for the active slide
-  protected cycleActiveSlideImage() {
-    const pool = this.imagePool();
-    if (!pool || pool.length <= 1) return;
+  protected closeImagePicker() {
+    this.isImagePickerOpen.set(false);
+  }
 
-    const activeIdx = this.activeSlideIndex();
+  protected selectImageForSlide(imageUrl: string) {
+    const idx = this.activeEditingSlideIndex();
     const currentSlides = [...this.slides()];
-    const currentUrl = currentSlides[activeIdx]?.mediaUrl;
+    if (!currentSlides[idx]) return;
 
-    const poolIdx = pool.indexOf(currentUrl || '');
-    const nextPoolIdx = (poolIdx + 1) % pool.length;
-    const nextUrl = pool[nextPoolIdx];
-
-    currentSlides[activeIdx] = {
-      ...currentSlides[activeIdx],
-      mediaUrl: nextUrl
+    currentSlides[idx] = {
+      ...currentSlides[idx],
+      mediaUrl: imageUrl
     };
     this.slides.set(currentSlides);
 
-    if (activeIdx === 0) {
-      this.generatedCoverUrl.set(nextUrl);
+    if (idx === 0) {
+      this.generatedCoverUrl.set(imageUrl);
+      if (this.customCoverUrl()) {
+        this.customCoverUrl.set(imageUrl);
+      }
     }
+  }
+
+  protected getActiveEditingSlideTitle(): string {
+    const idx = this.activeEditingSlideIndex();
+    const slide = this.slides()[idx];
+    if (!slide) return `Slide ${idx + 1}`;
+    if (idx === 0) {
+      return this.customFirstSlideTitle() || slide.title || 'Cover Slide';
+    }
+    return slide.title || `Slide ${idx + 1}`;
   }
 
   // Computed state validations
@@ -575,6 +614,8 @@ export class CarouselCreatorComponent {
     this.errorMessage.set(null);
     this.publishSuccess.set(null);
     this.isPublishModalOpen.set(false);
+    this.isImagePickerOpen.set(false);
+    this.imagePool.set([]);
     this.state.set('intake');
   }
 }

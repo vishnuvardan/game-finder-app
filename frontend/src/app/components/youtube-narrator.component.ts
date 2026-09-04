@@ -1,10 +1,10 @@
 import { Component, signal, computed, ViewChild, ElementRef, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { 
-  GameService, 
-  IGDBGame, 
-  YoutubeScriptResponse, 
+import {
+  GameService,
+  IGDBGame,
+  YoutubeScriptResponse,
   YoutubeScriptSection,
   GenerateYoutubeScriptParams,
   RegenerateSectionParams,
@@ -159,29 +159,28 @@ export class YoutubeNarratorComponent implements OnInit, OnDestroy {
   private animFrameId: number | null = null;
   private preloadedImageMap = new Map<string, HTMLImageElement>();
 
-  // Voice Catalogue
+  // Voice Catalogue: Max 2 voices per language (Deep Bass Male & Natural Female)
   protected readonly voicesList: VoiceOption[] = [
-    { id: 'en-US-ChristopherNeural', name: 'Christopher (Male - Authoritative / Documentary)', lang: 'en', gender: 'Male' },
-    { id: 'en-US-GuyNeural', name: 'Guy (Male - Conversational)', lang: 'en', gender: 'Male' },
-    { id: 'en-US-EricNeural', name: 'Eric (Male - Energetic / YouTube)', lang: 'en', gender: 'Male' },
-    { id: 'en-US-JennyNeural', name: 'Jenny (Female - Natural / Warm)', lang: 'en', gender: 'Female' },
-    { id: 'en-US-AriaNeural', name: 'Aria (Female - Dynamic Storyteller)', lang: 'en', gender: 'Female' },
-    { id: 'en-GB-RyanNeural', name: 'Ryan (Male - British Accent)', lang: 'en', gender: 'Male' },
-    { id: 'en-GB-SoniaNeural', name: 'Sonia (Female - British Accent)', lang: 'en', gender: 'Female' },
-    
-    // Tamil Voices (தமிழ்)
-    { id: 'ta-IN-ValluvarNeural', name: 'வள்ளுவர் (ஆண் - Male India)', lang: 'ta', gender: 'Male' },
-    { id: 'ta-IN-PallaviNeural', name: 'பல்லவி (பெண் - Female India)', lang: 'ta', gender: 'Female' },
-    { id: 'ta-LK-KumarNeural', name: 'குமார் (ஆண் - Male Sri Lanka)', lang: 'ta', gender: 'Male' },
-    { id: 'ta-LK-SaranyaNeural', name: 'சரண்யா (பெண் - Female Sri Lanka)', lang: 'ta', gender: 'Female' },
-    { id: 'ta-MY-SuryaNeural', name: 'சூர்யா (ஆண் - Male Malaysia)', lang: 'ta', gender: 'Male' },
-    { id: 'ta-SG-VenbaNeural', name: 'வெண்பா (பெண் - Female Singapore)', lang: 'ta', gender: 'Female' },
+    // English
+    { id: 'en-US-ChristopherNeural', name: 'Christopher (Deep Bass Male)', lang: 'en', gender: 'Male' },
+    { id: 'en-US-JennyNeural', name: 'Jenny (Natural Female)', lang: 'en', gender: 'Female' },
+
+    // Tamil (தமிழ்)
+    { id: 'ta-IN-ValluvarNeural', name: 'வள்ளுவர் (Deep Bass Male)', lang: 'ta', gender: 'Male' },
+    { id: 'ta-IN-PallaviNeural', name: 'பல்லவி (Clear Female)', lang: 'ta', gender: 'Female' },
   ];
 
-  // Filtered Voices based on active language
+  // All voices available in output dropdown (English and Tamil both)
   protected readonly availableVoices = computed(() => {
-    const lang = this.language();
-    return this.voicesList.filter(v => v.lang === lang);
+    return this.voicesList;
+  });
+
+  protected readonly englishVoices = computed(() => {
+    return this.voicesList.filter(v => v.lang === 'en');
+  });
+
+  protected readonly tamilVoices = computed(() => {
+    return this.voicesList.filter(v => v.lang === 'ta');
   });
 
   // Current Thumbnail Image
@@ -196,15 +195,15 @@ export class YoutubeNarratorComponent implements OnInit, OnDestroy {
   protected readonly fullScriptText = computed(() => {
     const parts: string[] = [];
     const secList = this.sections();
-    
+
     for (const sec of secList) {
       parts.push(`[${sec.title.toUpperCase()}]\n${sec.content}\n`);
     }
-    
+
     if (this.callToAction()) {
       parts.push(`[OUTRO & CALL TO ACTION]\n${this.callToAction()}`);
     }
-    
+
     return parts.join('\n');
   });
 
@@ -212,7 +211,7 @@ export class YoutubeNarratorComponent implements OnInit, OnDestroy {
   protected readonly fullPackageText = computed(() => {
     const title = this.youtubeTitle()?.trim() || '';
     const desc = this.youtubeDescription()?.trim() || '';
-    
+
     const rawTags = this.tags() || [];
     const hashtagsFormatted = rawTags
       .map(tag => tag.trim().startsWith('#') ? tag.trim() : `#${tag.trim()}`)
@@ -245,9 +244,9 @@ export class YoutubeNarratorComponent implements OnInit, OnDestroy {
   constructor(
     private gameService: GameService,
     private videoRecorder: YoutubeVideoRecorderService
-  ) {}
+  ) { }
 
-  ngOnInit() {}
+  ngOnInit() { }
 
   ngOnDestroy() {
     this.stopPreviewLoop();
@@ -306,11 +305,13 @@ export class YoutubeNarratorComponent implements OnInit, OnDestroy {
         this.youtubeTitle.set(res.youtubeTitle);
         this.youtubeDescription.set(res.youtubeDescription);
         this.thumbnailHeadline.set(res.thumbnailHeadline || res.youtubeTitle);
-        
+
         if (this.language() === 'ta') {
           this.thumbnailDescription.set('முழுமையான விளக்கம் & ரகசியங்கள்');
+          this.selectedVoice.set('ta-IN-ValluvarNeural');
         } else {
           this.thumbnailDescription.set('The Complete Breakdown & Truth');
+          this.selectedVoice.set('en-US-ChristopherNeural');
         }
 
         this.sections.set(res.sections || []);
@@ -783,7 +784,7 @@ export class YoutubeNarratorComponent implements OnInit, OnDestroy {
 
     this.activeEditingSceneIndex.set(index);
     this.sceneImageSearchQuery.set(scenes[index].imageQuery || this.topic());
-    
+
     // Immediately populate with all available preloaded images from the pool
     const pool = this.imagePool();
     if (pool.length > 0) {

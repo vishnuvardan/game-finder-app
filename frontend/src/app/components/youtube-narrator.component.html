@@ -2,629 +2,683 @@
 
   <!-- ======================== STATE 1: INTAKE FORM ======================== -->
   @if (state() === 'intake') {
-    <section class="intake-card glass-panel">
-      <div class="intake-header">
-        <div class="header-badge">🎙️ Long-Form YouTube Creator</div>
-        <h2 class="intake-title">YouTube Script & Audio Narrator Studio</h2>
-        <p class="intake-subtitle">
-          Generate comprehensive 5–10 minute long-form video scripts, SEO metadata, 16:9 thumbnail art, and full Neural Voiceover narration in English and Tamil.
-        </p>
-      </div>
+  <section class="intake-card glass-panel">
+    <div class="intake-header">
+      <div class="header-badge">🎙️ Long-Form YouTube Creator</div>
+      <h2 class="intake-title">YouTube Script & Audio Narrator Studio</h2>
+      <p class="intake-subtitle">
+        Generate comprehensive 5–10 minute long-form video scripts, SEO metadata, 16:9 thumbnail art, and full Neural
+        Voiceover narration in English and Tamil.
+      </p>
+    </div>
 
-      <!-- Language Selector Row -->
-      <div class="form-group">
-        <label class="form-label">🌍 Output Language & Narration Accent</label>
-        <div class="lang-selector-group">
-          <button type="button" class="lang-btn" [class.active]="language() === 'en'" (click)="setLanguage('en')">
-            <span class="lang-flag">🇬🇧</span>
-            <span class="lang-text">English (UK / US Neural Voices)</span>
-          </button>
-          <button type="button" class="lang-btn" [class.active]="language() === 'ta'" (click)="setLanguage('ta')">
-            <span class="lang-flag">🇮🇳</span>
-            <span class="lang-text">தமிழ் (Tamil Script & Native Voices)</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Settings Grid: Domain, Tone, Duration -->
-      <div class="settings-tri-grid">
-        <!-- Domain / Category -->
-        <div class="form-group">
-          <label for="domain-select" class="form-label">📂 Topic Domain / Genre</label>
-          <div class="select-wrapper">
-            <select id="domain-select" class="select-input" [ngModel]="domain()" (ngModelChange)="domain.set($event)">
-              @for (d of domainsList; track d.value) {
-                <option [value]="d.value">{{ d.label }}</option>
-              }
-            </select>
-          </div>
-        </div>
-
-        <!-- Narration Tone -->
-        <div class="form-group">
-          <label for="tone-select" class="form-label">🎭 Narration Tone</label>
-          <div class="select-wrapper">
-            <select id="tone-select" class="select-input" [ngModel]="tone()" (ngModelChange)="tone.set($event)">
-              @for (t of tonesList; track t.value) {
-                <option [value]="t.value">{{ t.label }}</option>
-              }
-            </select>
-          </div>
-        </div>
-
-        <!-- Target Video Duration -->
-        <div class="form-group">
-          <label for="duration-select" class="form-label">⏱️ Target Video Duration</label>
-          <div class="select-wrapper">
-            <select id="duration-select" class="select-input" [ngModel]="targetMinutes()" (ngModelChange)="targetMinutes.set($event)">
-              @for (dur of durationsList; track dur.value) {
-                <option [value]="dur.value">{{ dur.label }}</option>
-              }
-            </select>
-          </div>
-        </div>
-      </div>
-
-      <!-- Video Idea / Prompt Input -->
-      <div class="form-group">
-        <div class="form-label-row">
-          <label for="video-topic-input" class="form-label">💡 Video Topic / Idea / Key Question</label>
-          <span class="field-hint">Be as specific or creative as you like</span>
-        </div>
-        <textarea id="video-topic-input" class="topic-textarea" rows="3"
-          [placeholder]="language() === 'ta' ? 'எ.கா: பிளட்பார்ன் (Bloodborne) ஏன் ஒரு தலைசிறந்த படைப்பு? 5 முக்கியமான காரணங்களை விவரிக்கவும்...' : 'e.g. Why Bloodborne is a masterpiece? Give me 5 deep gameplay and lore reasons...'"
-          [ngModel]="topic()" (ngModelChange)="topic.set($event)"></textarea>
-
-        <!-- Suggestion Chips -->
-        <div class="preset-chips-row">
-          <span class="chips-title">Try ideas:</span>
-          @if (language() === 'en') {
-            @for (idea of presetIdeas; track idea) {
-              <button type="button" class="preset-chip" (click)="applyPreset(idea)">
-                {{ idea }}
-              </button>
-            }
-          } @else {
-            @for (idea of tamilPresetIdeas; track idea) {
-              <button type="button" class="preset-chip" (click)="applyPreset(idea)">
-                {{ idea }}
-              </button>
-            }
-          }
-        </div>
-      </div>
-
-      <!-- Optional Game Autocomplete -->
-      <div class="form-group optional-game-group">
-        <div class="form-label-row">
-          <label class="form-label">🎮 Specific Game Name (Optional)</label>
-          <span class="badge-optional">Optional for high-res screenshots</span>
-        </div>
-        <app-autocomplete-input 
-          placeholder="Search game on Steam / IGDB (e.g. Bloodborne, Cyberpunk 2077)..."
-          (gameSelected)="onGameSelected($event)">
-        </app-autocomplete-input>
-      </div>
-
-      @if (errorMessage()) {
-        <div class="error-banner">
-          ⚠️ {{ errorMessage() }}
-        </div>
-      }
-
-      <div class="action-submit-row">
-        <button type="button" class="glow-btn main-generate-btn" (click)="generateScript()">
-          <span>✨ Generate YouTube Script & Voiceover Studio</span>
+    <!-- Language Selector Row -->
+    <div class="form-group">
+      <label class="form-label">🌍 Output Language & Narration Accent</label>
+      <div class="lang-selector-group">
+        <button type="button" class="lang-btn" [class.active]="language() === 'en'" (click)="setLanguage('en')">
+          <span class="lang-flag">🇬🇧</span>
+          <span class="lang-text">English (UK / US Neural Voices)</span>
+        </button>
+        <button type="button" class="lang-btn" [class.active]="language() === 'ta'" (click)="setLanguage('ta')">
+          <span class="lang-flag">🇮🇳</span>
+          <span class="lang-text">தமிழ் (Tamil Script & Native Voices)</span>
         </button>
       </div>
-    </section>
+    </div>
+
+    <!-- Settings Grid: Domain, Tone, Duration -->
+    <div class="settings-tri-grid">
+      <!-- Domain / Category -->
+      <div class="form-group">
+        <label for="domain-select" class="form-label">📂 Topic Domain / Genre</label>
+        <div class="select-wrapper">
+          <select id="domain-select" class="select-input" [ngModel]="domain()" (ngModelChange)="domain.set($event)">
+            @for (d of domainsList; track d.value) {
+            <option [value]="d.value">{{ d.label }}</option>
+            }
+          </select>
+        </div>
+      </div>
+
+      <!-- Narration Tone -->
+      <div class="form-group">
+        <label for="tone-select" class="form-label">🎭 Narration Tone</label>
+        <div class="select-wrapper">
+          <select id="tone-select" class="select-input" [ngModel]="tone()" (ngModelChange)="tone.set($event)">
+            @for (t of tonesList; track t.value) {
+            <option [value]="t.value">{{ t.label }}</option>
+            }
+          </select>
+        </div>
+      </div>
+
+      <!-- Target Video Duration -->
+      <div class="form-group">
+        <label for="duration-select" class="form-label">⏱️ Target Video Duration</label>
+        <div class="select-wrapper">
+          <select id="duration-select" class="select-input" [ngModel]="targetMinutes()"
+            (ngModelChange)="targetMinutes.set($event)">
+            @for (dur of durationsList; track dur.value) {
+            <option [value]="dur.value">{{ dur.label }}</option>
+            }
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Video Idea / Prompt Input -->
+    <div class="form-group">
+      <div class="form-label-row">
+        <label for="video-topic-input" class="form-label">💡 Video Topic / Idea / Key Question</label>
+        <span class="field-hint">Be as specific or creative as you like</span>
+      </div>
+      <textarea id="video-topic-input" class="topic-textarea" rows="3"
+        [placeholder]="language() === 'ta' ? 'எ.கா: பிளட்பார்ன் (Bloodborne) ஏன் ஒரு தலைசிறந்த படைப்பு? 5 முக்கியமான காரணங்களை விவரிக்கவும்...' : 'e.g. Why Bloodborne is a masterpiece? Give me 5 deep gameplay and lore reasons...'"
+        [ngModel]="topic()" (ngModelChange)="topic.set($event)"></textarea>
+
+      <!-- Suggestion Chips -->
+      <div class="preset-chips-row">
+        <span class="chips-title">Try ideas:</span>
+        @if (language() === 'en') {
+        @for (idea of presetIdeas; track idea) {
+        <button type="button" class="preset-chip" (click)="applyPreset(idea)">
+          {{ idea }}
+        </button>
+        }
+        } @else {
+        @for (idea of tamilPresetIdeas; track idea) {
+        <button type="button" class="preset-chip" (click)="applyPreset(idea)">
+          {{ idea }}
+        </button>
+        }
+        }
+      </div>
+    </div>
+
+    <!-- Optional Game Autocomplete -->
+    <div class="form-group optional-game-group">
+      <div class="form-label-row">
+        <label class="form-label">🎮 Specific Game Name (Optional)</label>
+        <span class="badge-optional">Optional for high-res screenshots</span>
+      </div>
+      <app-autocomplete-input placeholder="Search game on Steam / IGDB (e.g. Bloodborne, Cyberpunk 2077)..."
+        (gameSelected)="onGameSelected($event)">
+      </app-autocomplete-input>
+    </div>
+
+    @if (errorMessage()) {
+    <div class="error-banner">
+      ⚠️ {{ errorMessage() }}
+    </div>
+    }
+
+    <div class="action-submit-row">
+      <button type="button" class="glow-btn main-generate-btn" (click)="generateScript()">
+        <span>✨ Generate YouTube Script & Voiceover Studio</span>
+      </button>
+    </div>
+  </section>
   }
 
   <!-- ======================== STATE 2: GENERATING SCREEN ======================== -->
   @if (state() === 'generating') {
-    <section class="loading-state-card glass-panel">
-      <div class="pulsing-mic-icon">🎙️</div>
-      <h3 class="loading-title">Drafting 5–10 Min Master Script...</h3>
-      <p class="loading-subtitle">
-        Gemini is researching "{{ topic() }}", structuring chapters, writing voiceover narration, and fetching high-resolution 16:9 thumbnail assets.
-      </p>
-      
-      <div class="loading-step-list">
-        <div class="loading-step active">
-          <span class="step-check">✓</span>
-          <span>Analyzing domain: <strong>{{ domain() }}</strong> & tone: <strong>{{ tone() }}</strong></span>
-        </div>
-        <div class="loading-step active">
-          <span class="step-check">✓</span>
-          <span>Targeting <strong>{{ targetMinutes() }} minutes</strong> duration (~{{ targetMinutes() * 140 }} words)</span>
-        </div>
-        <div class="loading-step active">
-          <span class="step-check">⏳</span>
-          <span>Writing long-form chapters in <strong>{{ language() === 'ta' ? 'Tamil (தமிழ்)' : 'English' }}</strong>...</span>
-        </div>
+  <section class="loading-state-card glass-panel">
+    <div class="pulsing-mic-icon">🎙️</div>
+    <h3 class="loading-title">Drafting 5–10 Min Master Script...</h3>
+    <p class="loading-subtitle">
+      Gemini is researching "{{ topic() }}", structuring chapters, writing voiceover narration, and fetching
+      high-resolution 16:9 thumbnail assets.
+    </p>
+
+    <div class="loading-step-list">
+      <div class="loading-step active">
+        <span class="step-check">✓</span>
+        <span>Analyzing domain: <strong>{{ domain() }}</strong> & tone: <strong>{{ tone() }}</strong></span>
       </div>
-    </section>
+      <div class="loading-step active">
+        <span class="step-check">✓</span>
+        <span>Targeting <strong>{{ targetMinutes() }} minutes</strong> duration (~{{ targetMinutes() * 140 }}
+          words)</span>
+      </div>
+      <div class="loading-step active">
+        <span class="step-check">⏳</span>
+        <span>Writing long-form chapters in <strong>{{ language() === 'ta' ? 'Tamil (தமிழ்)' : 'English'
+            }}</strong>...</span>
+      </div>
+    </div>
+  </section>
   }
 
   <!-- ======================== STATE 3: STUDIO & EDITOR ======================== -->
   @if (state() === 'editor') {
-    <section class="studio-layout-grid">
+  <section class="studio-layout-grid">
 
-      <!-- LHS: Thumbnail & YouTube SEO Metadata -->
-      <aside class="studio-sidebar-column">
+    <!-- LHS: Thumbnail & YouTube SEO Metadata -->
+    <aside class="studio-sidebar-column">
 
-        <!-- 16:9 YouTube Thumbnail Generator Card -->
-        <div class="studio-panel glass-panel thumbnail-panel">
-          <div class="panel-header-row">
-            <h3 class="panel-title">🖼️ 16:9 YouTube Thumbnail</h3>
-            <button type="button" class="btn-compact-secondary" (click)="reshuffleThumbnailImage()" title="Shuffle through game media pool">
-              <span>🔀 Reshuffle</span>
-            </button>
-          </div>
-
-          <!-- Thumbnail Canvas (16:9 Aspect Ratio) -->
-          <div id="youtube-thumbnail-canvas" class="thumbnail-canvas-frame">
-            <div class="thumbnail-backdrop-img" [style.background-image]="'url(' + currentThumbnailImage() + ')'"></div>
-            <div class="thumbnail-gradient-fade"></div>
-            
-            <div class="thumbnail-overlay-content">
-              <!-- Upper Fold: Title -->
-              <div class="thumbnail-upper-fold">
-                <h2 class="thumbnail-hero-text">{{ thumbnailHeadline() || youtubeTitle() }}</h2>
-              </div>
-              <!-- Lower Fold: Description / Subtitle -->
-              <div class="thumbnail-lower-fold">
-                <p class="thumbnail-sub-desc">{{ thumbnailDescription() }}</p>
-              </div>
-            </div>
-          </div>
-
-          <!-- Editable Thumbnail Inputs -->
-          <div class="form-group-compact" style="margin-top: 0.85rem;">
-            <label class="form-label-compact" for="thumbnail-headline-input">Thumbnail Title (Upper Fold)</label>
-            <input id="thumbnail-headline-input" type="text" class="text-input-compact" 
-              [ngModel]="thumbnailHeadline()" (ngModelChange)="thumbnailHeadline.set($event)" 
-              placeholder="e.g. WHY BLOODBORNE IS A MASTERPIECE" />
-          </div>
-
-          <div class="form-group-compact" style="margin-top: 0.5rem;">
-            <label class="form-label-compact" for="thumbnail-desc-input">Thumbnail Subtitle (Lower Fold)</label>
-            <input id="thumbnail-desc-input" type="text" class="text-input-compact" 
-              [ngModel]="thumbnailDescription()" (ngModelChange)="thumbnailDescription.set($event)" 
-              placeholder="e.g. 5 Reasons That Changed Gaming" />
-          </div>
-
-          <button type="button" class="glow-btn download-thumb-btn" (click)="downloadThumbnail()">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2v9.67z" />
-            </svg>
-            <span>Download 1280x720 Thumbnail PNG</span>
+      <!-- 16:9 YouTube Thumbnail Generator Card -->
+      <div class="studio-panel glass-panel thumbnail-panel">
+        <div class="panel-header-row">
+          <h3 class="panel-title">🖼️ 16:9 YouTube Thumbnail</h3>
+          <button type="button" class="btn-compact-secondary" (click)="reshuffleThumbnailImage()"
+            title="Shuffle through game media pool">
+            <span>🔀 Reshuffle</span>
           </button>
         </div>
 
-        <!-- YouTube SEO Metadata Panel -->
-        <div class="studio-panel glass-panel">
-          <div class="panel-header-row">
-            <h3 class="panel-title">📈 YouTube SEO Metadata</h3>
-          </div>
+        <!-- Thumbnail Canvas (16:9 Aspect Ratio) -->
+        <div id="youtube-thumbnail-canvas" class="thumbnail-canvas-frame">
+          <div class="thumbnail-backdrop-img" [style.background-image]="'url(' + currentThumbnailImage() + ')'"></div>
+          <div class="thumbnail-gradient-fade"></div>
 
-          <!-- YouTube Title -->
-          <div class="form-group-compact">
-            <div class="form-label-row-compact">
-              <label class="form-label-compact" for="seo-title-input">Optimized YouTube Title</label>
-              <button type="button" class="btn-copy-small" (click)="copyTitle()">
-                {{ isCopiedTitle() ? '✓ Copied' : '📋 Copy' }}
-              </button>
+          <div class="thumbnail-overlay-content">
+            <!-- Upper Fold: Title -->
+            <div class="thumbnail-upper-fold">
+              <h2 class="thumbnail-hero-text">{{ thumbnailHeadline() || youtubeTitle() }}</h2>
             </div>
-            <textarea id="seo-title-input" class="seo-title-textarea" rows="2"
-              [ngModel]="youtubeTitle()" (ngModelChange)="youtubeTitle.set($event)"></textarea>
-          </div>
-
-          <!-- YouTube Description -->
-          <div class="form-group-compact" style="margin-top: 0.85rem;">
-            <div class="form-label-row-compact">
-              <label class="form-label-compact" for="seo-desc-input">Video Description & Chapters</label>
-              <button type="button" class="btn-copy-small" (click)="copyDescription()">
-                {{ isCopiedDesc() ? '✓ Copied' : '📋 Copy' }}
-              </button>
+            <!-- Lower Fold: Description / Subtitle -->
+            <div class="thumbnail-lower-fold">
+              <p class="thumbnail-sub-desc">{{ thumbnailDescription() }}</p>
             </div>
-            <textarea id="seo-desc-input" class="seo-desc-textarea" rows="6"
-              [ngModel]="youtubeDescription()" (ngModelChange)="youtubeDescription.set($event)"></textarea>
           </div>
+        </div>
 
-          <!-- Tags -->
-          @if (tags().length > 0) {
-            <div class="form-group-compact" style="margin-top: 0.85rem;">
-              <div class="form-label-row-compact">
-                <label class="form-label-compact">SEO Tags ({{ tags().length }})</label>
-                <button type="button" class="btn-copy-small" (click)="copyAllTags()">
-                  {{ isCopiedTags() ? '✓ Copied' : '📋 Copy Tags' }}
-                </button>
-              </div>
-              <div class="tags-cloud-row">
-                @for (tag of tags(); track tag) {
-                  <span class="tag-pill">#{{ tag }}</span>
-                }
-              </div>
-            </div>
-          }
+        <!-- Editable Thumbnail Inputs -->
+        <div class="form-group-compact" style="margin-top: 0.85rem;">
+          <label class="form-label-compact" for="thumbnail-headline-input">Thumbnail Title (Upper Fold)</label>
+          <input id="thumbnail-headline-input" type="text" class="text-input-compact" [ngModel]="thumbnailHeadline()"
+            (ngModelChange)="thumbnailHeadline.set($event)" placeholder="e.g. WHY BLOODBORNE IS A MASTERPIECE" />
+        </div>
 
-          <div style="margin-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 1rem;">
-            <button type="button" class="glow-btn-secondary" (click)="startOver()" style="width: 100%;">
-              <span>Create New Video Script</span>
+        <div class="form-group-compact" style="margin-top: 0.5rem;">
+          <label class="form-label-compact" for="thumbnail-desc-input">Thumbnail Subtitle (Lower Fold)</label>
+          <input id="thumbnail-desc-input" type="text" class="text-input-compact" [ngModel]="thumbnailDescription()"
+            (ngModelChange)="thumbnailDescription.set($event)" placeholder="e.g. 5 Reasons That Changed Gaming" />
+        </div>
+
+        <button type="button" class="glow-btn download-thumb-btn" (click)="downloadThumbnail()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <path
+              d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2v9.67z" />
+          </svg>
+          <span>Download 1280x720 Thumbnail PNG</span>
+        </button>
+      </div>
+
+      <!-- YouTube SEO Metadata Panel -->
+      <div class="studio-panel glass-panel">
+        <div class="panel-header-row">
+          <h3 class="panel-title">📈 YouTube SEO Metadata</h3>
+        </div>
+
+        <!-- YouTube Title -->
+        <div class="form-group-compact">
+          <div class="form-label-row-compact">
+            <label class="form-label-compact" for="seo-title-input">Optimized YouTube Title</label>
+            <button type="button" class="btn-copy-small" (click)="copyTitle()">
+              {{ isCopiedTitle() ? '✓ Copied' : '📋 Copy' }}
             </button>
           </div>
+          <textarea id="seo-title-input" class="seo-title-textarea" rows="2" [ngModel]="youtubeTitle()"
+            (ngModelChange)="youtubeTitle.set($event)"></textarea>
         </div>
 
-      </aside>
-
-      <!-- RHS: Modular Script Editor & Narration Studio -->
-      <main class="studio-main-column">
-
-        <!-- Narration & Voice Studio Box -->
-        <div class="studio-panel glass-panel voice-studio-card">
-          <div class="voice-studio-header">
-            <div class="voice-header-left">
-              <span class="voice-badge">🎙️ Voiceover Narration Studio</span>
-              <h3 class="voice-title">Neural Audio Synthesizer</h3>
-            </div>
-            <div class="script-stats-pill">
-              <span>📊 <strong>{{ totalWordCount() }}</strong> words</span>
-              <span>•</span>
-              <span>⏱️ ~<strong>{{ estimatedTotalMinutes() }}</strong> mins spoken</span>
-            </div>
+        <!-- YouTube Description -->
+        <div class="form-group-compact" style="margin-top: 0.85rem;">
+          <div class="form-label-row-compact">
+            <label class="form-label-compact" for="seo-desc-input">Video Description & Chapters</label>
+            <button type="button" class="btn-copy-small" (click)="copyDescription()">
+              {{ isCopiedDesc() ? '✓ Copied' : '📋 Copy' }}
+            </button>
           </div>
-
-          <!-- Controls Row: Voice Selector & Rate Selector -->
-          <div class="voice-controls-row">
-            <div class="form-group-compact voice-select-group">
-              <label class="form-label-compact" for="voice-select">Narration Voice</label>
-              <div class="select-wrapper">
-                <select id="voice-select" class="select-input-compact" [ngModel]="selectedVoice()" (ngModelChange)="selectedVoice.set($event)">
-                  @for (v of availableVoices(); track v.id) {
-                    <option [value]="v.id">{{ v.name }}</option>
-                  }
-                </select>
-              </div>
-            </div>
-
-            <div class="form-group-compact rate-select-group">
-              <label class="form-label-compact" for="rate-select">Speed Rate</label>
-              <div class="select-wrapper">
-                <select id="rate-select" class="select-input-compact" [ngModel]="selectedRate()" (ngModelChange)="selectedRate.set($event)">
-                  <option value="-10%">0.9x (Relaxed)</option>
-                  <option value="+0%">1.0x (Standard Normal)</option>
-                  <option value="+10%">1.1x (Paced)</option>
-                  <option value="+20%">1.2x (Energetic)</option>
-                  <option value="+30%">1.3x (Fast)</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="voice-action-group">
-              <button type="button" class="glow-btn generate-voice-btn" 
-                [disabled]="isAudioSynthesizing()" 
-                (click)="generateVoiceoverAudio()">
-                <span>{{ isAudioSynthesizing() ? '🎙️ Synthesizing Voice...' : '🎙️ Generate Voiceover Audio' }}</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- Audio Synthesizing Animated Loading Box -->
-          @if (isAudioSynthesizing()) {
-            <div class="audio-synthesizing-box">
-              <div class="audio-waves-anim">
-                <span class="bar"></span>
-                <span class="bar"></span>
-                <span class="bar"></span>
-                <span class="bar"></span>
-                <span class="bar"></span>
-              </div>
-              <div class="synthesizing-text-col">
-                <span class="synth-title">🎙️ Synthesizing Neural Narration Audio...</span>
-                <span class="synth-subtitle">Processing voiceover in streaming chunks for "{{ selectedVoice() }}". Please wait a few moments...</span>
-              </div>
-            </div>
-          }
-
-          <!-- Built-in Audio Player Bar -->
-          @if (audioUrl() && !isAudioSynthesizing()) {
-            <div class="audio-player-container">
-              <div class="audio-player-info">
-                <span class="audio-status-label">✓ Audio Master Ready</span>
-                <span class="audio-voice-name">{{ selectedVoice() }} • {{ selectedRate() }} speed</span>
-              </div>
-              <audio #audioPlayer controls [src]="audioUrl()" class="native-audio-player"></audio>
-              
-              <div class="audio-download-row">
-                <button type="button" class="glow-btn download-mp3-btn" (click)="downloadAudioFile()">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14l-4-4 1.41-1.41L11 13.17V7h2v6.17l2.59-2.58L17 12l-5 5z"/>
-                  </svg>
-                  <span>Download MP3 Audio File</span>
-                </button>
-              </div>
-            </div>
-          }
+          <textarea id="seo-desc-input" class="seo-desc-textarea" rows="6" [ngModel]="youtubeDescription()"
+            (ngModelChange)="youtubeDescription.set($event)"></textarea>
         </div>
 
-        <!-- ======================== 1080p YOUTUBE VIDEO STUDIO ======================== -->
-        @if (audioUrl() && videoScenes().length > 0) {
-          <div class="studio-panel glass-panel video-studio-panel">
-            <div class="video-studio-header">
-              <div class="video-header-left">
-                <span class="video-studio-badge">🎬 1080p YouTube Video Studio</span>
-                <h3 class="video-studio-title">Full HD Video Generator (1920x1080)</h3>
-                <p class="video-studio-desc">
-                  Hybrid visual layout with cinematic Ken Burns image motion, bulleted infographic takeaways, audio spectrum equalizer, and synchronized subtitles.
-                </p>
-              </div>
-
-              <div class="video-header-actions">
-                <div class="fps-selector-group">
-                  <span class="fps-label">Framerate:</span>
-                  <button type="button" class="btn-fps" [class.active]="videoFps() === 30" (click)="videoFps.set(30)">30 FPS</button>
-                  <button type="button" class="btn-fps" [class.active]="videoFps() === 60" (click)="videoFps.set(60)">60 FPS</button>
-                </div>
-
-                <button type="button" class="glow-btn export-video-btn" [disabled]="isExportingVideo()" (click)="exportYoutubeVideo()">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2v9.67z" />
-                  </svg>
-                  <span>{{ isExportingVideo() ? '🎬 Rendering Video (' + exportProgress() + '%)...' : '🎬 Export 1080p Video' }}</span>
-                </button>
-              </div>
-            </div>
-
-            <!-- Export Progress Indicator -->
-            @if (isExportingVideo()) {
-              <div class="export-progress-bar-wrapper">
-                <div class="export-progress-bar-fill" [style.width.%]="exportProgress()"></div>
-                <span class="export-progress-text">Rendering 1080p {{ videoFps() }}FPS Video... {{ exportProgress() }}%</span>
-              </div>
+        <!-- Tags -->
+        @if (tags().length > 0) {
+        <div class="form-group-compact" style="margin-top: 0.85rem;">
+          <div class="form-label-row-compact">
+            <label class="form-label-compact">SEO Tags ({{ tags().length }})</label>
+            <button type="button" class="btn-copy-small" (click)="copyAllTags()">
+              {{ isCopiedTags() ? '✓ Copied' : '📋 Copy Tags' }}
+            </button>
+          </div>
+          <div class="tags-cloud-row">
+            @for (tag of tags(); track tag) {
+            <span class="tag-pill">#{{ tag }}</span>
             }
-
-            <!-- 16:9 Interactive Canvas Preview Frame -->
-            <div class="canvas-preview-container">
-              <canvas #previewCanvas width="1920" height="1080" class="video-preview-canvas" (click)="toggleVideoPreviewPlay()"></canvas>
-
-              @if (!isPreviewPlaying()) {
-                <button type="button" class="canvas-center-play-btn" (click)="toggleVideoPreviewPlay()" title="Play video preview">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M8 5v14l11-7z"/>
-                  </svg>
-                </button>
-              }
-
-              <!-- Live Player Controls Bar -->
-              <div class="canvas-controls-bar">
-                <button type="button" class="player-ctrl-btn" (click)="toggleVideoPreviewPlay()">
-                  @if (isPreviewPlaying()) {
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
-                  } @else {
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-                  }
-                </button>
-
-                <input type="range" class="timeline-scrubber" min="0" [max]="previewTotalDuration()" [value]="previewCurrentTime()" (input)="seekTimeline($event)" step="0.1" />
-
-                <div class="player-time-badge">
-                  <span>{{ (previewCurrentTime() / 60 | number:'1.0-0') }}:{{ (previewCurrentTime() % 60 < 10 ? '0' : '') }}{{ (previewCurrentTime() % 60 | number:'1.0-0') }}</span>
-                  <span>/</span>
-                  <span>{{ (previewTotalDuration() / 60 | number:'1.0-0') }}:{{ (previewTotalDuration() % 60 < 10 ? '0' : '') }}{{ (previewTotalDuration() % 60 | number:'1.0-0') }}</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Scene Timeline Carousel & Visual Swapper -->
-            <div class="scenes-timeline-section">
-              <div class="scenes-timeline-header">
-                <h4 class="scenes-timeline-title">🎞️ Video Scenes & Visual Timeline ({{ videoScenes().length }} scenes)</h4>
-                <span class="scenes-timeline-hint">Images automatically change every ~8–10s with Ken Burns camera pan/zoom.</span>
-              </div>
-
-              <div class="scenes-cards-row">
-                @for (scene of videoScenes(); track scene.id; let sIdx = $index) {
-                  <div class="scene-item-card" [class.active-scene]="previewCurrentTime() >= scene.startTime && previewCurrentTime() <= scene.endTime" (click)="jumpToScene(sIdx)">
-                    <div class="scene-card-thumb-wrapper">
-                      <img [src]="scene.imageUrl" class="scene-card-thumb" alt="Scene Visual" loading="lazy" />
-                      <span class="scene-time-pill">{{ (scene.startTime / 60 | number:'1.0-0') }}:{{ (scene.startTime % 60 < 10 ? '0' : '') }}{{ (scene.startTime % 60 | number:'1.0-0') }}</span>
-                    </div>
-
-                    <div class="scene-card-details">
-                      <span class="scene-card-chap">Scene {{ sIdx + 1 }}: {{ scene.chapterTitle }}</span>
-                      @if (scene.bulletPoints && scene.bulletPoints.length > 0) {
-                        <p class="scene-card-bullet">✦ {{ scene.bulletPoints[0] }}</p>
-                      }
-                    </div>
-
-                    <div class="scene-card-actions" (click)="$event.stopPropagation()">
-                      <button type="button" class="scene-action-btn primary select-img-btn" (click)="openSceneImagePicker(sIdx)" title="Choose from all loaded images or search Google Images">
-                        🖼️ Select Image
-                      </button>
-                    </div>
-                  </div>
-                }
-              </div>
-            </div>
-
           </div>
+        </div>
         }
 
-        <!-- Script Chapters & Modular Sections Container -->
-        <div class="studio-panel glass-panel script-chapters-panel">
-          <div class="chapters-header-row">
-            <div>
-              <h3 class="chapters-headline">📝 Script Chapters & Modular Segments ({{ sections().length }})</h3>
-              <p class="chapters-subheadline">Review, rewrite, reorder, or add custom talking points to tailor the narrative.</p>
-            </div>
+        <div style="margin-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 1rem;">
+          <button type="button" class="glow-btn-secondary" (click)="startOver()" style="width: 100%;">
+            <span>Create New Video Script</span>
+          </button>
+        </div>
+      </div>
 
-            <button type="button" class="btn-copy-script" (click)="copyMasterScript()" title="Copy entire YouTube package: Title, Description, Hashtags & Voiceover Script">
-              <span>{{ isCopiedScript() ? '✓ Copied Package' : '📋 Copy All (Title, Desc & Script)' }}</span>
-            </button>
+    </aside>
+
+    <!-- RHS: Modular Script Editor & Narration Studio -->
+    <main class="studio-main-column">
+
+      <!-- Narration & Voice Studio Box -->
+      <div class="studio-panel glass-panel voice-studio-card">
+        <div class="voice-studio-header">
+          <div class="voice-header-left">
+            <span class="voice-badge">🎙️ Voiceover Narration Studio</span>
+            <h3 class="voice-title">Neural Audio Synthesizer</h3>
           </div>
-
-          <!-- Modular Section Cards List -->
-          <div class="sections-accordion-list">
-            @for (section of sections(); track section.id; let i = $index) {
-              <div class="section-card glass-panel" [class.intro-section]="i === 0" [class.section-loading]="isSectionGenerating() === section.id">
-                
-                <!-- Section Loading Overlay -->
-                @if (isSectionGenerating() === section.id) {
-                  <div class="section-loading-overlay">
-                    <div class="spinner-small"></div>
-                    <span class="overlay-text">Gemini is rewriting this chapter...</span>
-                  </div>
-                }
-
-                <!-- Section Top Header -->
-                <div class="section-card-header">
-                  <div class="section-badge-group">
-                    <span class="section-number-pill">{{ i === 0 ? 'INTRO HOOK' : 'CHAPTER ' + i }}</span>
-                    @if (section.estimatedSeconds) {
-                      <span class="section-duration-badge">⏱️ ~{{ section.estimatedSeconds }}s</span>
-                    }
-                  </div>
-
-                  <!-- Section Reorder & Delete Controls -->
-                  <div class="section-action-btns">
-                    <button type="button" class="icon-btn-ghost" [disabled]="i === 0 || isSectionGenerating() === section.id" (click)="moveSectionUp(i)" title="Move Up">↑</button>
-                    <button type="button" class="icon-btn-ghost" [disabled]="i === sections().length - 1 || isSectionGenerating() === section.id" (click)="moveSectionDown(i)" title="Move Down">↓</button>
-                    <button type="button" class="icon-btn-ghost delete-btn" [disabled]="isSectionGenerating() === section.id" (click)="deleteSection(i)" title="Delete Section">✕</button>
-                  </div>
-                </div>
-
-                <!-- Editable Section Title -->
-                <div class="section-title-wrapper">
-                  <input type="text" class="section-title-input" [(ngModel)]="section.title" placeholder="Chapter Heading..." [disabled]="isSectionGenerating() === section.id" />
-                </div>
-
-                <!-- Visual Cue / B-Roll Suggestion -->
-                @if (section.visualCue) {
-                  <div class="visual-cue-pill">
-                    <span>🎬 B-Roll: {{ section.visualCue }}</span>
-                  </div>
-                }
-
-                <!-- Key Takeaway Bullets Display -->
-                @if (section.bulletPoints && section.bulletPoints.length > 0) {
-                  <div class="section-bullets-box">
-                    <span class="bullets-box-label">📊 Key Infographic Bullets (Displayed on Video):</span>
-                    <ul class="section-bullets-list">
-                      @for (bullet of section.bulletPoints; track bullet) {
-                        <li>✦ {{ bullet }}</li>
-                      }
-                    </ul>
-                  </div>
-                }
-
-                <!-- Narration Script Textarea -->
-                <div class="section-textarea-wrapper">
-                  <textarea class="section-narration-textarea" rows="5" [(ngModel)]="section.content" placeholder="Narration text..." [disabled]="isSectionGenerating() === section.id"></textarea>
-                </div>
-
-                <!-- Section Footer with AI Rewrite Tool -->
-                <div class="section-card-footer">
-                  @if (activeSectionRewriteId() !== section.id) {
-                    <button type="button" class="btn-rewrite-section" [disabled]="isSectionGenerating() === section.id" (click)="openSectionRewrite(section.id)">
-                      <span>{{ isSectionGenerating() === section.id ? '⏳ AI is Rewriting...' : '🔄 AI Rewrite This Section' }}</span>
-                    </button>
-                  } @else {
-                    <!-- Section Rewrite Interactive Prompt -->
-                    <div class="section-rewrite-box">
-                      <label class="form-label-compact" for="rewrite-hint-{{section.id}}">Instructions for Gemini (Optional):</label>
-                      <input id="rewrite-hint-{{section.id}}" type="text" class="text-input-compact" [(ngModel)]="sectionRewriteHint"
-                        [disabled]="isSectionGenerating() === section.id"
-                        placeholder="e.g. Make it more dramatic, add stats, explain lore in depth..." />
-                      
-                      <div class="rewrite-actions-row">
-                        <button type="button" class="btn-compact-secondary" [disabled]="isSectionGenerating() === section.id" (click)="cancelSectionRewrite()">Cancel</button>
-                        <button type="button" class="glow-btn btn-compact-glow" [disabled]="isSectionGenerating() === section.id" (click)="executeSectionRegenerate(section.id)">
-                          <span>{{ isSectionGenerating() === section.id ? '⏳ Rewriting...' : '✨ Rewrite with AI' }}</span>
-                        </button>
-                      </div>
-                    </div>
-                  }
-                </div>
-
-              </div>
-            }
+          <div class="script-stats-pill">
+            <span>📊 <strong>{{ totalWordCount() }}</strong> words</span>
+            <span>•</span>
+            <span>⏱️ ~<strong>{{ estimatedTotalMinutes() }}</strong> mins spoken</span>
           </div>
-
-          <!-- Add New Section Prompt Box -->
-          <div class="add-section-card glass-panel">
-            <h4 class="add-section-title">➕ Add Custom Chapter / Section</h4>
-            <p class="add-section-desc">Type a topic or hint to have Gemini write a complete custom narration segment.</p>
-            
-            <div class="add-section-inputs-row">
-              <input type="text" class="text-input-compact" [(ngModel)]="newSectionTitle" placeholder="New Section Title (e.g. The Secret Ending Lore)..." />
-              <input type="text" class="text-input-compact" [(ngModel)]="newSectionHint" placeholder="Details/Hints (e.g. Focus on the Moon Presence)..." />
-            </div>
-
-            <button type="button" class="glow-btn add-sec-btn" [disabled]="isAddingSection()" (click)="appendSectionFromPrompt()">
-              <span>{{ isAddingSection() ? '⏳ Generating Section...' : '✨ Write & Append Section' }}</span>
-            </button>
-          </div>
-
-          <!-- Outro & Call to Action Box -->
-          @if (callToAction()) {
-            <div class="outro-section-card glass-panel">
-              <div class="outro-badge-row">
-                <span class="outro-badge">📢 OUTRO & CALL TO ACTION</span>
-              </div>
-              <textarea class="outro-textarea" rows="3" [(ngModel)]="callToAction" placeholder="Outro voiceover script..."></textarea>
-            </div>
-          }
-
         </div>
 
-      </main>
+        <!-- Controls Row: Voice Selector & Rate Selector -->
+        <div class="voice-controls-row">
+          <div class="form-group-compact voice-select-group">
+            <label class="form-label-compact" for="voice-select">Narration Voice</label>
+            <div class="select-wrapper">
+              <select id="voice-select" class="select-input-compact" [ngModel]="selectedVoice()"
+                (ngModelChange)="selectedVoice.set($event)">
+                <optgroup label="🇺🇸 English Voices">
+                  @for (v of englishVoices(); track v.id) {
+                  <option [value]="v.id">{{ v.name }}</option>
+                  }
+                </optgroup>
+                <optgroup label="🇮🇳 Tamil Voices (தமிழ்)">
+                  @for (v of tamilVoices(); track v.id) {
+                  <option [value]="v.id">{{ v.name }}</option>
+                  }
+                </optgroup>
+              </select>
+            </div>
+          </div>
 
-    </section>
+          <div class="form-group-compact rate-select-group">
+            <label class="form-label-compact" for="rate-select">Speed Rate</label>
+            <div class="select-wrapper">
+              <select id="rate-select" class="select-input-compact" [ngModel]="selectedRate()"
+                (ngModelChange)="selectedRate.set($event)">
+                <option value="-10%">0.9x (Relaxed)</option>
+                <option value="+0%">1.0x (Standard Normal)</option>
+                <option value="+10%">1.1x (Paced)</option>
+                <option value="+20%">1.2x (Energetic)</option>
+                <option value="+30%">1.3x (Fast)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="voice-action-group">
+            <button type="button" class="glow-btn generate-voice-btn" [disabled]="isAudioSynthesizing()"
+              (click)="generateVoiceoverAudio()">
+              <span>{{ isAudioSynthesizing() ? '🎙️ Synthesizing Voice...' : '🎙️ Generate Voiceover Audio' }}</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Audio Synthesizing Animated Loading Box -->
+        @if (isAudioSynthesizing()) {
+        <div class="audio-synthesizing-box">
+          <div class="audio-waves-anim">
+            <span class="bar"></span>
+            <span class="bar"></span>
+            <span class="bar"></span>
+            <span class="bar"></span>
+            <span class="bar"></span>
+          </div>
+          <div class="synthesizing-text-col">
+            <span class="synth-title">🎙️ Synthesizing Neural Narration Audio...</span>
+            <span class="synth-subtitle">Processing voiceover in streaming chunks for "{{ selectedVoice() }}". Please
+              wait a few moments...</span>
+          </div>
+        </div>
+        }
+
+        <!-- Built-in Audio Player Bar -->
+        @if (audioUrl() && !isAudioSynthesizing()) {
+        <div class="audio-player-container">
+          <div class="audio-player-info">
+            <span class="audio-status-label">✓ Audio Master Ready</span>
+            <span class="audio-voice-name">{{ selectedVoice() }} • {{ selectedRate() }} speed</span>
+          </div>
+          <audio #audioPlayer controls [src]="audioUrl()" class="native-audio-player"></audio>
+
+          <div class="audio-download-row">
+            <button type="button" class="glow-btn download-mp3-btn" (click)="downloadAudioFile()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                <path
+                  d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14l-4-4 1.41-1.41L11 13.17V7h2v6.17l2.59-2.58L17 12l-5 5z" />
+              </svg>
+              <span>Download MP3 Audio File</span>
+            </button>
+          </div>
+        </div>
+        }
+      </div>
+
+      <!-- ======================== 1080p YOUTUBE VIDEO STUDIO ======================== -->
+      @if (audioUrl() && videoScenes().length > 0) {
+      <div class="studio-panel glass-panel video-studio-panel">
+        <div class="video-studio-header">
+          <div class="video-header-left">
+            <span class="video-studio-badge">🎬 1080p YouTube Video Studio</span>
+            <h3 class="video-studio-title">Full HD Video Generator (1920x1080)</h3>
+            <p class="video-studio-desc">
+              Hybrid visual layout with cinematic Ken Burns image motion, bulleted infographic takeaways, audio spectrum
+              equalizer, and synchronized subtitles.
+            </p>
+          </div>
+
+          <div class="video-header-actions">
+            <div class="fps-selector-group">
+              <span class="fps-label">Framerate:</span>
+              <button type="button" class="btn-fps" [class.active]="videoFps() === 30" (click)="videoFps.set(30)">30
+                FPS</button>
+              <button type="button" class="btn-fps" [class.active]="videoFps() === 60" (click)="videoFps.set(60)">60
+                FPS</button>
+            </div>
+
+            <button type="button" class="glow-btn export-video-btn" [disabled]="isExportingVideo()"
+              (click)="exportYoutubeVideo()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                <path
+                  d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2v9.67z" />
+              </svg>
+              <span>{{ isExportingVideo() ? '🎬 Rendering Video (' + exportProgress() + '%)...' : '🎬 Export 1080p
+                Video' }}</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Export Progress Indicator -->
+        @if (isExportingVideo()) {
+        <div class="export-progress-bar-wrapper">
+          <div class="export-progress-bar-fill" [style.width.%]="exportProgress()"></div>
+          <span class="export-progress-text">Rendering 1080p {{ videoFps() }}FPS Video... {{ exportProgress() }}%</span>
+        </div>
+        }
+
+        <!-- 16:9 Interactive Canvas Preview Frame -->
+        <div class="canvas-preview-container">
+          <canvas #previewCanvas width="1920" height="1080" class="video-preview-canvas"
+            (click)="toggleVideoPreviewPlay()"></canvas>
+
+          @if (!isPreviewPlaying()) {
+          <button type="button" class="canvas-center-play-btn" (click)="toggleVideoPreviewPlay()"
+            title="Play video preview">
+            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          </button>
+          }
+
+          <!-- Live Player Controls Bar -->
+          <div class="canvas-controls-bar">
+            <button type="button" class="player-ctrl-btn" (click)="toggleVideoPreviewPlay()">
+              @if (isPreviewPlaying()) {
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
+              </svg>
+              } @else {
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M8 5v14l11-7z" />
+              </svg>
+              }
+            </button>
+
+            <input type="range" class="timeline-scrubber" min="0" [max]="previewTotalDuration()"
+              [value]="previewCurrentTime()" (input)="seekTimeline($event)" step="0.1" />
+
+            <div class="player-time-badge">
+              <span>{{ (previewCurrentTime() / 60 | number:'1.0-0') }}:{{ (previewCurrentTime() % 60 < 10 ? '0' : '' )
+                  }}{{ (previewCurrentTime() % 60 | number:'1.0-0') }}</span>
+                  <span>/</span>
+                  <span>{{ (previewTotalDuration() / 60 | number:'1.0-0') }}:{{ (previewTotalDuration() % 60 < 10 ? '0'
+                      : '' ) }}{{ (previewTotalDuration() % 60 | number:'1.0-0') }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Scene Timeline Carousel & Visual Swapper -->
+        <div class="scenes-timeline-section">
+          <div class="scenes-timeline-header">
+            <h4 class="scenes-timeline-title">🎞️ Video Scenes & Visual Timeline ({{ videoScenes().length }} scenes)
+            </h4>
+            <span class="scenes-timeline-hint">Images automatically change every ~8–10s with Ken Burns camera
+              pan/zoom.</span>
+          </div>
+
+          <div class="scenes-cards-row">
+            @for (scene of videoScenes(); track scene.id; let sIdx = $index) {
+            <div class="scene-item-card"
+              [class.active-scene]="previewCurrentTime() >= scene.startTime && previewCurrentTime() <= scene.endTime"
+              (click)="jumpToScene(sIdx)">
+              <div class="scene-card-thumb-wrapper">
+                <img [src]="scene.imageUrl" class="scene-card-thumb" alt="Scene Visual" loading="lazy" />
+                <span class="scene-time-pill">{{ (scene.startTime / 60 | number:'1.0-0') }}:{{ (scene.startTime % 60 <
+                    10 ? '0' : '' ) }}{{ (scene.startTime % 60 | number:'1.0-0') }}</span>
+              </div>
+
+              <div class="scene-card-details">
+                <span class="scene-card-chap">Scene {{ sIdx + 1 }}: {{ scene.chapterTitle }}</span>
+                @if (scene.bulletPoints && scene.bulletPoints.length > 0) {
+                <p class="scene-card-bullet">✦ {{ scene.bulletPoints[0] }}</p>
+                }
+              </div>
+
+              <div class="scene-card-actions" (click)="$event.stopPropagation()">
+                <button type="button" class="scene-action-btn primary select-img-btn"
+                  (click)="openSceneImagePicker(sIdx)" title="Choose from all loaded images or search Google Images">
+                  🖼️ Select Image
+                </button>
+              </div>
+            </div>
+            }
+          </div>
+        </div>
+
+      </div>
+      }
+
+      <!-- Script Chapters & Modular Sections Container -->
+      <div class="studio-panel glass-panel script-chapters-panel">
+        <div class="chapters-header-row">
+          <div>
+            <h3 class="chapters-headline">📝 Script Chapters & Modular Segments ({{ sections().length }})</h3>
+            <p class="chapters-subheadline">Review, rewrite, reorder, or add custom talking points to tailor the
+              narrative.</p>
+          </div>
+
+          <button type="button" class="btn-copy-script" (click)="copyMasterScript()"
+            title="Copy entire YouTube package: Title, Description, Hashtags & Voiceover Script">
+            <span>{{ isCopiedScript() ? '✓ Copied Package' : '📋 Copy All (Title, Desc & Script)' }}</span>
+          </button>
+        </div>
+
+        <!-- Modular Section Cards List -->
+        <div class="sections-accordion-list">
+          @for (section of sections(); track section.id; let i = $index) {
+          <div class="section-card glass-panel" [class.intro-section]="i === 0"
+            [class.section-loading]="isSectionGenerating() === section.id">
+
+            <!-- Section Loading Overlay -->
+            @if (isSectionGenerating() === section.id) {
+            <div class="section-loading-overlay">
+              <div class="spinner-small"></div>
+              <span class="overlay-text">Gemini is rewriting this chapter...</span>
+            </div>
+            }
+
+            <!-- Section Top Header -->
+            <div class="section-card-header">
+              <div class="section-badge-group">
+                <span class="section-number-pill">{{ i === 0 ? 'INTRO HOOK' : 'CHAPTER ' + i }}</span>
+                @if (section.estimatedSeconds) {
+                <span class="section-duration-badge">⏱️ ~{{ section.estimatedSeconds }}s</span>
+                }
+              </div>
+
+              <!-- Section Reorder & Delete Controls -->
+              <div class="section-action-btns">
+                <button type="button" class="icon-btn-ghost"
+                  [disabled]="i === 0 || isSectionGenerating() === section.id" (click)="moveSectionUp(i)"
+                  title="Move Up">↑</button>
+                <button type="button" class="icon-btn-ghost"
+                  [disabled]="i === sections().length - 1 || isSectionGenerating() === section.id"
+                  (click)="moveSectionDown(i)" title="Move Down">↓</button>
+                <button type="button" class="icon-btn-ghost delete-btn"
+                  [disabled]="isSectionGenerating() === section.id" (click)="deleteSection(i)"
+                  title="Delete Section">✕</button>
+              </div>
+            </div>
+
+            <!-- Editable Section Title -->
+            <div class="section-title-wrapper">
+              <input type="text" class="section-title-input" [(ngModel)]="section.title"
+                placeholder="Chapter Heading..." [disabled]="isSectionGenerating() === section.id" />
+            </div>
+
+            <!-- Visual Cue / B-Roll Suggestion -->
+            @if (section.visualCue) {
+            <div class="visual-cue-pill">
+              <span>🎬 B-Roll: {{ section.visualCue }}</span>
+            </div>
+            }
+
+            <!-- Key Takeaway Bullets Display -->
+            @if (section.bulletPoints && section.bulletPoints.length > 0) {
+            <div class="section-bullets-box">
+              <span class="bullets-box-label">📊 Key Infographic Bullets (Displayed on Video):</span>
+              <ul class="section-bullets-list">
+                @for (bullet of section.bulletPoints; track bullet) {
+                <li>✦ {{ bullet }}</li>
+                }
+              </ul>
+            </div>
+            }
+
+            <!-- Narration Script Textarea -->
+            <div class="section-textarea-wrapper">
+              <textarea class="section-narration-textarea" rows="5" [(ngModel)]="section.content"
+                placeholder="Narration text..." [disabled]="isSectionGenerating() === section.id"></textarea>
+            </div>
+
+            <!-- Section Footer with AI Rewrite Tool -->
+            <div class="section-card-footer">
+              @if (activeSectionRewriteId() !== section.id) {
+              <button type="button" class="btn-rewrite-section" [disabled]="isSectionGenerating() === section.id"
+                (click)="openSectionRewrite(section.id)">
+                <span>{{ isSectionGenerating() === section.id ? '⏳ AI is Rewriting...' : '🔄 AI Rewrite This Section'
+                  }}</span>
+              </button>
+              } @else {
+              <!-- Section Rewrite Interactive Prompt -->
+              <div class="section-rewrite-box">
+                <label class="form-label-compact" for="rewrite-hint-{{section.id}}">Instructions for Gemini
+                  (Optional):</label>
+                <input id="rewrite-hint-{{section.id}}" type="text" class="text-input-compact"
+                  [(ngModel)]="sectionRewriteHint" [disabled]="isSectionGenerating() === section.id"
+                  placeholder="e.g. Make it more dramatic, add stats, explain lore in depth..." />
+
+                <div class="rewrite-actions-row">
+                  <button type="button" class="btn-compact-secondary" [disabled]="isSectionGenerating() === section.id"
+                    (click)="cancelSectionRewrite()">Cancel</button>
+                  <button type="button" class="glow-btn btn-compact-glow"
+                    [disabled]="isSectionGenerating() === section.id" (click)="executeSectionRegenerate(section.id)">
+                    <span>{{ isSectionGenerating() === section.id ? '⏳ Rewriting...' : '✨ Rewrite with AI' }}</span>
+                  </button>
+                </div>
+              </div>
+              }
+            </div>
+
+          </div>
+          }
+        </div>
+
+        <!-- Add New Section Prompt Box -->
+        <div class="add-section-card glass-panel">
+          <h4 class="add-section-title">➕ Add Custom Chapter / Section</h4>
+          <p class="add-section-desc">Type a topic or hint to have Gemini write a complete custom narration segment.</p>
+
+          <div class="add-section-inputs-row">
+            <input type="text" class="text-input-compact" [(ngModel)]="newSectionTitle"
+              placeholder="New Section Title (e.g. The Secret Ending Lore)..." />
+            <input type="text" class="text-input-compact" [(ngModel)]="newSectionHint"
+              placeholder="Details/Hints (e.g. Focus on the Moon Presence)..." />
+          </div>
+
+          <button type="button" class="glow-btn add-sec-btn" [disabled]="isAddingSection()"
+            (click)="appendSectionFromPrompt()">
+            <span>{{ isAddingSection() ? '⏳ Generating Section...' : '✨ Write & Append Section' }}</span>
+          </button>
+        </div>
+
+        <!-- Outro & Call to Action Box -->
+        @if (callToAction()) {
+        <div class="outro-section-card glass-panel">
+          <div class="outro-badge-row">
+            <span class="outro-badge">📢 OUTRO & CALL TO ACTION</span>
+          </div>
+          <textarea class="outro-textarea" rows="3" [(ngModel)]="callToAction"
+            placeholder="Outro voiceover script..."></textarea>
+        </div>
+        }
+
+      </div>
+
+    </main>
+
+  </section>
   }
 
   <!-- ======================== SERPER IMAGE SEARCH MODAL ======================== -->
   @if (isSceneImageModalOpen()) {
-    <div class="modal-backdrop" (click)="closeSceneImagePicker()">
-      <div class="modal-content glass-panel" (click)="$event.stopPropagation()">
-        <div class="modal-header">
-          <div class="modal-title-group">
-            <span class="modal-badge">🔍 Serper Google Images Search</span>
-            <h3 class="modal-title">Select Scene Visual Artwork</h3>
-          </div>
-          <button type="button" class="modal-close-btn" (click)="closeSceneImagePicker()">✕</button>
+  <div class="modal-backdrop" (click)="closeSceneImagePicker()">
+    <div class="modal-content glass-panel" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <span class="modal-badge">🔍 Serper Google Images Search</span>
+          <h3 class="modal-title">Select Scene Visual Artwork</h3>
         </div>
+        <button type="button" class="modal-close-btn" (click)="closeSceneImagePicker()">✕</button>
+      </div>
 
-        <div class="modal-search-row">
-          <input type="text" class="text-input-compact search-input" 
-            [(ngModel)]="sceneImageSearchQuery" 
-            (keyup.enter)="searchSceneImages()"
-            placeholder="Search high-res Google Images (e.g. Bloodborne Lady Maria boss battle)..." />
-          <button type="button" class="glow-btn modal-search-btn" [disabled]="isSearchingSceneImages()" (click)="searchSceneImages()">
-            <span>{{ isSearchingSceneImages() ? 'Searching...' : 'Search' }}</span>
-          </button>
-        </div>
+      <div class="modal-search-row">
+        <input type="text" class="text-input-compact search-input" [(ngModel)]="sceneImageSearchQuery"
+          (keyup.enter)="searchSceneImages()"
+          placeholder="Search high-res Google Images (e.g. Bloodborne Lady Maria boss battle)..." />
+        <button type="button" class="glow-btn modal-search-btn" [disabled]="isSearchingSceneImages()"
+          (click)="searchSceneImages()">
+          <span>{{ isSearchingSceneImages() ? 'Searching...' : 'Search' }}</span>
+        </button>
+      </div>
 
-        @if (isSearchingSceneImages()) {
-          <div class="modal-loading-state">
-            <div class="spinner-small"></div>
-            <span>Fetching HD images from Serper...</span>
+      @if (isSearchingSceneImages()) {
+      <div class="modal-loading-state">
+        <div class="spinner-small"></div>
+        <span>Fetching HD images from Serper...</span>
+      </div>
+      }
+
+      <div class="modal-images-grid">
+        @for (imgUrl of sceneImageResults(); track imgUrl) {
+        <div class="modal-image-card" (click)="selectSceneImage(imgUrl)">
+          <img [src]="imgUrl" alt="Serper search result" loading="lazy" />
+          <div class="image-select-overlay">
+            <span>✓ Select Image</span>
           </div>
+        </div>
         }
-
-        <div class="modal-images-grid">
-          @for (imgUrl of sceneImageResults(); track imgUrl) {
-            <div class="modal-image-card" (click)="selectSceneImage(imgUrl)">
-              <img [src]="imgUrl" alt="Serper search result" loading="lazy" />
-              <div class="image-select-overlay">
-                <span>✓ Select Image</span>
-              </div>
-            </div>
-          }
-        </div>
       </div>
     </div>
+  </div>
   }
 
 </div>
-

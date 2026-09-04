@@ -656,60 +656,93 @@
   text-shadow: 0 0 8px var(--secondary-glow, #00f0ff);
 }
 
-/* Image Pool Shuffle Controls */
-.image-shuffle-controls-box {
+/* Quick Floating Select Image Button on Slide Card */
+.slide-card-select-img-btn {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 25;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 240, 255, 0.4);
+  color: #ffffff;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  opacity: 0.85;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.slide-card-select-img-btn:hover {
+  opacity: 1;
+  background: rgba(0, 240, 255, 0.25);
+  border-color: #00f0ff;
+  box-shadow: 0 0 16px rgba(0, 240, 255, 0.5);
+  transform: translateY(-2px);
+}
+
+/* Image Selection Controls Box */
+.image-select-controls-box {
   background: rgba(0, 240, 255, 0.05);
   border: 1px solid rgba(0, 240, 255, 0.2);
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 0.75rem 0.85rem;
 }
 
-.image-shuffle-btn-row {
+.image-select-btn-wrapper {
   display: flex;
-  gap: 0.5rem;
   width: 100%;
 }
 
-.shuffle-btn-primary {
-  flex: 1;
-  background: linear-gradient(135deg, rgba(0, 240, 255, 0.25), rgba(189, 0, 255, 0.25));
-  border: 1px solid rgba(0, 240, 255, 0.4);
+.select-image-action-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: linear-gradient(135deg, rgba(0, 240, 255, 0.15), rgba(189, 0, 255, 0.15));
+  border: 1px solid rgba(0, 240, 255, 0.35);
   color: #ffffff;
-  padding: 8px 10px;
-  border-radius: 8px;
-  font-size: 0.78rem;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 0.82rem;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s ease;
-  text-align: center;
-  white-space: nowrap;
+  transition: all 0.25s ease;
 }
 
-.shuffle-btn-primary:hover {
-  background: linear-gradient(135deg, rgba(0, 240, 255, 0.45), rgba(189, 0, 255, 0.45));
-  box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
+.select-image-action-btn:hover {
+  background: linear-gradient(135deg, rgba(0, 240, 255, 0.3), rgba(189, 0, 255, 0.3));
+  border-color: #00f0ff;
+  box-shadow: 0 0 18px rgba(0, 240, 255, 0.35);
   transform: translateY(-1px);
 }
 
-.shuffle-btn-secondary {
+.select-image-action-btn .btn-icon {
+  font-size: 1.1rem;
+}
+
+.select-image-action-btn .btn-text {
   flex: 1;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  color: #f1f5f9;
-  padding: 8px 10px;
-  border-radius: 8px;
-  font-size: 0.78rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  text-align: center;
-  white-space: nowrap;
+  text-align: left;
 }
 
-.shuffle-btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.3);
-  transform: translateY(-1px);
+.image-count-badge {
+  background: rgba(0, 240, 255, 0.2);
+  border: 1px solid rgba(0, 240, 255, 0.3);
+  color: #00f0ff;
+  padding: 3px 8px;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.3px;
 }
 
 .slide-card-footer {
@@ -2443,6 +2476,307 @@
 @keyframes scaleUp {
   from { transform: scale(0.95); opacity: 0; }
   to { transform: scale(1); opacity: 1; }
+}
+
+/* ======================== IMAGE PICKER MODAL ======================== */
+.picker-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(3, 7, 18, 0.82);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  animation: fadeIn 0.2s ease-out forwards;
+}
+
+.picker-modal-content {
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid rgba(0, 240, 255, 0.25);
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 240, 255, 0.15);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 840px;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: scaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.picker-modal-header {
+  padding: 1.25rem 1.5rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.picker-header-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.picker-modal-badge {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--secondary-glow, #00f0ff);
+}
+
+.picker-modal-title {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.picker-modal-subtitle {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 550px;
+}
+
+.picker-close-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.picker-close-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: #ef4444;
+  color: #fff;
+}
+
+/* Tabs for Steam Deals */
+.picker-tabs-row {
+  display: flex;
+  gap: 8px;
+  padding: 0.75rem 1.5rem 0.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(10, 15, 30, 0.4);
+}
+
+.picker-tab-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: #94a3b8;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.picker-tab-btn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.picker-tab-btn.active {
+  background: rgba(0, 240, 255, 0.15);
+  border-color: rgba(0, 240, 255, 0.3);
+  color: #00f0ff;
+}
+
+/* Gallery Body & Grid */
+.picker-modal-body {
+  padding: 1.25rem 1.5rem;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 250px;
+}
+
+.picker-images-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 14px;
+}
+
+.picker-image-card {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 2px solid rgba(255, 255, 255, 0.08);
+  background: #090d16;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.picker-image-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.35s ease;
+}
+
+.picker-image-card:hover {
+  border-color: rgba(0, 240, 255, 0.6);
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 15px rgba(0, 240, 255, 0.25);
+}
+
+.picker-image-card:hover img {
+  transform: scale(1.08);
+}
+
+.picker-image-card.selected {
+  border-color: #00f0ff;
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.5), inset 0 0 12px rgba(0, 240, 255, 0.25);
+}
+
+.image-active-indicator {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 240, 255, 0.15);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  pointer-events: none;
+}
+
+.image-active-indicator .check-icon {
+  background: #00f0ff;
+  color: #05050a;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 1rem;
+  box-shadow: 0 0 12px #00f0ff;
+}
+
+.image-active-indicator .active-badge {
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.image-select-hover-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.picker-image-card:hover:not(.selected) .image-select-hover-overlay {
+  opacity: 1;
+}
+
+.image-select-hover-overlay span {
+  background: rgba(0, 240, 255, 0.85);
+  color: #05050a;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  box-shadow: 0 0 12px rgba(0, 240, 255, 0.6);
+}
+
+.picker-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1rem;
+  color: #94a3b8;
+  text-align: center;
+}
+
+.picker-empty-state .empty-icon {
+  font-size: 2.5rem;
+  margin-bottom: 0.75rem;
+  opacity: 0.5;
+}
+
+/* Modal Footer */
+.picker-modal-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  background: rgba(10, 15, 30, 0.6);
+}
+
+.picker-footer-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.78rem;
+  color: #94a3b8;
+}
+
+.cached-pill {
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #10b981;
+  padding: 3px 8px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+@media (max-width: 640px) {
+  .picker-images-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  .picker-modal-header {
+    padding: 1rem;
+  }
+  .picker-modal-body {
+    padding: 1rem;
+  }
+  .picker-modal-footer {
+    padding: 0.85rem 1rem;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+  .picker-modal-footer button {
+    width: 100%;
+  }
 }
 
 

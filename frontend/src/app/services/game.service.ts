@@ -301,6 +301,13 @@ export interface VideoScene {
   imageUrl: string;
   imagePool?: string[];
   visualCue?: string;
+  mediaType?: 'image' | 'video';
+  videoUrl?: string;
+  videoFileName?: string;
+  videoStartOffset?: number;
+  videoDuration?: number;
+  videoVolume?: number;
+  videoElement?: HTMLVideoElement;
 }
 
 export interface YoutubeScriptSection {
@@ -313,6 +320,12 @@ export interface YoutubeScriptSection {
   imageQuery?: string;
   imageUrl?: string;
   imagePool?: string[];
+  mediaType?: 'image' | 'video';
+  videoUrl?: string;
+  videoFileName?: string;
+  videoStartOffset?: number;
+  videoDuration?: number;
+  videoVolume?: number;
 }
 
 export interface YoutubeScriptResponse {

@@ -142,15 +142,27 @@ export class YoutubeNarratorComponent implements OnInit, OnDestroy {
   protected readonly previewCurrentTime = signal<number>(0);
   protected readonly previewTotalDuration = signal<number>(0);
 
-  // Scene Image Customizer Modal
+  // Scene Asset Customizer Modal (Dual tab: Google Images or Local Video)
   protected readonly isSceneImageModalOpen = signal<boolean>(false);
   protected readonly activeEditingSceneIndex = signal<number | null>(null);
+  protected readonly activeAssetTab = signal<'images' | 'video'>('images');
+  protected readonly uploadedVideoFile = signal<File | null>(null);
+  protected readonly uploadedVideoUrl = signal<string | null>(null);
+  protected readonly uploadedVideoFileName = signal<string>('');
+  protected readonly uploadedVideoDuration = signal<number>(0);
+  protected readonly videoStartOffset = signal<number>(0);
+  protected readonly videoMaxStartOffset = signal<number>(0);
+  protected readonly videoVolume = signal<number>(0.3);
+  protected readonly isVideoLoading = signal<boolean>(false);
+
+  protected readonly Math = Math;
+
   protected readonly sceneImageSearchQuery = signal<string>('');
   protected readonly sceneImageResults = signal<string[]>([]);
   protected readonly isSearchingSceneImages = signal<boolean>(false);
   protected readonly brokenImages = new Set<string>();
   protected readonly hasEmptyScenes = computed(() => {
-    return this.videoScenes().some(s => !s.imageUrl || s.imageUrl.trim() === '' || this.brokenImages.has(s.imageUrl));
+    return this.videoScenes().some(s => (!s.imageUrl || s.imageUrl.trim() === '' || this.brokenImages.has(s.imageUrl)) && s.mediaType !== 'video');
   });
 
   // Scene Image Range Selection
@@ -189,6 +201,7 @@ export class YoutubeNarratorComponent implements OnInit, OnDestroy {
 
   @ViewChild('audioPlayer') audioPlayerRef?: ElementRef<HTMLAudioElement>;
   @ViewChild('previewCanvas') previewCanvasRef?: ElementRef<HTMLCanvasElement>;
+  @ViewChild('trimmerPreview') trimmerPreviewRef?: ElementRef<HTMLVideoElement>;
 
   private previewAudioEl: HTMLAudioElement | null = null;
   private animFrameId: number | null = null;
@@ -814,13 +827,13 @@ export class YoutubeNarratorComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Preloads scene images and renders the first frame on the preview canvas
+   * Preloads scene images and video assets, then renders the first frame on the preview canvas
    */
   private async preloadAndRenderInitialFrame() {
     const scenes = this.videoScenes();
     if (scenes.length === 0) return;
 
-    this.preloadedImageMap = await this.videoRecorder.preloadSceneImages(
+    this.preloadedImageMap = await this.videoRecorder.preloadSceneMedia(
       scenes,
       (url) => this.gameService.getProxiedImageUrl(url)
     );
@@ -888,11 +901,45 @@ export class YoutubeNarratorComponent implements OnInit, OnDestroy {
       const t = this.previewAudioEl.currentTime;
       this.previewCurrentTime.set(t);
 
+      // Synchronize video element playback for the active video scene
+      const scenes = this.videoScenes();
+      const activeScene = scenes.find(s => t >= s.startTime && (s === scenes[scenes.length - 1] ? t <= s.endTime : t < s.endTime));
+
+      if (activeScene?.mediaType === 'video' && activeScene.videoElement) {
+        const vid = activeScene.videoElement;
+        const vol = activeScene.videoVolume !== undefined ? activeScene.videoVolume : 0.3;
+        vid.volume = vol;
+        vid.muted = (vol === 0);
+        const vidDur = vid.duration || activeScene.videoDuration || 0;
+        const elapsedInScene = Math.max(0, t - activeScene.startTime);
+        let targetVideoTime = (activeScene.videoStartOffset || 0) + elapsedInScene;
+
+        // When video is shorter than chapter duration, loop seamlessly
+        if (vidDur > 0) {
+          targetVideoTime = targetVideoTime % vidDur;
+        }
+
+        if (vid.paused && t >= activeScene.startTime && t < activeScene.endTime) {
+          vid.play().catch(() => {});
+        }
+        if (Math.abs(vid.currentTime - targetVideoTime) > 0.15) {
+          vid.currentTime = targetVideoTime;
+        }
+      }
+
+      // Pause non-active scene video elements
+      for (const s of scenes) {
+        if (s !== activeScene && s.videoElement && !s.videoElement.paused) {
+          s.videoElement.pause();
+        }
+      }
+
       this.drawPreviewFrame(t);
 
       if (t >= this.previewTotalDuration()) {
         this.isPreviewPlaying.set(false);
         this.previewAudioEl.pause();
+        this.stopPreviewLoop();
         return;
       }
 
@@ -906,6 +953,11 @@ export class YoutubeNarratorComponent implements OnInit, OnDestroy {
     if (this.animFrameId) {
       cancelAnimationFrame(this.animFrameId);
       this.animFrameId = null;
+    }
+    for (const s of this.videoScenes()) {
+      if (s.videoElement && !s.videoElement.paused) {
+        s.videoElement.pause();
+      }
     }
   }
 
@@ -923,6 +975,24 @@ export class YoutubeNarratorComponent implements OnInit, OnDestroy {
     if (this.previewAudioEl) {
       this.previewAudioEl.currentTime = targetTime;
     }
+
+    // Seek active video element if any
+    const scenes = this.videoScenes();
+    const activeScene = scenes.find(s => targetTime >= s.startTime && (s === scenes[scenes.length - 1] ? targetTime <= s.endTime : targetTime < s.endTime));
+    if (activeScene?.mediaType === 'video' && activeScene.videoElement) {
+      const vid = activeScene.videoElement;
+      const vol = activeScene.videoVolume !== undefined ? activeScene.videoVolume : 0.3;
+      vid.volume = vol;
+      vid.muted = (vol === 0);
+      const vidDur = vid.duration || activeScene.videoDuration || 0;
+      const elapsed = Math.max(0, targetTime - activeScene.startTime);
+      let targetVidTime = (activeScene.videoStartOffset || 0) + elapsed;
+      if (vidDur > 0) {
+        targetVidTime = targetVidTime % vidDur;
+      }
+      vid.currentTime = targetVidTime;
+    }
+
     this.drawPreviewFrame(targetTime);
   }
 
@@ -941,18 +1011,34 @@ export class YoutubeNarratorComponent implements OnInit, OnDestroy {
     if (this.previewAudioEl) {
       this.previewAudioEl.currentTime = targetTime;
     }
+
+    // Seek target scene video element if video
+    if (scenes[index].mediaType === 'video' && scenes[index].videoElement) {
+      const vid = scenes[index].videoElement!;
+      const vol = scenes[index].videoVolume !== undefined ? scenes[index].videoVolume : 0.3;
+      vid.volume = vol;
+      vid.muted = (vol === 0);
+      const vidDur = vid.duration || scenes[index].videoDuration || 0;
+      let offset = scenes[index].videoStartOffset || 0;
+      if (vidDur > 0) {
+        offset = offset % vidDur;
+      }
+      vid.currentTime = offset;
+    }
+
     this.drawPreviewFrame(targetTime);
   }
 
   /**
-   * Open Image Customizer Modal for a Scene
+   * Open Asset Customizer Modal for a Scene (Dual Tab: Images or Video)
    */
   protected openSceneImagePicker(index: number) {
     const scenes = this.videoScenes();
     if (!scenes[index]) return;
 
     this.activeEditingSceneIndex.set(index);
-    this.sceneImageSearchQuery.set(scenes[index].chapterTitle || this.topic());
+    const scene = scenes[index];
+    this.sceneImageSearchQuery.set(scene.chapterTitle || this.topic());
 
     const totalScenes = scenes.length;
     const startNum = index + 1;
@@ -960,7 +1046,27 @@ export class YoutubeNarratorComponent implements OnInit, OnDestroy {
     this.rangeEndScene.set(Math.min(totalScenes, startNum + 9));
     this.rangeFeedbackMessage.set(null);
 
-    // Gather all currently loaded images across pool and scenes with STRICT 0 API HITS
+    // If this chapter already has a video, initialize video tab state
+    if (scene.mediaType === 'video' && scene.videoUrl) {
+      this.activeAssetTab.set('video');
+      this.uploadedVideoUrl.set(scene.videoUrl);
+      this.uploadedVideoFileName.set(scene.videoFileName || 'Local Video');
+      this.videoStartOffset.set(scene.videoStartOffset || 0);
+      this.uploadedVideoDuration.set(scene.videoDuration || 0);
+      this.videoVolume.set(scene.videoVolume !== undefined ? scene.videoVolume : 0.3);
+      const chapterDuration = scene.duration || 30;
+      this.videoMaxStartOffset.set(Math.max(0, (scene.videoDuration || 0) - chapterDuration));
+    } else {
+      this.activeAssetTab.set('images');
+      this.uploadedVideoUrl.set(null);
+      this.uploadedVideoFileName.set('');
+      this.videoStartOffset.set(0);
+      this.uploadedVideoDuration.set(0);
+      this.videoVolume.set(0.3);
+      this.videoMaxStartOffset.set(0);
+    }
+
+    // Gather all currently loaded images across pool and scenes
     const rawList: (string | undefined)[] = [
       ...this.imagePool(),
       ...this.videoScenes().map(s => s.imageUrl),
@@ -970,7 +1076,6 @@ export class YoutubeNarratorComponent implements OnInit, OnDestroy {
       rawList.filter((url): url is string => typeof url === 'string' && url.trim().length > 0 && !this.brokenImages.has(url))
     ));
 
-    // Update imagePool to always retain all accumulated images
     this.imagePool.set(allLoadedImages);
     this.sceneImageResults.set(allLoadedImages);
     this.isSceneImageModalOpen.set(true);
@@ -980,6 +1085,188 @@ export class YoutubeNarratorComponent implements OnInit, OnDestroy {
     this.isSceneImageModalOpen.set(false);
     this.activeEditingSceneIndex.set(null);
     this.rangeFeedbackMessage.set(null);
+  }
+
+  protected setActiveAssetTab(tab: 'images' | 'video') {
+    this.activeAssetTab.set(tab);
+    this.rangeFeedbackMessage.set(null);
+  }
+
+  /**
+   * Returns current active scene duration in whole seconds
+   */
+  protected getActiveSceneDuration(): number {
+    const idx = this.activeEditingSceneIndex();
+    if (idx === null) return 30;
+    const scenes = this.videoScenes();
+    return scenes[idx] ? Math.max(1, Math.round(scenes[idx].duration)) : 30;
+  }
+
+  protected isCurrentSceneVideo(): boolean {
+    const idx = this.activeEditingSceneIndex();
+    if (idx === null) return false;
+    const scenes = this.videoScenes();
+    return scenes[idx]?.mediaType === 'video';
+  }
+
+  /**
+   * Handles local video selection from disk
+   */
+  protected onVideoFileSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
+    const file = input.files[0];
+    this.isVideoLoading.set(true);
+    this.rangeFeedbackMessage.set(null);
+
+    const url = URL.createObjectURL(file);
+    this.uploadedVideoFile.set(file);
+    this.uploadedVideoFileName.set(file.name);
+    this.uploadedVideoUrl.set(url);
+    this.videoStartOffset.set(0);
+
+    const tempVid = document.createElement('video');
+    tempVid.src = url;
+    tempVid.preload = 'metadata';
+    tempVid.onloadedmetadata = () => {
+      this.uploadedVideoDuration.set(tempVid.duration);
+      const scenes = this.videoScenes();
+      const idx = this.activeEditingSceneIndex();
+      const chapterDuration = (idx !== null && scenes[idx]) ? scenes[idx].duration : 30;
+      const maxOffset = Math.max(0, tempVid.duration - chapterDuration);
+      this.videoMaxStartOffset.set(maxOffset);
+      this.isVideoLoading.set(false);
+    };
+    tempVid.onerror = () => {
+      this.isVideoLoading.set(false);
+    };
+  }
+
+  /**
+   * Updates start offset for the chapter video window
+   */
+  protected onVideoOffsetSlider(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const val = Math.max(0, Math.min(this.videoMaxStartOffset(), Number(input.value) || 0));
+    this.videoStartOffset.set(Math.round(val * 10) / 10);
+  }
+
+  /**
+   * Updates background audio volume for the selected video
+   */
+  protected onVideoVolumeSlider(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const val = Math.max(0, Math.min(1, Number(input.value) || 0));
+    this.videoVolume.set(Math.round(val * 100) / 100);
+    if (this.trimmerPreviewRef?.nativeElement) {
+      this.trimmerPreviewRef.nativeElement.volume = val;
+      this.trimmerPreviewRef.nativeElement.muted = (val === 0);
+    }
+  }
+
+  /**
+   * Applies selected local video clip & timeline window to current scene
+   */
+  protected applyVideoToScene() {
+    const idx = this.activeEditingSceneIndex();
+    if (idx === null) return;
+    const scenes = [...this.videoScenes()];
+    const scene = scenes[idx];
+    if (!scene) return;
+
+    const url = this.uploadedVideoUrl();
+    if (!url) return;
+
+    const vol = this.videoVolume();
+    const vid = document.createElement('video');
+    vid.src = url;
+    vid.volume = vol;
+    vid.muted = (vol === 0);
+    vid.playsInline = true;
+    vid.loop = true;
+    vid.preload = 'auto';
+    vid.currentTime = this.videoStartOffset();
+
+    scenes[idx] = {
+      ...scene,
+      mediaType: 'video',
+      videoUrl: url,
+      videoFileName: this.uploadedVideoFileName(),
+      videoStartOffset: this.videoStartOffset(),
+      videoDuration: this.uploadedVideoDuration(),
+      videoVolume: vol,
+      videoElement: vid
+    };
+    this.videoScenes.set(scenes);
+
+    // Sync to sections array so re-ordering/rebuild retains video
+    const secs = [...this.sections()];
+    if (secs[idx]) {
+      secs[idx] = {
+        ...secs[idx],
+        mediaType: 'video',
+        videoUrl: url,
+        videoFileName: this.uploadedVideoFileName(),
+        videoStartOffset: this.videoStartOffset(),
+        videoDuration: this.uploadedVideoDuration(),
+        videoVolume: vol
+      };
+      this.sections.set(secs);
+    }
+
+    this.rangeFeedbackMessage.set(`✓ Applied video "${this.uploadedVideoFileName()}" with volume ${Math.round(vol * 100)}% to Chapter ${idx + 1}!`);
+    setTimeout(() => {
+      this.closeSceneImagePicker();
+      this.preloadAndRenderInitialFrame();
+    }, 400);
+  }
+
+  /**
+   * Reverts current scene from local video back to artwork image
+   */
+  protected removeVideoFromScene() {
+    const idx = this.activeEditingSceneIndex();
+    if (idx === null) return;
+    const scenes = [...this.videoScenes()];
+    if (!scenes[idx]) return;
+
+    if (scenes[idx].videoElement) {
+      scenes[idx].videoElement!.pause();
+    }
+
+    scenes[idx] = {
+      ...scenes[idx],
+      mediaType: 'image',
+      videoUrl: undefined,
+      videoFileName: undefined,
+      videoStartOffset: undefined,
+      videoDuration: undefined,
+      videoVolume: undefined,
+      videoElement: undefined
+    };
+    this.videoScenes.set(scenes);
+
+    const secs = [...this.sections()];
+    if (secs[idx]) {
+      secs[idx] = {
+        ...secs[idx],
+        mediaType: 'image',
+        videoUrl: undefined,
+        videoFileName: undefined,
+        videoStartOffset: undefined,
+        videoDuration: undefined,
+        videoVolume: undefined
+      };
+      this.sections.set(secs);
+    }
+
+    this.uploadedVideoUrl.set(null);
+    this.uploadedVideoFile.set(null);
+    this.uploadedVideoFileName.set('');
+    this.videoVolume.set(0.3);
+    this.activeAssetTab.set('images');
+    this.rangeFeedbackMessage.set(`✓ Reverted Chapter ${idx + 1} to Image.`);
+    this.preloadAndRenderInitialFrame();
   }
 
   /**
@@ -1018,10 +1305,18 @@ export class YoutubeNarratorComponent implements OnInit, OnDestroy {
     if (mode === 'all') {
       const updated = currentScenes.map(scene => ({
         ...scene,
+        mediaType: 'image' as const,
+        videoUrl: undefined,
+        videoElement: undefined,
         imageUrl
       }));
       this.videoScenes.set(updated);
-      const updatedSecs = this.sections().map(sec => ({ ...sec, imageUrl }));
+      const updatedSecs = this.sections().map(sec => ({
+        ...sec,
+        mediaType: 'image' as const,
+        videoUrl: undefined,
+        imageUrl
+      }));
       this.sections.set(updatedSecs);
       this.rangeFeedbackMessage.set(`✓ Applied image to ALL ${totalScenes} chapter scenes!`);
     } else if (mode === 'empty') {
@@ -1031,7 +1326,13 @@ export class YoutubeNarratorComponent implements OnInit, OnDestroy {
         const isEmpty = !scene.imageUrl || scene.imageUrl.trim() === '' || this.brokenImages.has(scene.imageUrl);
         if (isCurrent || isEmpty) {
           count++;
-          return { ...scene, imageUrl };
+          return {
+            ...scene,
+            mediaType: 'image' as const,
+            videoUrl: undefined,
+            videoElement: undefined,
+            imageUrl
+          };
         }
         return scene;
       });
@@ -1039,7 +1340,12 @@ export class YoutubeNarratorComponent implements OnInit, OnDestroy {
       const updatedSecs = this.sections().map((sec, i) => {
         const isCurrent = (idx !== null && i === idx);
         const isEmpty = !sec.imageUrl || sec.imageUrl.trim() === '' || this.brokenImages.has(sec.imageUrl);
-        return (isCurrent || isEmpty) ? { ...sec, imageUrl } : sec;
+        return (isCurrent || isEmpty) ? {
+          ...sec,
+          mediaType: 'image' as const,
+          videoUrl: undefined,
+          imageUrl
+        } : sec;
       });
       this.sections.set(updatedSecs);
       this.rangeFeedbackMessage.set(`✓ Applied image to ${count} empty chapter scenes!`);
@@ -1051,14 +1357,25 @@ export class YoutubeNarratorComponent implements OnInit, OnDestroy {
       const updated = currentScenes.map((scene, i) => {
         const sceneNum = i + 1;
         if (sceneNum >= start && sceneNum <= end) {
-          return { ...scene, imageUrl };
+          return {
+            ...scene,
+            mediaType: 'image' as const,
+            videoUrl: undefined,
+            videoElement: undefined,
+            imageUrl
+          };
         }
         return scene;
       });
       this.videoScenes.set(updated);
       const updatedSecs = this.sections().map((sec, i) => {
         const sceneNum = i + 1;
-        return (sceneNum >= start && sceneNum <= end) ? { ...sec, imageUrl } : sec;
+        return (sceneNum >= start && sceneNum <= end) ? {
+          ...sec,
+          mediaType: 'image' as const,
+          videoUrl: undefined,
+          imageUrl
+        } : sec;
       });
       this.sections.set(updatedSecs);
       this.rangeFeedbackMessage.set(`✓ Applied image to Chapters ${start}–${end}!`);
@@ -1074,12 +1391,20 @@ export class YoutubeNarratorComponent implements OnInit, OnDestroy {
       if (idx !== null && currentScenes[idx]) {
         currentScenes[idx] = {
           ...currentScenes[idx],
+          mediaType: 'image' as const,
+          videoUrl: undefined,
+          videoElement: undefined,
           imageUrl
         };
         this.videoScenes.set(currentScenes);
         const updatedSecs = [...this.sections()];
         if (updatedSecs[idx]) {
-          updatedSecs[idx] = { ...updatedSecs[idx], imageUrl };
+          updatedSecs[idx] = {
+            ...updatedSecs[idx],
+            mediaType: 'image' as const,
+            videoUrl: undefined,
+            imageUrl
+          };
           this.sections.set(updatedSecs);
         }
         this.closeSceneImagePicker();
@@ -1153,8 +1478,8 @@ export class YoutubeNarratorComponent implements OnInit, OnDestroy {
     this.errorMessage.set(null);
 
     try {
-      // Ensure all scene images are preloaded
-      const preloadedImages = await this.videoRecorder.preloadSceneImages(
+      // Ensure all scene images and video assets are preloaded
+      const preloadedImages = await this.videoRecorder.preloadSceneMedia(
         scenes,
         (url) => this.gameService.getProxiedImageUrl(url)
       );

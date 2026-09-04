@@ -438,21 +438,29 @@
               [class.active-scene]="previewCurrentTime() >= scene.startTime && (sIdx === videoScenes().length - 1 ? previewCurrentTime() <= scene.endTime : previewCurrentTime() < scene.endTime)"
               (click)="jumpToScene(sIdx)">
               <div class="scene-card-thumb-wrapper">
-                <img [src]="scene.imageUrl" class="scene-card-thumb" alt="Scene Visual" loading="lazy" />
+                @if (scene.mediaType === 'video' && scene.videoUrl) {
+                  <video [src]="scene.videoUrl" class="scene-card-thumb" muted playsinline preload="metadata"></video>
+                  <span class="scene-media-type-badge video-badge">🎬 VIDEO</span>
+                } @else {
+                  <img [src]="scene.imageUrl" class="scene-card-thumb" alt="Scene Visual" loading="lazy" />
+                  <span class="scene-media-type-badge image-badge">🖼️ IMAGE</span>
+                }
                 <span class="scene-time-pill">{{ formatTimestamp(scene.startTime) }}</span>
               </div>
 
               <div class="scene-card-details">
                 <span class="scene-card-chap">Chapter {{ sIdx + 1 }}: {{ scene.chapterTitle }}</span>
-                @if (scene.bulletPoints && scene.bulletPoints.length > 0) {
+                @if (scene.mediaType === 'video') {
+                  <p class="scene-card-bullet video-info-text">📹 {{ scene.videoFileName || 'Local Video Clip' }}</p>
+                } @else if (scene.bulletPoints && scene.bulletPoints.length > 0) {
                 <p class="scene-card-bullet">✦ {{ scene.bulletPoints[0] }}</p>
                 }
               </div>
 
               <div class="scene-card-actions" (click)="$event.stopPropagation()">
                 <button type="button" class="scene-action-btn primary select-img-btn"
-                  (click)="openSceneImagePicker(sIdx)" title="Choose from all loaded images or search Google Images">
-                  🖼️ Select Image
+                  (click)="openSceneImagePicker(sIdx)" title="Choose an artwork image or select a local video from your computer">
+                  🎬 Select Asset
                 </button>
               </div>
             </div>
@@ -615,18 +623,41 @@
   </section>
   }
 
-  <!-- ======================== SERPER IMAGE SEARCH MODAL ======================== -->
+  <!-- ======================== SCENE ASSET SELECTOR MODAL (DUAL TAB) ======================== -->
   @if (isSceneImageModalOpen()) {
   <div class="modal-backdrop" (click)="closeSceneImagePicker()">
     <div class="modal-content glass-panel" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <div class="modal-title-group">
-          <span class="modal-badge">🔍 Serper Google Images Search</span>
-          <h3 class="modal-title">Select Scene Visual Artwork</h3>
+          <span class="modal-badge">🎬 Scene Visual Asset Customizer</span>
+          <h3 class="modal-title">Customize Chapter {{ (activeEditingSceneIndex() ?? 0) + 1 }} Visuals</h3>
         </div>
         <button type="button" class="modal-close-btn" (click)="closeSceneImagePicker()">✕</button>
       </div>
 
+      <!-- Dual Tab Navigation: Google Images / Upload Local Video -->
+      <div class="modal-asset-tabs-row">
+        <button type="button" class="asset-tab-btn" [class.active]="activeAssetTab() === 'images'"
+          (click)="setActiveAssetTab('images')">
+          <span>🔍 Google Images Search</span>
+        </button>
+        <button type="button" class="asset-tab-btn" [class.active]="activeAssetTab() === 'video'"
+          (click)="setActiveAssetTab('video')">
+          <span>📁 Select Local Video</span>
+          @if (isCurrentSceneVideo()) {
+          <span class="tab-pill-active">Active</span>
+          }
+        </button>
+      </div>
+
+      @if (rangeFeedbackMessage()) {
+      <div class="modal-feedback-banner">
+        <span>{{ rangeFeedbackMessage() }}</span>
+      </div>
+      }
+
+      <!-- ==================== TAB 1: GOOGLE IMAGES ==================== -->
+      @if (activeAssetTab() === 'images') {
       <div class="modal-search-row">
         <input type="text" class="text-input-compact search-input" [(ngModel)]="sceneImageSearchQuery"
           (keyup.enter)="searchSceneImages()"
@@ -641,12 +672,6 @@
       <div class="modal-loading-state">
         <div class="spinner-small"></div>
         <span>Fetching HD images from Serper...</span>
-      </div>
-      }
-
-      @if (rangeFeedbackMessage()) {
-      <div class="modal-feedback-banner">
-        <span>{{ rangeFeedbackMessage() }}</span>
       </div>
       }
 
@@ -705,6 +730,119 @@
         </div>
         }
       </div>
+      }
+
+      <!-- ==================== TAB 2: LOCAL VIDEO SELECTOR & TRIMMER ==================== -->
+      @if (activeAssetTab() === 'video') {
+      <div class="modal-video-tab-content">
+        <!-- Hidden file input -->
+        <input #videoFileInput type="file" accept="video/mp4,video/webm,video/quicktime,video/x-matroska,.mp4,.webm,.mov,.mkv"
+          (change)="onVideoFileSelected($event)" style="display: none;" />
+
+        <!-- File selection dropzone -->
+        <div class="video-upload-box" (click)="videoFileInput.click()">
+          <div class="upload-icon-circle">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/>
+            </svg>
+          </div>
+          <div class="upload-text-group">
+            <h4 class="upload-title">{{ uploadedVideoFileName() ? 'Selected: ' + uploadedVideoFileName() : 'Click to select a video file from your computer' }}</h4>
+            <p class="upload-subtitle">Supports MP4, WebM, MOV. Runs 100% locally in your browser—no upload needed!</p>
+          </div>
+          <button type="button" class="glow-btn btn-choose-video">
+            <span>{{ uploadedVideoFileName() ? '📁 Change Video File' : '📁 Browse Local Videos' }}</span>
+          </button>
+        </div>
+
+        @if (isVideoLoading()) {
+        <div class="modal-loading-state">
+          <div class="spinner-small"></div>
+          <span>Reading local video metadata...</span>
+        </div>
+        }
+
+        <!-- Interactive Trimmer Window -->
+        @if (uploadedVideoUrl() && !isVideoLoading()) {
+        <div class="video-trimmer-container">
+          <div class="trimmer-preview-row">
+            <div class="trimmer-video-wrapper">
+              <video #trimmerPreview [src]="uploadedVideoUrl()" controls [muted]="videoVolume() === 0" loop [currentTime]="videoStartOffset()" class="trimmer-preview-player"></video>
+            </div>
+
+            <div class="trimmer-details-col">
+              <div class="trimmer-stat-badge">
+                <span class="stat-label">Chapter Required Duration:</span>
+                <span class="stat-val highlight">{{ getActiveSceneDuration() }}s</span>
+              </div>
+              <div class="trimmer-stat-badge">
+                <span class="stat-label">Source Video Length:</span>
+                <span class="stat-val">{{ formatTimestamp(uploadedVideoDuration()) }}</span>
+              </div>
+              <div class="trimmer-stat-badge">
+                <span class="stat-label">Selected Chapter Window:</span>
+                @if (uploadedVideoDuration() < getActiveSceneDuration()) {
+                <span class="stat-val accent">🔁 Loops to fill (00:00 ➔ {{ formatTimestamp(uploadedVideoDuration()) }})</span>
+                } @else {
+                <span class="stat-val accent">{{ formatTimestamp(videoStartOffset()) }} ➔ {{ formatTimestamp(videoStartOffset() + getActiveSceneDuration()) }}</span>
+                }
+              </div>
+            </div>
+          </div>
+
+          <!-- Video Start Offset Slider (When video is longer than chapter) -->
+          @if (videoMaxStartOffset() > 0) {
+          <div class="trimmer-slider-wrapper">
+            <div class="slider-labels-row">
+              <span>⏱️ Drag slider to position video window:</span>
+              <span class="slider-pos-pill">{{ formatTimestamp(videoStartOffset()) }}</span>
+            </div>
+
+            <input type="range" class="timeline-scrubber video-range-slider" min="0" [max]="videoMaxStartOffset()"
+              [value]="videoStartOffset()" step="0.5" (input)="onVideoOffsetSlider($event)" />
+
+            <div class="slider-bounds-row">
+              <span>Start: 00:00</span>
+              <span>Max Offset: {{ formatTimestamp(videoMaxStartOffset()) }}</span>
+            </div>
+          </div>
+          } @else {
+          <div class="trimmer-loop-banner">
+            <span>🔁 <strong>Seamless Auto-Loop:</strong> Video ({{ formatTimestamp(uploadedVideoDuration()) }}) is shorter than chapter ({{ getActiveSceneDuration() }}s). It will loop continuously to fill the chapter duration.</span>
+          </div>
+          }
+
+          <!-- Video Audio Volume Slider -->
+          <div class="trimmer-volume-wrapper">
+            <div class="slider-labels-row">
+              <span>🔊 Video Background Audio Volume:</span>
+              <span class="slider-pos-pill volume-pill">{{ Math.round(videoVolume() * 100) }}%</span>
+            </div>
+
+            <input type="range" class="timeline-scrubber video-range-slider volume-range-slider" min="0" max="1"
+              step="0.05" [value]="videoVolume()" (input)="onVideoVolumeSlider($event)" />
+
+            <div class="slider-bounds-row">
+              <span>0% (Mute)</span>
+              <span>Default (30%)</span>
+              <span>100% (Max)</span>
+            </div>
+          </div>
+
+          <div class="video-actions-row">
+            @if (isCurrentSceneVideo()) {
+            <button type="button" class="btn-compact-secondary remove-video-btn" (click)="removeVideoFromScene()">
+              <span>🔄 Revert Chapter to Image</span>
+            </button>
+            }
+            <button type="button" class="glow-btn apply-video-btn" (click)="applyVideoToScene()">
+              <span>✓ Apply Video to Chapter {{ (activeEditingSceneIndex() ?? 0) + 1 }}</span>
+            </button>
+          </div>
+        </div>
+        }
+      </div>
+      }
 
       <div class="modal-footer-row">
         <button type="button" class="glow-btn-secondary modal-done-btn" (click)="closeSceneImagePicker()">

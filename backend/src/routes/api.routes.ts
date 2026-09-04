@@ -1142,14 +1142,15 @@ function splitTextIntoChunks(text: string, maxChunkLen: number = 700): string[] 
  * and extracts frame-accurate aligned subtitles.
  */
 router.post('/narrator/tts', async (req: Request, res: Response) => {
-  const { text, voice, rate, pitch } = req.body;
+  const { text, sections, callToAction, voice, rate, pitch } = req.body;
 
-  if (!text || typeof text !== 'string' || text.trim() === '') {
-    return res.status(400).json({ error: 'text must be a non-empty string' });
+  if ((!text || typeof text !== 'string' || text.trim() === '') && (!Array.isArray(sections) || sections.length === 0)) {
+    return res.status(400).json({ error: 'text or sections must be provided' });
   }
 
   // Detect language or use chosen voice
-  const chosenVoice = voice || (text.match(/[\u0B80-\u0BFF]/) ? 'ta-IN-ValluvarNeural' : 'en-US-ChristopherNeural');
+  const sampleText = text || (Array.isArray(sections) && sections.length > 0 ? sections.map((s: any) => s.content || '').join(' ') : '');
+  const chosenVoice = voice || (sampleText.match(/[\u0B80-\u0BFF]/) ? 'ta-IN-ValluvarNeural' : 'en-US-ChristopherNeural');
   const isBassMaleVoice = (chosenVoice === 'en-US-ChristopherNeural' || chosenVoice === 'ta-IN-ValluvarNeural');
   
   // Rate defaults: -10% for deep bass male, +0% otherwise
@@ -1165,60 +1166,145 @@ router.post('/narrator/tts', async (req: Request, res: Response) => {
   const tempDir = os.tmpdir();
 
   try {
-    const chunks = splitTextIntoChunks(text, 1000);
-    console.log(`[Narrator TTS] Synthesizing ${chunks.length} chunks for voice "${chosenVoice}" (rate: "${chosenRate}", pitch: "${chosenPitch}")...`);
     const audioBuffers: Buffer[] = [];
     const allWords: WordSegment[] = [];
     let cumulativeTimeOffsetMs = 0;
+    const chapters: Array<{ id: string, title: string, startTime: number, endTime: number, duration: number }> = [];
 
-    for (let i = 0; i < chunks.length; i++) {
-      const chunk = chunks[i];
-      const chunkFile = path.join(tempDir, `tts_${Date.now()}_${i}_${Math.random().toString(36).substr(2, 6)}.mp3`);
-      
-      const tts = new EdgeTTS({
-        voice: chosenVoice,
-        lang,
-        rate: chosenRate,
-        pitch: chosenPitch,
-        saveSubtitles: true,
-        timeout: 60000
-      });
+    // Prepare sections list if provided
+    const itemsToSynthesize: Array<{ id: string, title: string, content: string }> = [];
+    if (Array.isArray(sections) && sections.length > 0) {
+      for (let i = 0; i < sections.length; i++) {
+        const s = sections[i];
+        if (s && s.content && s.content.trim()) {
+          itemsToSynthesize.push({
+            id: s.id || `sec_${i}`,
+            title: s.title || `Chapter ${i + 1}`,
+            content: s.content.trim()
+          });
+        }
+      }
+      if (callToAction && typeof callToAction === 'string' && callToAction.trim()) {
+        itemsToSynthesize.push({
+          id: 'outro',
+          title: 'Outro & Call to Action',
+          content: callToAction.trim()
+        });
+      }
+    }
 
-      await tts.ttsPromise(chunk, chunkFile);
+    if (itemsToSynthesize.length > 0) {
+      console.log(`[Narrator TTS] Synthesizing ${itemsToSynthesize.length} chapters for voice "${chosenVoice}" (rate: "${chosenRate}", pitch: "${chosenPitch}")...`);
 
-      if (fs.existsSync(chunkFile)) {
-        const buf = fs.readFileSync(chunkFile);
-        audioBuffers.push(buf);
+      for (let i = 0; i < itemsToSynthesize.length; i++) {
+        const item = itemsToSynthesize[i];
+        const chapterStartMs = cumulativeTimeOffsetMs;
+        const chapterChunks = splitTextIntoChunks(item.content, 1000);
 
-        // Compute frame-accurate duration of this MP3 chunk to avoid any subtitle drift
-        const chunkAudioDurationMs = getMp3DurationMs(buf);
+        for (let c = 0; c < chapterChunks.length; c++) {
+          const chunk = chapterChunks[c];
+          const chunkFile = path.join(tempDir, `tts_${Date.now()}_${i}_${c}_${Math.random().toString(36).substr(2, 6)}.mp3`);
+          
+          const tts = new EdgeTTS({
+            voice: chosenVoice,
+            lang,
+            rate: chosenRate,
+            pitch: chosenPitch,
+            saveSubtitles: true,
+            timeout: 60000
+          });
 
-        // Parse word subtitles for this chunk
-        const subFile = chunkFile + '.json';
-        if (fs.existsSync(subFile)) {
-          try {
-            const subContent = fs.readFileSync(subFile, 'utf8');
-            const words: WordSegment[] = JSON.parse(subContent);
-            if (Array.isArray(words) && words.length > 0) {
-              for (const w of words) {
-                allWords.push({
-                  part: w.part,
-                  start: w.start + cumulativeTimeOffsetMs,
-                  end: w.end + cumulativeTimeOffsetMs
-                });
+          await tts.ttsPromise(chunk, chunkFile);
+
+          if (fs.existsSync(chunkFile)) {
+            const buf = fs.readFileSync(chunkFile);
+            audioBuffers.push(buf);
+            const chunkAudioDurationMs = getMp3DurationMs(buf);
+
+            const subFile = chunkFile + '.json';
+            if (fs.existsSync(subFile)) {
+              try {
+                const subContent = fs.readFileSync(subFile, 'utf8');
+                const words: WordSegment[] = JSON.parse(subContent);
+                if (Array.isArray(words) && words.length > 0) {
+                  for (const w of words) {
+                    allWords.push({
+                      part: w.part,
+                      start: w.start + cumulativeTimeOffsetMs,
+                      end: w.end + cumulativeTimeOffsetMs
+                    });
+                  }
+                }
+              } catch (subErr) {
+                console.warn(`[Narrator TTS] Warning parsing subfile ${subFile}:`, subErr);
+              } finally {
+                try { fs.unlinkSync(subFile); } catch (e) {}
               }
             }
-          } catch (subErr) {
-            console.warn(`[Narrator TTS] Warning parsing subfile ${subFile}:`, subErr);
-          } finally {
-            try { fs.unlinkSync(subFile); } catch (e) {}
+
+            cumulativeTimeOffsetMs += chunkAudioDurationMs;
+            try { fs.unlinkSync(chunkFile); } catch (e) {}
           }
         }
 
-        // Advance timeline offset by the exact physical duration of the audio buffer
-        cumulativeTimeOffsetMs += chunkAudioDurationMs;
+        const chapterEndMs = cumulativeTimeOffsetMs;
+        chapters.push({
+          id: item.id,
+          title: item.title,
+          startTime: Math.round(chapterStartMs / 10) / 100,
+          endTime: Math.round(chapterEndMs / 10) / 100,
+          duration: Math.round((chapterEndMs - chapterStartMs) / 10) / 100
+        });
+      }
+    } else {
+      // Fallback to text chunking
+      const chunks = splitTextIntoChunks(text, 1000);
+      console.log(`[Narrator TTS] Synthesizing ${chunks.length} chunks for voice "${chosenVoice}" (rate: "${chosenRate}", pitch: "${chosenPitch}")...`);
 
-        try { fs.unlinkSync(chunkFile); } catch (e) {}
+      for (let i = 0; i < chunks.length; i++) {
+        const chunk = chunks[i];
+        const chunkFile = path.join(tempDir, `tts_${Date.now()}_${i}_${Math.random().toString(36).substr(2, 6)}.mp3`);
+        
+        const tts = new EdgeTTS({
+          voice: chosenVoice,
+          lang,
+          rate: chosenRate,
+          pitch: chosenPitch,
+          saveSubtitles: true,
+          timeout: 60000
+        });
+
+        await tts.ttsPromise(chunk, chunkFile);
+
+        if (fs.existsSync(chunkFile)) {
+          const buf = fs.readFileSync(chunkFile);
+          audioBuffers.push(buf);
+          const chunkAudioDurationMs = getMp3DurationMs(buf);
+
+          const subFile = chunkFile + '.json';
+          if (fs.existsSync(subFile)) {
+            try {
+              const subContent = fs.readFileSync(subFile, 'utf8');
+              const words: WordSegment[] = JSON.parse(subContent);
+              if (Array.isArray(words) && words.length > 0) {
+                for (const w of words) {
+                  allWords.push({
+                    part: w.part,
+                    start: w.start + cumulativeTimeOffsetMs,
+                    end: w.end + cumulativeTimeOffsetMs
+                  });
+                }
+              }
+            } catch (subErr) {
+              console.warn(`[Narrator TTS] Warning parsing subfile ${subFile}:`, subErr);
+            } finally {
+              try { fs.unlinkSync(subFile); } catch (e) {}
+            }
+          }
+
+          cumulativeTimeOffsetMs += chunkAudioDurationMs;
+          try { fs.unlinkSync(chunkFile); } catch (e) {}
+        }
       }
     }
 
@@ -1233,6 +1319,7 @@ router.post('/narrator/tts', async (req: Request, res: Response) => {
     return res.json({
       audio: audioBase64,
       subtitles: alignedSubs,
+      chapters,
       voice: chosenVoice,
       rate: chosenRate,
       pitch: chosenPitch

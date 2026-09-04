@@ -9,7 +9,8 @@ import {
   GenerateYoutubeScriptParams,
   RegenerateSectionParams,
   VideoScene,
-  SubtitleSegment
+  SubtitleSegment,
+  ChapterTimestamp
 } from '../services/game.service';
 import { YoutubeVideoRecorderService } from '../services/youtube-video-recorder.service';
 import { AutocompleteInput } from './autocomplete-input';
@@ -128,6 +129,7 @@ export class YoutubeNarratorComponent implements OnInit, OnDestroy {
 
   // 1080p Video Studio Signals
   protected readonly videoScenes = signal<VideoScene[]>([]);
+  protected readonly synthesizedChapters = signal<ChapterTimestamp[]>([]);
   protected readonly videoFps = signal<30 | 60>(60);
   protected readonly isExportingVideo = signal<boolean>(false);
   protected readonly exportProgress = signal<number>(0);
@@ -565,6 +567,9 @@ export class YoutubeNarratorComponent implements OnInit, OnDestroy {
     const updated = [...this.sections()];
     updated.splice(index, 1);
     this.sections.set(updated);
+    if (this.previewTotalDuration() > 0) {
+      this.buildVideoScenes(this.previewTotalDuration());
+    }
   }
 
   protected moveSectionUp(index: number) {
@@ -574,6 +579,9 @@ export class YoutubeNarratorComponent implements OnInit, OnDestroy {
     updated[index] = updated[index - 1];
     updated[index - 1] = temp;
     this.sections.set(updated);
+    if (this.previewTotalDuration() > 0) {
+      this.buildVideoScenes(this.previewTotalDuration());
+    }
   }
 
   protected moveSectionDown(index: number) {
@@ -583,6 +591,9 @@ export class YoutubeNarratorComponent implements OnInit, OnDestroy {
     updated[index] = updated[index + 1];
     updated[index + 1] = temp;
     this.sections.set(updated);
+    if (this.previewTotalDuration() > 0) {
+      this.buildVideoScenes(this.previewTotalDuration());
+    }
   }
 
   /**
@@ -601,7 +612,14 @@ export class YoutubeNarratorComponent implements OnInit, OnDestroy {
     this.isAudioSynthesizing.set(true);
     this.errorMessage.set(null);
 
-    this.gameService.synthesizeNarratorAudio(text, this.selectedVoice(), this.selectedRate(), this.selectedPitch()).subscribe({
+    this.gameService.synthesizeNarratorAudio(
+      text,
+      this.selectedVoice(),
+      this.selectedRate(),
+      this.selectedPitch(),
+      this.sections(),
+      this.callToAction()
+    ).subscribe({
       next: async (res) => {
         this.audioBase64.set(res.audio);
         this.subtitles.set(res.subtitles || []);
@@ -631,8 +649,15 @@ export class YoutubeNarratorComponent implements OnInit, OnDestroy {
           this.previewTotalDuration.set(words / 2.2);
         }
 
-        // Build 1080p Video Scenes based on narration timeline
-        this.buildVideoScenes(this.previewTotalDuration());
+        // Build 1080p Video Scenes based on exact physical chapters from audio synthesis
+        if (res.chapters && res.chapters.length > 0) {
+          this.synthesizedChapters.set(res.chapters);
+          this.buildVideoScenesFromChapters(res.chapters, this.previewTotalDuration());
+          // Sync YouTube Description timestamps to exact physical seconds of the audio
+          this.youtubeDescription.set(this.syncDescriptionTimestamps(this.youtubeDescription(), res.chapters));
+        } else {
+          this.buildVideoScenes(this.previewTotalDuration());
+        }
 
         this.isAudioSynthesizing.set(false);
       },
@@ -645,50 +670,50 @@ export class YoutubeNarratorComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Automatically partitions the script into 8-10 second timed visual scenes
+   * Partitions the video timeline chapter-wise (exactly 1 scene per chapter)
    */
   protected buildVideoScenes(totalDuration: number) {
     const secs = this.sections();
     if (secs.length === 0 || totalDuration <= 0) return;
 
+    // If physical chapters have been synthesized and match current section count, always use them
+    const cachedChapters = this.synthesizedChapters();
+    if (cachedChapters.length === secs.length && cachedChapters.length > 0) {
+      this.buildVideoScenesFromChapters(cachedChapters, totalDuration);
+      return;
+    }
+
     const pool = this.imagePool();
     const scenes: VideoScene[] = [];
-    const totalWords = this.totalWordCount() || 1;
+    const totalEst = secs.reduce((acc, s) => acc + (s.estimatedSeconds || Math.max(15, Math.round(s.content.trim().split(/\s+/).length / 2.1))), 0) || 1;
     let currentStart = 0;
 
     for (let i = 0; i < secs.length; i++) {
       const sec = secs[i];
-      const secWords = sec.content.trim().split(/\s+/).length;
-      const secDuration = (secWords / totalWords) * totalDuration;
+      const estSec = sec.estimatedSeconds || Math.max(15, Math.round(sec.content.trim().split(/\s+/).length / 2.1));
+      const secDuration = (estSec / totalEst) * totalDuration;
+      const sceneStart = currentStart;
+      const sceneEnd = (i === secs.length - 1) ? totalDuration : Math.min(totalDuration, sceneStart + secDuration);
+      const poolIdx = i % (pool.length || 1);
+      const sceneImg = sec.imageUrl || (pool.length > 0 ? pool[poolIdx] : this.currentThumbnailImage());
 
-      // Split long chapters into 8-10s sub-scenes so visuals change regularly
-      const sceneCount = Math.max(1, Math.round(secDuration / 9));
-      const sceneChunkDuration = secDuration / sceneCount;
-
-      for (let c = 0; c < sceneCount; c++) {
-        const sceneStart = currentStart + (c * sceneChunkDuration);
-        const sceneEnd = Math.min(totalDuration, sceneStart + sceneChunkDuration);
-        const poolIdx = (i + c) % (pool.length || 1);
-        const sceneImg = sec.imageUrl || (pool.length > 0 ? pool[poolIdx] : this.currentThumbnailImage());
-
-        scenes.push({
-          id: `scene_${i}_${c}`,
-          sectionId: sec.id,
-          chapterTitle: sec.title,
-          startTime: sceneStart,
-          endTime: sceneEnd,
-          duration: sceneEnd - sceneStart,
-          bulletPoints: sec.bulletPoints && sec.bulletPoints.length > 0 ? sec.bulletPoints : [
-            'Detailed storyline breakdown',
-            'Key gameplay & lore analysis',
-            'Core community takeaways'
-          ],
-          imageQuery: sec.imageQuery || `${this.topic()} ${sec.title}`,
-          imageUrl: sceneImg,
-          imagePool: pool,
-          visualCue: sec.visualCue
-        });
-      }
+      scenes.push({
+        id: `scene_${i}`,
+        sectionId: sec.id,
+        chapterTitle: sec.title,
+        startTime: sceneStart,
+        endTime: sceneEnd,
+        duration: sceneEnd - sceneStart,
+        bulletPoints: sec.bulletPoints && sec.bulletPoints.length > 0 ? sec.bulletPoints : [
+          'Detailed storyline breakdown',
+          'Key gameplay & lore analysis',
+          'Core community takeaways'
+        ],
+        imageQuery: sec.title,
+        imageUrl: sceneImg,
+        imagePool: pool,
+        visualCue: sec.visualCue
+      });
 
       currentStart += secDuration;
     }
@@ -700,6 +725,92 @@ export class YoutubeNarratorComponent implements OnInit, OnDestroy {
 
     this.videoScenes.set(scenes);
     this.preloadAndRenderInitialFrame();
+  }
+
+  /**
+   * Builds 1080p Video Scenes directly from frame-accurate synthesized audio chapter boundaries
+   */
+  protected buildVideoScenesFromChapters(chapters: ChapterTimestamp[], totalDuration: number) {
+    const secs = this.sections();
+    const pool = this.imagePool();
+    const scenes: VideoScene[] = [];
+
+    for (let i = 0; i < chapters.length; i++) {
+      const ch = chapters[i];
+      const sec = secs[i] || {
+        id: ch.id,
+        title: ch.title,
+        content: '',
+        imageUrl: undefined,
+        bulletPoints: [],
+        imageQuery: undefined,
+        visualCue: undefined
+      };
+
+      const poolIdx = i % (pool.length || 1);
+      const sceneImg = sec.imageUrl || (pool.length > 0 ? pool[poolIdx] : this.currentThumbnailImage());
+
+      scenes.push({
+        id: `scene_${i}`,
+        sectionId: ch.id,
+        chapterTitle: ch.title,
+        startTime: ch.startTime,
+        endTime: ch.endTime,
+        duration: ch.duration,
+        bulletPoints: sec.bulletPoints && sec.bulletPoints.length > 0 ? sec.bulletPoints : [
+          'Detailed storyline breakdown',
+          'Key gameplay & lore analysis',
+          'Core community takeaways'
+        ],
+        imageQuery: ch.title || sec.title,
+        imageUrl: sceneImg,
+        imagePool: pool,
+        visualCue: sec.visualCue
+      });
+    }
+
+    if (scenes.length > 0 && totalDuration > 0) {
+      scenes[scenes.length - 1].endTime = totalDuration;
+      scenes[scenes.length - 1].duration = totalDuration - scenes[scenes.length - 1].startTime;
+    }
+
+    this.videoScenes.set(scenes);
+    this.preloadAndRenderInitialFrame();
+  }
+
+  /**
+   * Formats seconds into MM:SS display without DecimalPipe rounding errors
+   */
+  protected formatTimestamp(seconds: number): string {
+    const totalSecs = Math.max(0, Math.floor(seconds || 0));
+    const mins = Math.floor(totalSecs / 60);
+    const secs = totalSecs % 60;
+    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+  }
+
+  /**
+   * Synchronizes timestamps in the YouTube description with the exact physical audio timestamps
+   */
+  private syncDescriptionTimestamps(desc: string, chapters: ChapterTimestamp[]): string {
+    if (!chapters || chapters.length === 0) return desc;
+
+    const formattedLines = chapters.map(ch => {
+      const timeStr = this.formatTimestamp(ch.startTime);
+      return `${timeStr} - ${ch.title}`;
+    });
+
+    const isTamil = this.isTamilScript();
+    const chapterHeader = isTamil ? '📌 இந்த வீடியோவில் உள்ளவை (Chapters):' : '📌 CHAPTERS:';
+    const newChapterBlock = `${chapterHeader}\n${formattedLines.join('\n')}`;
+
+    // Robust Regex to match any existing timestamp section in English, Tamil, or any format
+    const existingRegex = /(?:(?:📌|📍|⏰|🎯|✨)?\s*(?:CHAPTERS?|TIMESTAMPS?|அத்தியாயங்கள்|இந்த வீடியோவில் உள்ளவை):?\s*\n+)?(?:\d{1,2}:\d{2}(?::\d{2})?\s*[-–—:\s]\s*[^\n]+\n*)+/i;
+
+    if (existingRegex.test(desc)) {
+      return desc.replace(existingRegex, `${newChapterBlock}\n\n`).trim();
+    } else {
+      return desc ? `${desc.trim()}\n\n${newChapterBlock}\n` : newChapterBlock;
+    }
   }
 
   /**
@@ -756,6 +867,10 @@ export class YoutubeNarratorComponent implements OnInit, OnDestroy {
     } else {
       if (this.previewAudioEl.currentTime >= this.previewTotalDuration() - 0.2) {
         this.previewAudioEl.currentTime = 0;
+        this.previewCurrentTime.set(0);
+      } else {
+        // Ensure audio element syncs with the current preview scrubber position
+        this.previewAudioEl.currentTime = this.previewCurrentTime();
       }
 
       this.previewAudioEl.play().then(() => {
@@ -802,6 +917,9 @@ export class YoutubeNarratorComponent implements OnInit, OnDestroy {
     const targetTime = Number(input.value);
     this.previewCurrentTime.set(targetTime);
 
+    if (!this.previewAudioEl && this.audioUrl()) {
+      this.previewAudioEl = new Audio(this.audioUrl()!);
+    }
     if (this.previewAudioEl) {
       this.previewAudioEl.currentTime = targetTime;
     }
@@ -814,9 +932,12 @@ export class YoutubeNarratorComponent implements OnInit, OnDestroy {
   protected jumpToScene(index: number) {
     const scenes = this.videoScenes();
     if (!scenes[index]) return;
-    const targetTime = scenes[index].startTime;
+    const targetTime = scenes[index].startTime + 0.05;
     this.previewCurrentTime.set(targetTime);
 
+    if (!this.previewAudioEl && this.audioUrl()) {
+      this.previewAudioEl = new Audio(this.audioUrl()!);
+    }
     if (this.previewAudioEl) {
       this.previewAudioEl.currentTime = targetTime;
     }
@@ -831,7 +952,7 @@ export class YoutubeNarratorComponent implements OnInit, OnDestroy {
     if (!scenes[index]) return;
 
     this.activeEditingSceneIndex.set(index);
-    this.sceneImageSearchQuery.set(scenes[index].imageQuery || this.topic());
+    this.sceneImageSearchQuery.set(scenes[index].chapterTitle || this.topic());
 
     const totalScenes = scenes.length;
     const startNum = index + 1;
@@ -900,7 +1021,9 @@ export class YoutubeNarratorComponent implements OnInit, OnDestroy {
         imageUrl
       }));
       this.videoScenes.set(updated);
-      this.rangeFeedbackMessage.set(`✓ Applied image to ALL ${totalScenes} scenes!`);
+      const updatedSecs = this.sections().map(sec => ({ ...sec, imageUrl }));
+      this.sections.set(updatedSecs);
+      this.rangeFeedbackMessage.set(`✓ Applied image to ALL ${totalScenes} chapter scenes!`);
     } else if (mode === 'empty') {
       let count = 0;
       const updated = currentScenes.map((scene, i) => {
@@ -913,7 +1036,13 @@ export class YoutubeNarratorComponent implements OnInit, OnDestroy {
         return scene;
       });
       this.videoScenes.set(updated);
-      this.rangeFeedbackMessage.set(`✓ Applied image to ${count} empty scenes!`);
+      const updatedSecs = this.sections().map((sec, i) => {
+        const isCurrent = (idx !== null && i === idx);
+        const isEmpty = !sec.imageUrl || sec.imageUrl.trim() === '' || this.brokenImages.has(sec.imageUrl);
+        return (isCurrent || isEmpty) ? { ...sec, imageUrl } : sec;
+      });
+      this.sections.set(updatedSecs);
+      this.rangeFeedbackMessage.set(`✓ Applied image to ${count} empty chapter scenes!`);
     } else if (mode === 'range') {
       const start = Math.max(1, Math.min(this.rangeStartScene(), this.rangeEndScene()));
       const end = Math.min(totalScenes, Math.max(this.rangeStartScene(), this.rangeEndScene()));
@@ -927,9 +1056,14 @@ export class YoutubeNarratorComponent implements OnInit, OnDestroy {
         return scene;
       });
       this.videoScenes.set(updated);
-      this.rangeFeedbackMessage.set(`✓ Applied image to Scenes ${start}–${end}!`);
+      const updatedSecs = this.sections().map((sec, i) => {
+        const sceneNum = i + 1;
+        return (sceneNum >= start && sceneNum <= end) ? { ...sec, imageUrl } : sec;
+      });
+      this.sections.set(updatedSecs);
+      this.rangeFeedbackMessage.set(`✓ Applied image to Chapters ${start}–${end}!`);
 
-      // Auto-advance range to next block (e.g. 1-10 -> 11-20)
+      // Auto-advance range to next block (e.g. 1-5 -> 6-10)
       const nextStart = end + 1;
       if (nextStart <= totalScenes) {
         const nextEnd = Math.min(totalScenes, nextStart + span - 1);
@@ -943,6 +1077,11 @@ export class YoutubeNarratorComponent implements OnInit, OnDestroy {
           imageUrl
         };
         this.videoScenes.set(currentScenes);
+        const updatedSecs = [...this.sections()];
+        if (updatedSecs[idx]) {
+          updatedSecs[idx] = { ...updatedSecs[idx], imageUrl };
+          this.sections.set(updatedSecs);
+        }
         this.closeSceneImagePicker();
       }
     }
@@ -1117,6 +1256,7 @@ export class YoutubeNarratorComponent implements OnInit, OnDestroy {
     this.audioBlob.set(null);
     this.subtitles.set([]);
     this.videoScenes.set([]);
+    this.synthesizedChapters.set([]);
     this.generatedVideoBlob.set(null);
     this.generatedVideoUrl.set(null);
     this.state.set('intake');

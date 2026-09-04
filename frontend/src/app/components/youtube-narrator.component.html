@@ -417,11 +417,9 @@
               [value]="previewCurrentTime()" (input)="seekTimeline($event)" step="0.1" />
 
             <div class="player-time-badge">
-              <span>{{ (previewCurrentTime() / 60 | number:'1.0-0') }}:{{ (previewCurrentTime() % 60 < 10 ? '0' : '' )
-                  }}{{ (previewCurrentTime() % 60 | number:'1.0-0') }}</span>
-                  <span>/</span>
-                  <span>{{ (previewTotalDuration() / 60 | number:'1.0-0') }}:{{ (previewTotalDuration() % 60 < 10 ? '0'
-                      : '' ) }}{{ (previewTotalDuration() % 60 | number:'1.0-0') }}</span>
+              <span>{{ formatTimestamp(previewCurrentTime()) }}</span>
+              <span>/</span>
+              <span>{{ formatTimestamp(previewTotalDuration()) }}</span>
             </div>
           </div>
         </div>
@@ -429,25 +427,23 @@
         <!-- Scene Timeline Carousel & Visual Swapper -->
         <div class="scenes-timeline-section">
           <div class="scenes-timeline-header">
-            <h4 class="scenes-timeline-title">🎞️ Video Scenes & Visual Timeline ({{ videoScenes().length }} scenes)
+            <h4 class="scenes-timeline-title">🎞️ Video Scenes & Visual Timeline ({{ videoScenes().length }} Chapters)
             </h4>
-            <span class="scenes-timeline-hint">Images automatically change every ~8–10s with Ken Burns camera
-              pan/zoom.</span>
+            <span class="scenes-timeline-hint">1 visual scene per chapter with Ken Burns cinematic pan/zoom.</span>
           </div>
 
           <div class="scenes-cards-row">
             @for (scene of videoScenes(); track scene.id; let sIdx = $index) {
             <div class="scene-item-card"
-              [class.active-scene]="previewCurrentTime() >= scene.startTime && previewCurrentTime() <= scene.endTime"
+              [class.active-scene]="previewCurrentTime() >= scene.startTime && (sIdx === videoScenes().length - 1 ? previewCurrentTime() <= scene.endTime : previewCurrentTime() < scene.endTime)"
               (click)="jumpToScene(sIdx)">
               <div class="scene-card-thumb-wrapper">
                 <img [src]="scene.imageUrl" class="scene-card-thumb" alt="Scene Visual" loading="lazy" />
-                <span class="scene-time-pill">{{ (scene.startTime / 60 | number:'1.0-0') }}:{{ (scene.startTime % 60 <
-                    10 ? '0' : '' ) }}{{ (scene.startTime % 60 | number:'1.0-0') }}</span>
+                <span class="scene-time-pill">{{ formatTimestamp(scene.startTime) }}</span>
               </div>
 
               <div class="scene-card-details">
-                <span class="scene-card-chap">Scene {{ sIdx + 1 }}: {{ scene.chapterTitle }}</span>
+                <span class="scene-card-chap">Chapter {{ sIdx + 1 }}: {{ scene.chapterTitle }}</span>
                 @if (scene.bulletPoints && scene.bulletPoints.length > 0) {
                 <p class="scene-card-bullet">✦ {{ scene.bulletPoints[0] }}</p>
                 }
@@ -685,24 +681,24 @@
       </div>
 
       <div class="modal-info-strip">
-        <span>Loaded <strong>{{ sceneImageResults().length }}</strong> cumulative images (initial + searched). Click image or use buttons to apply to <strong>Scenes {{ rangeStartScene() }}–{{ rangeEndScene() }}</strong>:</span>
+        <span>Loaded <strong>{{ sceneImageResults().length }}</strong> images. Click an image to apply to <strong>Chapter {{ (activeEditingSceneIndex() ?? 0) + 1 }}</strong>, or use range buttons:</span>
       </div>
 
       <div class="modal-images-grid">
         @for (imgUrl of sceneImageResults(); track imgUrl) {
-        <div class="modal-image-card" (click)="selectSceneImage(imgUrl, 'range')"
-          title="Click to apply to Scenes {{ rangeStartScene() }}–{{ rangeEndScene() }}">
+        <div class="modal-image-card" (click)="selectSceneImage(imgUrl, 'single')"
+          title="Click to apply to Chapter {{ (activeEditingSceneIndex() ?? 0) + 1 }}">
           <img [src]="imgUrl" alt="Scene image" loading="lazy" (error)="handleImageError(imgUrl)" />
           <div class="image-select-overlay">
-            <button type="button" class="btn-overlay-range" (click)="selectSceneImage(imgUrl, 'range'); $event.stopPropagation()">
-              🎯 Apply Scenes {{ rangeStartScene() }}–{{ rangeEndScene() }}
+            <button type="button" class="btn-overlay-range" (click)="selectSceneImage(imgUrl, 'single'); $event.stopPropagation()">
+              ✓ Apply to Chapter {{ (activeEditingSceneIndex() ?? 0) + 1 }}
             </button>
             <div class="btn-overlay-sub-row">
-              <button type="button" class="btn-overlay-sub" (click)="selectSceneImage(imgUrl, 'single'); $event.stopPropagation()">
-                Scene {{ (activeEditingSceneIndex() ?? 0) + 1 }} Only
+              <button type="button" class="btn-overlay-sub" (click)="selectSceneImage(imgUrl, 'range'); $event.stopPropagation()">
+                Chapters {{ rangeStartScene() }}–{{ rangeEndScene() }}
               </button>
               <button type="button" class="btn-overlay-sub" (click)="selectSceneImage(imgUrl, 'all'); $event.stopPropagation()">
-                All Scenes
+                All Chapters
               </button>
             </div>
           </div>

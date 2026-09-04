@@ -1236,14 +1236,14 @@ ${gameTitle ? `- Specific Game/Subject: "${gameTitle}"` : ''}
 
 Requirements:
 1. YouTube Title: Write a high-CTR, SEO-optimized title (Under 70 characters, clickable, curiosity-inducing).
-2. YouTube Description: Write a formatted YouTube video description with a captivating opening hook, brief outline with chapter timestamps placeholders, and 5-8 relevant hashtags.
+2. YouTube Description: Write a formatted YouTube video description with a captivating opening hook, summary of topics covered, and 5-8 relevant hashtags. CRITICAL: Do NOT write any chapter timestamps or timestamps list (e.g. 0:00, 1:30, etc.) in youtubeDescription. Chapter timestamps will be calculated and appended automatically based on script content.
 3. Thumbnail Headline: Write a punchy, clickbaity 3-5 word headline for the 16:9 thumbnail graphic.
 4. Modular Script Sections: Structure the video into 5 to 8 distinct chapters/sections:
    - Section 1 MUST be the Intro / Cold Hook (sets the stakes, presents the core mystery/question, ~60-90 seconds).
    - Sections 2 to N-1 MUST be substantive in-depth points, evidence, analysis, or lore breakdowns (detailed paragraphs with conversational flow, concrete details, and storytelling flair, ~60-120 seconds each).
    - Include visual cues describing what should be shown on screen in the visualCue field.
    - For EACH section, provide 2-3 punchy, concise bullet points (under 8-10 words each) in the bulletPoints field summarizing the core takeaways to display on the 1080p video canvas.
-   - For EACH section, provide a specific image search query in imageQuery (e.g. "${gameTitle || topic} cinematic artwork 4k").
+   - For EACH section, imageQuery MUST be simply the concise chapter title (e.g. "${gameTitle || topic}"). Do NOT generate long descriptions, translations, or English sentences.
 5. Call to Action / Outro: An engaging closing statement that poses a question to the viewers to drive comments, and reminds them to like and subscribe.
 6. Tags: 8 to 15 comma-separated YouTube keyword tags.
 
@@ -1258,7 +1258,7 @@ ${isTamil ? 'CRITICAL REQUIREMENT: The entire output (youtubeTitle, youtubeDescr
       type: 'OBJECT',
       properties: {
         youtubeTitle: { type: 'STRING', description: 'High-CTR YouTube video title.' },
-        youtubeDescription: { type: 'STRING', description: 'SEO-rich video description with summary, chapters, and hashtags.' },
+        youtubeDescription: { type: 'STRING', description: 'SEO-rich video description with summary and hashtags. Do NOT write timestamps.' },
         thumbnailHeadline: { type: 'STRING', description: 'Clickbaity 3-5 word headline for thumbnail image.' },
         tags: { type: 'ARRAY', items: { type: 'STRING' }, description: 'SEO keyword tags for YouTube.' },
         sections: {
@@ -1343,14 +1343,38 @@ ${isTamil ? 'CRITICAL REQUIREMENT: The entire output (youtubeTitle, youtubeDescr
         return {
           ...sec,
           bulletPoints: (sec.bulletPoints && sec.bulletPoints.length > 0) ? sec.bulletPoints : defaultBullets,
-          imageQuery: sec.imageQuery || `${gameQuery} ${sec.title}`,
+          imageQuery: sec.title.trim(),
           imageUrl: shuffledPool[poolIndex] || thumbnailImageUrl,
           imagePool: shuffledPool,
         };
       });
 
+      // Build realistic initial chapter timestamps based on actual section word counts (~2.1 words/sec for Tamil, ~2.5 words/sec for English)
+      let currentEstSec = 0;
+      const speechRate = isTamil ? 2.1 : 2.5;
+      const initialTimestampLines = enrichedSections.map((sec, idx) => {
+        const startSec = idx === 0 ? 0 : Math.round(currentEstSec);
+        const mins = Math.floor(startSec / 60);
+        const secs = startSec % 60;
+        const timeStr = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+        const secWords = (sec.content || '').trim().split(/\s+/).filter(Boolean).length;
+        const durationSec = Math.max(15, sec.estimatedSeconds || Math.round(secWords / speechRate));
+        currentEstSec += durationSec;
+        return `${timeStr} - ${sec.title}`;
+      });
+
+      const chapterHeader = isTamil ? '📌 இந்த வீடியோவில் உள்ளவை (Chapters):' : '📌 CHAPTERS:';
+      const initialChapterBlock = `${chapterHeader}\n${initialTimestampLines.join('\n')}`;
+
+      // Clean any accidental timestamps Gemini might have emitted and attach formatted realistic block
+      const cleanDesc = (parsed.youtubeDescription || '')
+        .replace(/(?:(?:📌|📍|⏰|🎯|✨)?\s*(?:CHAPTERS?|TIMESTAMPS?|அத்தியாயங்கள்|இந்த வீடியோவில் உள்ளவை):?\s*\n+)?(?:\d{1,2}:\d{2}(?::\d{2})?\s*[-–—:\s]\s*[^\n]+\n*)+/gi, '')
+        .trim();
+      const finalDescription = `${cleanDesc}\n\n${initialChapterBlock}\n`;
+
       return {
         ...parsed,
+        youtubeDescription: finalDescription,
         sections: enrichedSections,
         imagePool: shuffledPool,
         thumbnailImageUrl

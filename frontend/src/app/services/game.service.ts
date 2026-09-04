@@ -257,8 +257,22 @@ export class GameService {
   /**
    * Synthesize voiceover audio for YouTube script narration
    */
-  synthesizeNarratorAudio(text: string, voice?: string, rate?: string, pitch?: string): Observable<NarratorTTSResponse> {
-    return this.http.post<NarratorTTSResponse>(`${this.apiUrl}/narrator/tts`, { text, voice, rate, pitch });
+  synthesizeNarratorAudio(
+    text: string,
+    voice?: string,
+    rate?: string,
+    pitch?: string,
+    sections?: any[],
+    callToAction?: string
+  ): Observable<NarratorTTSResponse> {
+    return this.http.post<NarratorTTSResponse>(`${this.apiUrl}/narrator/tts`, {
+      text,
+      voice,
+      rate,
+      pitch,
+      sections,
+      callToAction
+    });
   }
 
   /**
@@ -330,11 +344,20 @@ export interface RegenerateSectionParams {
   language?: 'en' | 'ta';
 }
 
+export interface ChapterTimestamp {
+  id: string;
+  title: string;
+  startTime: number;
+  endTime: number;
+  duration: number;
+}
+
 export interface NarratorTTSResponse {
   audio: string;
   voice: string;
   rate: string;
   subtitles?: SubtitleSegment[];
+  chapters?: ChapterTimestamp[];
 }
 
 

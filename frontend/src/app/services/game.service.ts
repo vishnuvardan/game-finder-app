@@ -257,8 +257,8 @@ export class GameService {
   /**
    * Synthesize voiceover audio for YouTube script narration
    */
-  synthesizeNarratorAudio(text: string, voice?: string, rate?: string): Observable<NarratorTTSResponse> {
-    return this.http.post<NarratorTTSResponse>(`${this.apiUrl}/narrator/tts`, { text, voice, rate });
+  synthesizeNarratorAudio(text: string, voice?: string, rate?: string, pitch?: string): Observable<NarratorTTSResponse> {
+    return this.http.post<NarratorTTSResponse>(`${this.apiUrl}/narrator/tts`, { text, voice, rate, pitch });
   }
 
   /**

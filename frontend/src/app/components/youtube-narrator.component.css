@@ -655,15 +655,22 @@
 }
 
 .voice-controls-row {
-  display: grid;
-  grid-template-columns: 2fr 1.2fr auto;
-  gap: 1rem;
+  display: flex;
   align-items: flex-end;
+  gap: 1rem;
+}
+
+.voice-select-group {
+  flex: 1;
+}
+
+.voice-action-group {
+  flex-shrink: 0;
 }
 
 .generate-voice-btn {
-  padding: 10px 20px;
-  font-size: 0.9rem;
+  padding: 10px 22px;
+  font-size: 0.92rem;
   white-space: nowrap;
 }
 
@@ -1756,34 +1763,50 @@
 
 .modal-images-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 12px;
-  max-height: 400px;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px;
+  max-height: 460px;
   overflow-y: auto;
-  padding: 4px;
+  padding: 6px;
 }
 
 .modal-image-card {
   position: relative;
   aspect-ratio: 16 / 9;
-  border-radius: 8px;
+  border-radius: 10px;
   overflow: hidden;
-  border: 2px solid transparent;
+  border: 2px solid rgba(255, 255, 255, 0.08);
   cursor: pointer;
   transition: all 0.2s ease;
   background: #000000;
+  box-sizing: border-box;
 }
 
 .modal-image-card img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
 
 .modal-image-card:hover {
   border-color: #ff0033;
-  transform: scale(1.03);
-  box-shadow: 0 4px 16px rgba(255, 0, 51, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 0, 51, 0.4);
+}
+
+.modal-info-strip {
+  font-size: 0.82rem;
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 0.5rem;
+}
+
+.modal-info-strip strong {
+  color: #f1f5f9;
 }
 
 .image-select-overlay {
@@ -1792,19 +1815,215 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(255, 0, 51, 0.8);
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.94) 0%, rgba(0, 0, 0, 0.4) 55%, transparent 100%);
   display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #ffffff;
-  font-weight: 800;
-  font-size: 0.85rem;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 6px;
+  padding: 10px;
   opacity: 0;
   transition: opacity 0.2s ease;
+  box-sizing: border-box;
+  pointer-events: none;
 }
 
 .modal-image-card:hover .image-select-overlay {
   opacity: 1;
+  pointer-events: auto;
+}
+
+.btn-overlay-range {
+  width: 100%;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 0.76rem;
+  font-weight: 800;
+  border: none;
+  cursor: pointer;
+  background: linear-gradient(135deg, #ff0033 0%, #ff4d6d 100%);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(255, 0, 51, 0.45);
+  transition: all 0.15s ease;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.btn-overlay-range:hover {
+  filter: brightness(1.15);
+  transform: translateY(-1px);
+}
+
+.btn-overlay-sub-row {
+  display: flex;
+  gap: 6px;
+  width: 100%;
+}
+
+.btn-overlay-sub {
+  flex: 1;
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #f1f5f9;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.btn-overlay-sub:hover {
+  background: rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+}
+
+.modal-feedback-banner {
+  background: rgba(34, 197, 94, 0.16);
+  border: 1px solid rgba(34, 197, 94, 0.5);
+  color: #4ade80;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.86rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.modal-range-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(255, 0, 51, 0.35);
+  padding: 10px 14px;
+  border-radius: 10px;
+}
+
+.range-controls-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.range-title-icon {
+  font-size: 1.1rem;
+}
+
+.range-label {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 0.02em;
+}
+
+.range-inputs-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.range-sublabel {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.range-num-input {
+  width: 52px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  color: #ffffff;
+  padding: 3px 6px;
+  font-size: 0.85rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+.range-num-input:focus {
+  outline: none;
+  border-color: #ff0033;
+  box-shadow: 0 0 8px rgba(255, 0, 51, 0.4);
+}
+
+.range-arrow {
+  color: #ff4d6d;
+  font-size: 0.8rem;
+  font-weight: 900;
+}
+
+.range-badge {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #38bdf8;
+  margin-left: 4px;
+}
+
+.range-presets-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.presets-label {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.btn-range-preset {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #e2e8f0;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-range-preset:hover {
+  background: rgba(255, 0, 51, 0.25);
+  border-color: #ff0033;
+  color: #ffffff;
+}
+
+.btn-overlay-action.highlight {
+  background: linear-gradient(135deg, #ff0033 0%, #ff4d6d 100%);
+  color: #ffffff;
+  box-shadow: 0 2px 10px rgba(255, 0, 51, 0.5);
+  font-weight: 900;
+  font-size: 0.78rem;
+  padding: 8px 10px;
+}
+
+.btn-overlay-action.highlight:hover {
+  filter: brightness(1.15);
+  transform: translateY(-1px);
+}
+
+.modal-footer-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.modal-done-btn {
+  padding: 8px 24px;
+  font-size: 0.88rem;
 }
 
 /* ==================== RESPONSIVE BREAKPOINTS ==================== */
@@ -1826,7 +2045,12 @@
 
 @media (max-width: 640px) {
   .voice-controls-row {
-    grid-template-columns: 1fr;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .generate-voice-btn {
+    width: 100%;
   }
 
   .lang-selector-group {

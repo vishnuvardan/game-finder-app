@@ -118,7 +118,8 @@ export class YoutubeNarratorComponent implements OnInit, OnDestroy {
 
   // Audio Narration Signals
   protected readonly selectedVoice = signal<string>('en-US-ChristopherNeural');
-  protected readonly selectedRate = signal<string>('+0%');
+  protected readonly selectedRate = signal<string>('-10%');
+  protected readonly selectedPitch = signal<string>('-15Hz');
   protected readonly audioBase64 = signal<string | null>(null);
   protected readonly audioUrl = signal<string | null>(null);
   protected readonly audioBlob = signal<Blob | null>(null);
@@ -145,6 +146,38 @@ export class YoutubeNarratorComponent implements OnInit, OnDestroy {
   protected readonly sceneImageSearchQuery = signal<string>('');
   protected readonly sceneImageResults = signal<string[]>([]);
   protected readonly isSearchingSceneImages = signal<boolean>(false);
+  protected readonly brokenImages = new Set<string>();
+  protected readonly hasEmptyScenes = computed(() => {
+    return this.videoScenes().some(s => !s.imageUrl || s.imageUrl.trim() === '' || this.brokenImages.has(s.imageUrl));
+  });
+
+  // Scene Image Range Selection
+  protected readonly rangeStartScene = signal<number>(1);
+  protected readonly rangeEndScene = signal<number>(1);
+  protected readonly rangeFeedbackMessage = signal<string | null>(null);
+
+  protected getRangeSceneCount(): number {
+    const total = this.videoScenes().length;
+    if (total === 0) return 0;
+    const s = Math.max(1, Math.min(this.rangeStartScene(), total));
+    const e = Math.max(1, Math.min(this.rangeEndScene(), total));
+    return Math.abs(e - s) + 1;
+  }
+
+  protected setRangePreset(start: number, end: number) {
+    const total = this.videoScenes().length || 1;
+    this.rangeStartScene.set(Math.max(1, Math.min(start, total)));
+    this.rangeEndScene.set(Math.max(1, Math.min(end, total)));
+    this.rangeFeedbackMessage.set(null);
+  }
+
+  protected clampSceneNumber(val: any): number {
+    const total = this.videoScenes().length || 1;
+    const num = Number(val);
+    if (isNaN(num) || num < 1) return 1;
+    if (num > total) return total;
+    return Math.floor(num);
+  }
 
   // Copy Feedback Signals
   protected readonly isCopiedTitle = signal<boolean>(false);
@@ -170,18 +203,30 @@ export class YoutubeNarratorComponent implements OnInit, OnDestroy {
     { id: 'ta-IN-PallaviNeural', name: 'பல்லவி (Clear Female)', lang: 'ta', gender: 'Female' },
   ];
 
-  // All voices available in output dropdown (English and Tamil both)
-  protected readonly availableVoices = computed(() => {
-    return this.voicesList;
+  // Detect if current generated script is in Tamil
+  protected readonly isTamilScript = computed(() => {
+    if (this.language() === 'ta') return true;
+    const title = this.youtubeTitle() || '';
+    const script = this.fullScriptText() || '';
+    return /[\u0B80-\u0BFF]/.test(title + script);
   });
 
-  protected readonly englishVoices = computed(() => {
-    return this.voicesList.filter(v => v.lang === 'en');
+  // Only show the 2 voices matching the active script's language
+  protected readonly currentLanguageVoices = computed(() => {
+    const isTamil = this.isTamilScript();
+    return this.voicesList.filter(v => isTamil ? v.lang === 'ta' : v.lang === 'en');
   });
 
-  protected readonly tamilVoices = computed(() => {
-    return this.voicesList.filter(v => v.lang === 'ta');
-  });
+  protected onVoiceChange(voiceId: string) {
+    this.selectedVoice.set(voiceId);
+    if (voiceId === 'en-US-ChristopherNeural' || voiceId === 'ta-IN-ValluvarNeural') {
+      this.selectedPitch.set('-15Hz');
+      this.selectedRate.set('-10%');
+    } else {
+      this.selectedPitch.set('+0Hz');
+      this.selectedRate.set('+0%');
+    }
+  }
 
   // Current Thumbnail Image
   protected readonly currentThumbnailImage = computed(() => {
@@ -306,13 +351,16 @@ export class YoutubeNarratorComponent implements OnInit, OnDestroy {
         this.youtubeDescription.set(res.youtubeDescription);
         this.thumbnailHeadline.set(res.thumbnailHeadline || res.youtubeTitle);
 
-        if (this.language() === 'ta') {
+        const isTamil = this.language() === 'ta' || /[\u0B80-\u0BFF]/.test(res.youtubeTitle + (res.sections?.[0]?.content || ''));
+        if (isTamil) {
           this.thumbnailDescription.set('முழுமையான விளக்கம் & ரகசியங்கள்');
           this.selectedVoice.set('ta-IN-ValluvarNeural');
         } else {
           this.thumbnailDescription.set('The Complete Breakdown & Truth');
           this.selectedVoice.set('en-US-ChristopherNeural');
         }
+        this.selectedPitch.set('-15Hz');
+        this.selectedRate.set('-10%');
 
         this.sections.set(res.sections || []);
         this.callToAction.set(res.callToAction || '');
@@ -553,7 +601,7 @@ export class YoutubeNarratorComponent implements OnInit, OnDestroy {
     this.isAudioSynthesizing.set(true);
     this.errorMessage.set(null);
 
-    this.gameService.synthesizeNarratorAudio(text, this.selectedVoice(), this.selectedRate()).subscribe({
+    this.gameService.synthesizeNarratorAudio(text, this.selectedVoice(), this.selectedRate(), this.selectedPitch()).subscribe({
       next: async (res) => {
         this.audioBase64.set(res.audio);
         this.subtitles.set(res.subtitles || []);
@@ -785,33 +833,49 @@ export class YoutubeNarratorComponent implements OnInit, OnDestroy {
     this.activeEditingSceneIndex.set(index);
     this.sceneImageSearchQuery.set(scenes[index].imageQuery || this.topic());
 
-    // Immediately populate with all available preloaded images from the pool
-    const pool = this.imagePool();
-    if (pool.length > 0) {
-      this.sceneImageResults.set([...pool]);
-    } else {
-      this.sceneImageResults.set([]);
-      this.searchSceneImages();
-    }
+    const totalScenes = scenes.length;
+    const startNum = index + 1;
+    this.rangeStartScene.set(startNum);
+    this.rangeEndScene.set(Math.min(totalScenes, startNum + 9));
+    this.rangeFeedbackMessage.set(null);
+
+    // Gather all currently loaded images across pool and scenes with STRICT 0 API HITS
+    const rawList: (string | undefined)[] = [
+      ...this.imagePool(),
+      ...this.videoScenes().map(s => s.imageUrl),
+      ...this.sections().map(s => s.imageUrl)
+    ];
+    const allLoadedImages: string[] = Array.from(new Set(
+      rawList.filter((url): url is string => typeof url === 'string' && url.trim().length > 0 && !this.brokenImages.has(url))
+    ));
+
+    // Update imagePool to always retain all accumulated images
+    this.imagePool.set(allLoadedImages);
+    this.sceneImageResults.set(allLoadedImages);
     this.isSceneImageModalOpen.set(true);
   }
 
   protected closeSceneImagePicker() {
     this.isSceneImageModalOpen.set(false);
     this.activeEditingSceneIndex.set(null);
+    this.rangeFeedbackMessage.set(null);
   }
 
   /**
-   * Search Google Images via Serper for the scene
+   * Search Google Images via Serper for the scene and append results to the cumulative pool
    */
   protected searchSceneImages() {
     const q = this.sceneImageSearchQuery().trim();
     if (!q) return;
 
     this.isSearchingSceneImages.set(true);
-    this.gameService.fetchSceneImages(q, 12).subscribe({
+    this.gameService.fetchSceneImages(q, 15).subscribe({
       next: (res) => {
-        this.sceneImageResults.set(res.images || []);
+        const returned = (res.images || []).filter((u: string) => Boolean(u) && !this.brokenImages.has(u));
+        // Append newly searched images to cumulative pool at the top, avoiding duplicates
+        const updatedPool = Array.from(new Set([...returned, ...this.imagePool()]));
+        this.imagePool.set(updatedPool);
+        this.sceneImageResults.set(updatedPool);
         this.isSearchingSceneImages.set(false);
       },
       error: (err) => {
@@ -822,22 +886,83 @@ export class YoutubeNarratorComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Assign chosen Serper image to the active scene
+   * Assign chosen image to active scene, a range of scenes, all empty scenes, or all scenes
    */
-  protected selectSceneImage(imageUrl: string) {
+  protected selectSceneImage(imageUrl: string, mode: 'single' | 'range' | 'empty' | 'all' = 'single') {
     const idx = this.activeEditingSceneIndex();
-    if (idx === null) return;
+    const currentScenes = [...this.videoScenes()];
+    if (currentScenes.length === 0) return;
+    const totalScenes = currentScenes.length;
 
-    const updated = [...this.videoScenes()];
-    updated[idx] = {
-      ...updated[idx],
-      imageUrl
-    };
-    this.videoScenes.set(updated);
-    this.closeSceneImagePicker();
+    if (mode === 'all') {
+      const updated = currentScenes.map(scene => ({
+        ...scene,
+        imageUrl
+      }));
+      this.videoScenes.set(updated);
+      this.rangeFeedbackMessage.set(`✓ Applied image to ALL ${totalScenes} scenes!`);
+    } else if (mode === 'empty') {
+      let count = 0;
+      const updated = currentScenes.map((scene, i) => {
+        const isCurrent = (idx !== null && i === idx);
+        const isEmpty = !scene.imageUrl || scene.imageUrl.trim() === '' || this.brokenImages.has(scene.imageUrl);
+        if (isCurrent || isEmpty) {
+          count++;
+          return { ...scene, imageUrl };
+        }
+        return scene;
+      });
+      this.videoScenes.set(updated);
+      this.rangeFeedbackMessage.set(`✓ Applied image to ${count} empty scenes!`);
+    } else if (mode === 'range') {
+      const start = Math.max(1, Math.min(this.rangeStartScene(), this.rangeEndScene()));
+      const end = Math.min(totalScenes, Math.max(this.rangeStartScene(), this.rangeEndScene()));
+      const span = end - start + 1;
+
+      const updated = currentScenes.map((scene, i) => {
+        const sceneNum = i + 1;
+        if (sceneNum >= start && sceneNum <= end) {
+          return { ...scene, imageUrl };
+        }
+        return scene;
+      });
+      this.videoScenes.set(updated);
+      this.rangeFeedbackMessage.set(`✓ Applied image to Scenes ${start}–${end}!`);
+
+      // Auto-advance range to next block (e.g. 1-10 -> 11-20)
+      const nextStart = end + 1;
+      if (nextStart <= totalScenes) {
+        const nextEnd = Math.min(totalScenes, nextStart + span - 1);
+        this.rangeStartScene.set(nextStart);
+        this.rangeEndScene.set(nextEnd);
+      }
+    } else {
+      if (idx !== null && currentScenes[idx]) {
+        currentScenes[idx] = {
+          ...currentScenes[idx],
+          imageUrl
+        };
+        this.videoScenes.set(currentScenes);
+        this.closeSceneImagePicker();
+      }
+    }
+
+    // Retain this image in imagePool if not present
+    if (!this.imagePool().includes(imageUrl)) {
+      this.imagePool.set([imageUrl, ...this.imagePool()]);
+    }
 
     // Preload newly assigned image and redraw current frame
     this.preloadAndRenderInitialFrame();
+  }
+
+  /**
+   * Handle broken image error in UI cards
+   */
+  protected handleImageError(imageUrl: string) {
+    this.brokenImages.add(imageUrl);
+    this.sceneImageResults.set(this.sceneImageResults().filter(u => u !== imageUrl));
+    this.imagePool.set(this.imagePool().filter(u => u !== imageUrl));
   }
 
   /**

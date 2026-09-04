@@ -178,11 +178,28 @@ export class YoutubeVideoRecorderService {
     ctx.fillStyle = '#05070d';
     ctx.fillRect(0, 0, width, height);
 
-    // 3. Draw Full Canvas Background Image with Ken Burns
+    // 3. Draw Full Canvas Background Image with Ken Burns (with auto-fallback to any valid loaded image)
+    let img: HTMLImageElement | null = null;
     if (currentScene && currentScene.imageUrl && preloadedImages.has(currentScene.imageUrl)) {
-      const img = preloadedImages.get(currentScene.imageUrl)!;
-      const sceneDuration = Math.max(1, currentScene.duration);
-      const sceneProgress = Math.min(1, Math.max(0, (currentTime - currentScene.startTime) / sceneDuration));
+      const candidate = preloadedImages.get(currentScene.imageUrl)!;
+      if (candidate.complete && candidate.naturalWidth > 0) {
+        img = candidate;
+      }
+    }
+
+    // If current scene's image failed or was empty, fall back to any other valid loaded image
+    if (!img) {
+      for (const [_, validCandidate] of preloadedImages.entries()) {
+        if (validCandidate && validCandidate.complete && validCandidate.naturalWidth > 0) {
+          img = validCandidate;
+          break;
+        }
+      }
+    }
+
+    if (img) {
+      const sceneDuration = Math.max(1, currentScene?.duration || 10);
+      const sceneProgress = Math.min(1, Math.max(0, (currentTime - (currentScene?.startTime || 0)) / sceneDuration));
 
       // Ken Burns: scale 1.02 -> 1.15 smoothly with slight horizontal drift
       const scale = 1.02 + sceneProgress * 0.13;
@@ -192,7 +209,7 @@ export class YoutubeVideoRecorderService {
       this.drawImageAspectFill(ctx, img, width, height, scale, panX, panY);
 
       // 0.5s Smooth Crossfade Transition from previous scene
-      if (prevScene && prevScene.imageUrl && preloadedImages.has(prevScene.imageUrl) && (currentTime - currentScene.startTime) < 0.5) {
+      if (prevScene && prevScene.imageUrl && preloadedImages.has(prevScene.imageUrl) && currentScene && (currentTime - currentScene.startTime) < 0.5) {
         const fadeProgress = (currentTime - currentScene.startTime) / 0.5;
         const prevImg = preloadedImages.get(prevScene.imageUrl)!;
         if (prevImg.complete && prevImg.naturalWidth > 0) {

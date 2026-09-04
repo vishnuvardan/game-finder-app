@@ -249,9 +249,13 @@ router.get('/proxy-image', async (req: Request, res: Response) => {
     return res.status(403).json({ error: 'Local network access is restricted' });
   }
 
-  const requestHeaders = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-    'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8'
+  const requestHeaders: Record<string, string> = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+    'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+    'Referer': parsedUrl.origin,
+    'Sec-Fetch-Dest': 'image',
+    'Sec-Fetch-Mode': 'no-cors',
+    'Sec-Fetch-Site': 'cross-site'
   };
 
   try {
@@ -813,6 +817,73 @@ interface SubtitlePhrase {
 }
 
 /**
+ * Accurately parses the total duration in milliseconds from raw MPEG Layer III audio frames.
+ * Prevents subtitle drift when concatenating chunked TTS audio streams.
+ */
+function getMp3DurationMs(buffer: Buffer): number {
+  let offset = 0;
+  let totalDurationMs = 0;
+
+  // Skip ID3v2 tag if present at start
+  if (buffer.length > 10 && buffer.toString('utf8', 0, 3) === 'ID3') {
+    const size =
+      ((buffer[6] & 0x7f) << 21) |
+      ((buffer[7] & 0x7f) << 14) |
+      ((buffer[8] & 0x7f) << 7) |
+      (buffer[9] & 0x7f);
+    offset = 10 + size;
+  }
+
+  const sampleRates: { [key: number]: number[] } = {
+    0: [11025, 12000, 8000],  // MPEG 2.5
+    2: [22050, 24000, 16000], // MPEG 2
+    3: [44100, 48000, 32000]  // MPEG 1
+  };
+
+  const bitrates: { [key: number]: number[] } = {
+    // MPEG 1, Layer III (kbps)
+    1: [0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320],
+    // MPEG 2 & 2.5, Layer III (kbps)
+    2: [0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160]
+  };
+
+  while (offset < buffer.length - 4) {
+    if (buffer[offset] === 0xff && (buffer[offset + 1] & 0xe0) === 0xe0) {
+      const b1 = buffer[offset + 1];
+      const b2 = buffer[offset + 2];
+      const mpegVer = (b1 >> 3) & 3; // 0=2.5, 2=2, 3=1
+      const layer = (b1 >> 1) & 3;   // 1=Layer III
+      const bitrateIdx = (b2 >> 4) & 15;
+      const sampleRateIdx = (b2 >> 2) & 3;
+      const padding = (b2 >> 1) & 1;
+
+      if (layer === 1 && bitrateIdx > 0 && bitrateIdx < 15 && sampleRateIdx < 3 && sampleRates[mpegVer]) {
+        const sr = sampleRates[mpegVer][sampleRateIdx];
+        const brTable = mpegVer === 3 ? bitrates[1] : bitrates[2];
+        const brKbps = brTable ? brTable[bitrateIdx] : 0;
+        const br = brKbps * 1000;
+
+        if (sr && br) {
+          const samplesPerFrame = mpegVer === 3 ? 1152 : 576;
+          const frameLen = Math.floor((samplesPerFrame * (br / 8)) / sr) + padding;
+          totalDurationMs += (samplesPerFrame / sr) * 1000;
+          offset += frameLen;
+          continue;
+        }
+      }
+    }
+    offset++;
+  }
+
+  // Fallback if parsing failed: EdgeTTS uses 48kbps mono (6000 bytes/sec)
+  if (totalDurationMs <= 0 && buffer.length > 0) {
+    totalDurationMs = (buffer.length / 6000) * 1000;
+  }
+
+  return totalDurationMs;
+}
+
+/**
  * Builds frame-perfect, synchronized subtitle cards directly from EdgeTTS physical word timestamps.
  * Works seamlessly for all voices and languages (English, Tamil, British, etc.) with zero drift.
  */
@@ -835,38 +906,29 @@ function buildPreciseSubtitlesFromWords(words: WordSegment[]): SubtitlePhrase[] 
     const nextWord = words[i + 1];
     const hasLongPauseNext = nextWord ? ((nextWord.start - w.end) > 250) : true;
     
-    // Chunk criteria for readable TikTok/Shorts: 3-4 words max, punctuation mark, character length >= 22, or audio pause
+    // Chunk criteria: 3-4 words max, punctuation mark, character length >= 22, or audio pause
     const shouldBreak = currentChunk.length >= 4 || 
                         (currentChunk.length >= 2 && (isPunctuation || currentChars >= 22 || hasLongPauseNext)) || 
                         i === words.length - 1;
 
     if (shouldBreak) {
       const text = currentChunk.map(x => x.part.trim()).join(' ');
-      const start = currentChunk[0].start / 1000;
-      const end = currentChunk[currentChunk.length - 1].end / 1000;
+      const start = Math.max(0, currentChunk[0].start / 1000);
+      const end = Math.max(start + 0.1, currentChunk[currentChunk.length - 1].end / 1000);
       chunks.push({ text, start, end });
       currentChunk = [];
       currentChars = 0;
     }
   }
 
-  if (chunks.length > 0) {
-    chunks[0].start = 0.0;
-  }
-
-  // Smooth brief pauses (<= 0.4s) between subtitle cards so text displays continuously without flickering
+  // Smooth brief pauses (<= 0.25s) between subtitle cards so text displays continuously without flickering
   for (let i = 0; i < chunks.length - 1; i++) {
     const curr = chunks[i];
     const next = chunks[i + 1];
     const gap = next.start - curr.end;
-    if (gap > 0 && gap <= 0.4) {
+    if (gap > 0 && gap <= 0.25) {
       curr.end = next.start;
     }
-  }
-
-  // Extend last subtitle to the exact end of the synthesized speech
-  if (chunks.length > 0 && words.length > 0) {
-    chunks[chunks.length - 1].end = words[words.length - 1].end / 1000;
   }
 
   return chunks;
@@ -1044,7 +1106,7 @@ function splitTextIntoChunks(text: string, maxChunkLen: number = 700): string[] 
  * and extracts frame-accurate aligned subtitles.
  */
 router.post('/narrator/tts', async (req: Request, res: Response) => {
-  const { text, voice, rate } = req.body;
+  const { text, voice, rate, pitch } = req.body;
 
   if (!text || typeof text !== 'string' || text.trim() === '') {
     return res.status(400).json({ error: 'text must be a non-empty string' });
@@ -1052,7 +1114,14 @@ router.post('/narrator/tts', async (req: Request, res: Response) => {
 
   // Detect language or use chosen voice
   const chosenVoice = voice || (text.match(/[\u0B80-\u0BFF]/) ? 'ta-IN-ValluvarNeural' : 'en-US-ChristopherNeural');
-  const chosenRate = rate || '+0%'; // Default 1.0X speed
+  const isBassMaleVoice = (chosenVoice === 'en-US-ChristopherNeural' || chosenVoice === 'ta-IN-ValluvarNeural');
+  
+  // Rate defaults: -10% for deep bass male, +0% otherwise
+  const chosenRate = rate || (isBassMaleVoice ? '-10%' : '+0%');
+
+  // Pitch defaults: -15Hz for deep bass male, default (+0Hz) otherwise
+  const chosenPitch = pitch !== undefined && pitch !== '' ? pitch : (isBassMaleVoice ? '-15Hz' : 'default');
+
   const isTamilVoice = chosenVoice.startsWith('ta-');
   const langParts = chosenVoice.split('-');
   const lang = (langParts.length >= 2) ? `${langParts[0]}-${langParts[1]}` : (isTamilVoice ? 'ta-IN' : 'en-US');
@@ -1060,8 +1129,8 @@ router.post('/narrator/tts', async (req: Request, res: Response) => {
   const tempDir = os.tmpdir();
 
   try {
-    const chunks = splitTextIntoChunks(text, 700);
-    console.log(`[Narrator TTS] Synthesizing ${chunks.length} chunks for voice "${chosenVoice}"...`);
+    const chunks = splitTextIntoChunks(text, 1000);
+    console.log(`[Narrator TTS] Synthesizing ${chunks.length} chunks for voice "${chosenVoice}" (rate: "${chosenRate}", pitch: "${chosenPitch}")...`);
     const audioBuffers: Buffer[] = [];
     const allWords: WordSegment[] = [];
     let cumulativeTimeOffsetMs = 0;
@@ -1074,8 +1143,9 @@ router.post('/narrator/tts', async (req: Request, res: Response) => {
         voice: chosenVoice,
         lang,
         rate: chosenRate,
+        pitch: chosenPitch,
         saveSubtitles: true,
-        timeout: 45000
+        timeout: 60000
       });
 
       await tts.ttsPromise(chunk, chunkFile);
@@ -1083,6 +1153,9 @@ router.post('/narrator/tts', async (req: Request, res: Response) => {
       if (fs.existsSync(chunkFile)) {
         const buf = fs.readFileSync(chunkFile);
         audioBuffers.push(buf);
+
+        // Compute frame-accurate duration of this MP3 chunk to avoid any subtitle drift
+        const chunkAudioDurationMs = getMp3DurationMs(buf);
 
         // Parse word subtitles for this chunk
         const subFile = chunkFile + '.json';
@@ -1098,8 +1171,6 @@ router.post('/narrator/tts', async (req: Request, res: Response) => {
                   end: w.end + cumulativeTimeOffsetMs
                 });
               }
-              const lastWord = words[words.length - 1];
-              cumulativeTimeOffsetMs += lastWord.end;
             }
           } catch (subErr) {
             console.warn(`[Narrator TTS] Warning parsing subfile ${subFile}:`, subErr);
@@ -1107,6 +1178,9 @@ router.post('/narrator/tts', async (req: Request, res: Response) => {
             try { fs.unlinkSync(subFile); } catch (e) {}
           }
         }
+
+        // Advance timeline offset by the exact physical duration of the audio buffer
+        cumulativeTimeOffsetMs += chunkAudioDurationMs;
 
         try { fs.unlinkSync(chunkFile); } catch (e) {}
       }
@@ -1124,7 +1198,8 @@ router.post('/narrator/tts', async (req: Request, res: Response) => {
       audio: audioBase64,
       subtitles: alignedSubs,
       voice: chosenVoice,
-      rate: chosenRate
+      rate: chosenRate,
+      pitch: chosenPitch
     });
   } catch (error: any) {
     console.error('Narrator TTS generation error:', error);

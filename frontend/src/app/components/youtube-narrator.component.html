@@ -279,37 +279,18 @@
           </div>
         </div>
 
-        <!-- Controls Row: Voice Selector & Rate Selector -->
+        <!-- Controls Row: Language-Filtered Voice Selector & Generate Voice Button -->
         <div class="voice-controls-row">
           <div class="form-group-compact voice-select-group">
-            <label class="form-label-compact" for="voice-select">Narration Voice</label>
+            <label class="form-label-compact" for="voice-select">
+              {{ isTamilScript() ? '🎙️ பின்னணி குரல் (Tamil Voice)' : '🎙️ Narration Voice' }}
+            </label>
             <div class="select-wrapper">
               <select id="voice-select" class="select-input-compact" [ngModel]="selectedVoice()"
-                (ngModelChange)="selectedVoice.set($event)">
-                <optgroup label="🇺🇸 English Voices">
-                  @for (v of englishVoices(); track v.id) {
-                  <option [value]="v.id">{{ v.name }}</option>
-                  }
-                </optgroup>
-                <optgroup label="🇮🇳 Tamil Voices (தமிழ்)">
-                  @for (v of tamilVoices(); track v.id) {
-                  <option [value]="v.id">{{ v.name }}</option>
-                  }
-                </optgroup>
-              </select>
-            </div>
-          </div>
-
-          <div class="form-group-compact rate-select-group">
-            <label class="form-label-compact" for="rate-select">Speed Rate</label>
-            <div class="select-wrapper">
-              <select id="rate-select" class="select-input-compact" [ngModel]="selectedRate()"
-                (ngModelChange)="selectedRate.set($event)">
-                <option value="-10%">0.9x (Relaxed)</option>
-                <option value="+0%">1.0x (Standard Normal)</option>
-                <option value="+10%">1.1x (Paced)</option>
-                <option value="+20%">1.2x (Energetic)</option>
-                <option value="+30%">1.3x (Fast)</option>
+                (ngModelChange)="onVoiceChange($event)">
+                @for (v of currentLanguageVoices(); track v.id) {
+                <option [value]="v.id">{{ v.name }}</option>
+                }
               </select>
             </div>
           </div>
@@ -667,15 +648,72 @@
       </div>
       }
 
+      @if (rangeFeedbackMessage()) {
+      <div class="modal-feedback-banner">
+        <span>{{ rangeFeedbackMessage() }}</span>
+      </div>
+      }
+
+      <!-- Target Scene Range Toolbar -->
+      <div class="modal-range-toolbar">
+        <div class="range-controls-left">
+          <span class="range-title-icon">🎯</span>
+          <span class="range-label">Apply Range:</span>
+          
+          <div class="range-inputs-wrapper">
+            <span class="range-sublabel">From Scene</span>
+            <input type="number" min="1" [max]="videoScenes().length || 1" class="range-num-input"
+              [ngModel]="rangeStartScene()" (ngModelChange)="rangeStartScene.set(clampSceneNumber($event))" />
+            
+            <span class="range-arrow">➜</span>
+            
+            <span class="range-sublabel">To Scene</span>
+            <input type="number" min="1" [max]="videoScenes().length || 1" class="range-num-input"
+              [ngModel]="rangeEndScene()" (ngModelChange)="rangeEndScene.set(clampSceneNumber($event))" />
+            
+            <span class="range-badge">({{ getRangeSceneCount() }} scenes)</span>
+          </div>
+        </div>
+
+        <div class="range-presets-row">
+          <span class="presets-label">Presets:</span>
+          <button type="button" class="btn-range-preset" (click)="setRangePreset(1, 5)">1–5</button>
+          <button type="button" class="btn-range-preset" (click)="setRangePreset(1, 10)">1–10</button>
+          <button type="button" class="btn-range-preset" (click)="setRangePreset(11, 20)">11–20</button>
+          <button type="button" class="btn-range-preset" (click)="setRangePreset(1, videoScenes().length)">All (1–{{ videoScenes().length }})</button>
+        </div>
+      </div>
+
+      <div class="modal-info-strip">
+        <span>Loaded <strong>{{ sceneImageResults().length }}</strong> cumulative images (initial + searched). Click image or use buttons to apply to <strong>Scenes {{ rangeStartScene() }}–{{ rangeEndScene() }}</strong>:</span>
+      </div>
+
       <div class="modal-images-grid">
         @for (imgUrl of sceneImageResults(); track imgUrl) {
-        <div class="modal-image-card" (click)="selectSceneImage(imgUrl)">
-          <img [src]="imgUrl" alt="Serper search result" loading="lazy" />
+        <div class="modal-image-card" (click)="selectSceneImage(imgUrl, 'range')"
+          title="Click to apply to Scenes {{ rangeStartScene() }}–{{ rangeEndScene() }}">
+          <img [src]="imgUrl" alt="Scene image" loading="lazy" (error)="handleImageError(imgUrl)" />
           <div class="image-select-overlay">
-            <span>✓ Select Image</span>
+            <button type="button" class="btn-overlay-range" (click)="selectSceneImage(imgUrl, 'range'); $event.stopPropagation()">
+              🎯 Apply Scenes {{ rangeStartScene() }}–{{ rangeEndScene() }}
+            </button>
+            <div class="btn-overlay-sub-row">
+              <button type="button" class="btn-overlay-sub" (click)="selectSceneImage(imgUrl, 'single'); $event.stopPropagation()">
+                Scene {{ (activeEditingSceneIndex() ?? 0) + 1 }} Only
+              </button>
+              <button type="button" class="btn-overlay-sub" (click)="selectSceneImage(imgUrl, 'all'); $event.stopPropagation()">
+                All Scenes
+              </button>
+            </div>
           </div>
         </div>
         }
+      </div>
+
+      <div class="modal-footer-row">
+        <button type="button" class="glow-btn-secondary modal-done-btn" (click)="closeSceneImagePicker()">
+          <span>✓ Done / Close Window</span>
+        </button>
       </div>
     </div>
   </div>

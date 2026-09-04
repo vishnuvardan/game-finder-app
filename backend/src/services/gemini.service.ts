@@ -626,9 +626,14 @@ class GeminiService {
     }
 
     try {
-      // Clean query and append optimal quality keywords for gaming/visuals
-      const cleanQuery = query.replace(/[^\w\s-]/g, ' ').trim();
-      const searchQuery = `${cleanQuery} gaming 4k wallpaper`;
+      // Clean query preserving Unicode letters and numbers across languages (English, Tamil, etc.)
+      const cleanQuery = query.replace(/[^\p{L}\p{N}\s-]/gu, ' ').replace(/\s+/g, ' ').trim();
+      // Extract concise keywords (first 7 words max) to avoid sending whole paragraph prompts to Google Images
+      const words = cleanQuery.split(' ').filter(w => w.length > 1);
+      const conciseQuery = words.slice(0, 7).join(' ') || cleanQuery;
+
+      const isGaming = /game|gaming|esports|steam|rpg|fps|playstation|xbox/i.test(query);
+      const searchQuery = isGaming ? `${conciseQuery} gaming 4k wallpaper` : `${conciseQuery} high resolution hd`;
       console.log(`[Serper API] Querying Google Images for: "${searchQuery}" (count: ${count})...`);
 
       const response = await axios.post(

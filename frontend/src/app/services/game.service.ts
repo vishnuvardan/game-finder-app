@@ -298,7 +298,7 @@ export interface VideoScene {
   duration: number;
   bulletPoints: string[];
   imageQuery: string;
-  imageUrl: string;
+  imageUrl?: string;
   imagePool?: string[];
   visualCue?: string;
   mediaType?: 'image' | 'video';

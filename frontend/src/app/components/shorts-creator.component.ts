@@ -179,9 +179,9 @@ export class ShortsCreatorComponent implements OnInit, OnDestroy {
       this.shortsTitle.set(result.title);
       this.shortsScript.set(result.script);
 
-      // Fixed voice parameters: -20Hz pitch for Deep Bass Male, +30% rate for energetic shorts pace
+      // Fixed voice parameters: -15Hz pitch for Deep Bass Male, +30% rate for energetic shorts pace
       const isBassMale = (this.voiceSelection() === 'en-US-ChristopherNeural' || this.voiceSelection() === 'ta-IN-ValluvarNeural');
-      const pitch = isBassMale ? '-20Hz' : 'default';
+      const pitch = isBassMale ? '-15Hz' : 'default';
       const rate = '+30%';
 
       // Fetch TTS Audio from backend proxy using chosen neural voice and inputting Gemini subtitles

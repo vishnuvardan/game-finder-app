@@ -708,7 +708,8 @@ export class YoutubeNarratorComponent implements OnInit, OnDestroy {
       const sceneStart = currentStart;
       const sceneEnd = (i === secs.length - 1) ? totalDuration : Math.min(totalDuration, sceneStart + secDuration);
       const poolIdx = i % (pool.length || 1);
-      const sceneImg = sec.imageUrl || (pool.length > 0 ? pool[poolIdx] : this.currentThumbnailImage());
+      const isVideo = sec.mediaType === 'video' && !!sec.videoUrl;
+      const sceneImg = isVideo ? undefined : (sec.imageUrl || (pool.length > 0 ? pool[poolIdx] : this.currentThumbnailImage()));
 
       scenes.push({
         id: `scene_${i}`,
@@ -723,6 +724,12 @@ export class YoutubeNarratorComponent implements OnInit, OnDestroy {
           'Core community takeaways'
         ],
         imageQuery: sec.title,
+        mediaType: isVideo ? 'video' : 'image',
+        videoUrl: isVideo ? sec.videoUrl : undefined,
+        videoFileName: isVideo ? sec.videoFileName : undefined,
+        videoStartOffset: isVideo ? sec.videoStartOffset : undefined,
+        videoDuration: isVideo ? sec.videoDuration : undefined,
+        videoVolume: isVideo ? (sec.videoVolume ?? this.videoVolume()) : undefined,
         imageUrl: sceneImg,
         imagePool: pool,
         visualCue: sec.visualCue
@@ -761,7 +768,8 @@ export class YoutubeNarratorComponent implements OnInit, OnDestroy {
       };
 
       const poolIdx = i % (pool.length || 1);
-      const sceneImg = sec.imageUrl || (pool.length > 0 ? pool[poolIdx] : this.currentThumbnailImage());
+      const isVideo = sec.mediaType === 'video' && !!sec.videoUrl;
+      const sceneImg = isVideo ? undefined : (sec.imageUrl || (pool.length > 0 ? pool[poolIdx] : this.currentThumbnailImage()));
 
       scenes.push({
         id: `scene_${i}`,
@@ -776,6 +784,12 @@ export class YoutubeNarratorComponent implements OnInit, OnDestroy {
           'Core community takeaways'
         ],
         imageQuery: ch.title || sec.title,
+        mediaType: isVideo ? 'video' : 'image',
+        videoUrl: isVideo ? sec.videoUrl : undefined,
+        videoFileName: isVideo ? sec.videoFileName : undefined,
+        videoStartOffset: isVideo ? sec.videoStartOffset : undefined,
+        videoDuration: isVideo ? sec.videoDuration : undefined,
+        videoVolume: isVideo ? (sec.videoVolume ?? this.videoVolume()) : undefined,
         imageUrl: sceneImg,
         imagePool: pool,
         visualCue: sec.visualCue
@@ -907,7 +921,7 @@ export class YoutubeNarratorComponent implements OnInit, OnDestroy {
 
       if (activeScene?.mediaType === 'video' && activeScene.videoElement) {
         const vid = activeScene.videoElement;
-        const vol = activeScene.videoVolume !== undefined ? activeScene.videoVolume : 0.3;
+        const vol = activeScene.videoVolume !== undefined ? activeScene.videoVolume : this.videoVolume();
         vid.volume = vol;
         vid.muted = (vol === 0);
         const vidDur = vid.duration || activeScene.videoDuration || 0;
@@ -924,6 +938,22 @@ export class YoutubeNarratorComponent implements OnInit, OnDestroy {
         }
         if (Math.abs(vid.currentTime - targetVideoTime) > 0.15) {
           vid.currentTime = targetVideoTime;
+        }
+      }
+
+      // Pre-warm the next scene if it is a video (within 1s of chapter boundary)
+      const activeIdx = activeScene ? scenes.indexOf(activeScene) : -1;
+      if (activeIdx >= 0 && activeIdx < scenes.length - 1) {
+        const nextScene = scenes[activeIdx + 1];
+        if (nextScene?.mediaType === 'video' && nextScene.videoElement) {
+          const timeUntilNext = nextScene.startTime - t;
+          if (timeUntilNext > 0 && timeUntilNext <= 1.0) {
+            const nextVid = nextScene.videoElement;
+            const startOffset = nextScene.videoStartOffset || 0;
+            if (nextVid.paused && Math.abs(nextVid.currentTime - startOffset) > 0.1) {
+              nextVid.currentTime = startOffset;
+            }
+          }
         }
       }
 
@@ -1152,16 +1182,48 @@ export class YoutubeNarratorComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * Master Background Video Audio Volume Control (located directly below preview video window)
+   * Controls volume for all background videos across preview playback and export.
+   */
+  protected onGlobalVideoVolumeSlider(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const val = Math.max(0, Math.min(1, Number(input.value) || 0));
+    const rounded = Math.round(val * 100) / 100;
+    this.videoVolume.set(rounded);
+
+    if (this.trimmerPreviewRef?.nativeElement) {
+      this.trimmerPreviewRef.nativeElement.volume = rounded;
+      this.trimmerPreviewRef.nativeElement.muted = (rounded === 0);
+    }
+
+    // Apply immediately to all scenes with video
+    const updatedScenes = this.videoScenes().map(scene => {
+      if (scene.mediaType === 'video') {
+        if (scene.videoElement) {
+          scene.videoElement.volume = rounded;
+          scene.videoElement.muted = (rounded === 0);
+        }
+        return { ...scene, videoVolume: rounded };
+      }
+      return scene;
+    });
+    this.videoScenes.set(updatedScenes);
+
+    // Sync to sections
+    const updatedSecs = this.sections().map(sec => {
+      if (sec.mediaType === 'video') {
+        return { ...sec, videoVolume: rounded };
+      }
+      return sec;
+    });
+    this.sections.set(updatedSecs);
+  }
+
+  /**
    * Updates background audio volume for the selected video
    */
   protected onVideoVolumeSlider(event: Event) {
-    const input = event.target as HTMLInputElement;
-    const val = Math.max(0, Math.min(1, Number(input.value) || 0));
-    this.videoVolume.set(Math.round(val * 100) / 100);
-    if (this.trimmerPreviewRef?.nativeElement) {
-      this.trimmerPreviewRef.nativeElement.volume = val;
-      this.trimmerPreviewRef.nativeElement.muted = (val === 0);
-    }
+    this.onGlobalVideoVolumeSlider(event);
   }
 
   /**
@@ -1190,6 +1252,7 @@ export class YoutubeNarratorComponent implements OnInit, OnDestroy {
     scenes[idx] = {
       ...scene,
       mediaType: 'video',
+      imageUrl: undefined,
       videoUrl: url,
       videoFileName: this.uploadedVideoFileName(),
       videoStartOffset: this.videoStartOffset(),
@@ -1205,6 +1268,7 @@ export class YoutubeNarratorComponent implements OnInit, OnDestroy {
       secs[idx] = {
         ...secs[idx],
         mediaType: 'video',
+        imageUrl: undefined,
         videoUrl: url,
         videoFileName: this.uploadedVideoFileName(),
         videoStartOffset: this.videoStartOffset(),
@@ -1214,7 +1278,7 @@ export class YoutubeNarratorComponent implements OnInit, OnDestroy {
       this.sections.set(secs);
     }
 
-    this.rangeFeedbackMessage.set(`✓ Applied video "${this.uploadedVideoFileName()}" with volume ${Math.round(vol * 100)}% to Chapter ${idx + 1}!`);
+    this.rangeFeedbackMessage.set(`✓ Applied video "${this.uploadedVideoFileName()}" to Chapter ${idx + 1}!`);
     setTimeout(() => {
       this.closeSceneImagePicker();
       this.preloadAndRenderInitialFrame();
@@ -1234,9 +1298,13 @@ export class YoutubeNarratorComponent implements OnInit, OnDestroy {
       scenes[idx].videoElement!.pause();
     }
 
+    const pool = this.imagePool();
+    const fallbackImage = (pool.length > 0) ? pool[idx % pool.length] : this.currentThumbnailImage();
+
     scenes[idx] = {
       ...scenes[idx],
       mediaType: 'image',
+      imageUrl: fallbackImage,
       videoUrl: undefined,
       videoFileName: undefined,
       videoStartOffset: undefined,
@@ -1251,6 +1319,7 @@ export class YoutubeNarratorComponent implements OnInit, OnDestroy {
       secs[idx] = {
         ...secs[idx],
         mediaType: 'image',
+        imageUrl: fallbackImage,
         videoUrl: undefined,
         videoFileName: undefined,
         videoStartOffset: undefined,
@@ -1263,7 +1332,6 @@ export class YoutubeNarratorComponent implements OnInit, OnDestroy {
     this.uploadedVideoUrl.set(null);
     this.uploadedVideoFile.set(null);
     this.uploadedVideoFileName.set('');
-    this.videoVolume.set(0.3);
     this.activeAssetTab.set('images');
     this.rangeFeedbackMessage.set(`✓ Reverted Chapter ${idx + 1} to Image.`);
     this.preloadAndRenderInitialFrame();
@@ -1440,7 +1508,7 @@ export class YoutubeNarratorComponent implements OnInit, OnDestroy {
     if (pool.length <= 1) return;
 
     const currentImg = scenes[index].imageUrl;
-    const currentPoolIdx = pool.indexOf(currentImg);
+    const currentPoolIdx = currentImg ? pool.indexOf(currentImg) : -1;
     const nextIdx = (currentPoolIdx + 1) % pool.length;
     scenes[index] = {
       ...scenes[index],

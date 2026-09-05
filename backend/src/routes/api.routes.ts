@@ -967,8 +967,8 @@ router.post('/shorts/proxy-tts', async (req: Request, res: Response) => {
     rate = `+${rate}`;
   }
 
-  // Pitch: -20Hz for deep bass male (Christopher / Valluvar), default for female / others
-  const pitch = requestedPitch !== undefined && requestedPitch !== '' ? requestedPitch : (isBassMaleVoice ? '-20Hz' : 'default');
+  // Pitch: -15Hz for deep bass male (Christopher / Valluvar), default for female / others
+  const pitch = requestedPitch !== undefined && requestedPitch !== '' ? requestedPitch : (isBassMaleVoice ? '-15Hz' : 'default');
 
   // Dynamically determine exact regional language code from voice prefix (e.g. 'en-US', 'en-GB', 'ta-IN', 'ta-LK')
   const langParts = voice.split('-');

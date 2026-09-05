@@ -424,6 +424,25 @@
           </div>
         </div>
 
+        <!-- Master Background Video Volume Slider (Directly below Preview Video Window) -->
+        <div class="preview-video-volume-bar">
+          <div class="volume-bar-header">
+            <div class="volume-title-group">
+              <span class="volume-icon">🔊</span>
+              <span class="volume-title">Background Video Audio Volume:</span>
+              <span class="volume-hint-tag">Controls all video chapters in preview & export</span>
+            </div>
+            <span class="volume-percentage-pill">{{ Math.round(videoVolume() * 100) }}%</span>
+          </div>
+
+          <div class="volume-slider-row">
+            <span class="volume-bound-label">0% (Muted)</span>
+            <input type="range" class="timeline-scrubber volume-master-slider" min="0" max="1"
+              step="0.05" [value]="videoVolume()" (input)="onGlobalVideoVolumeSlider($event)" />
+            <span class="volume-bound-label">100% (Max)</span>
+          </div>
+        </div>
+
         <!-- Scene Timeline Carousel & Visual Swapper -->
         <div class="scenes-timeline-section">
           <div class="scenes-timeline-header">
@@ -811,23 +830,6 @@
             <span>🔁 <strong>Seamless Auto-Loop:</strong> Video ({{ formatTimestamp(uploadedVideoDuration()) }}) is shorter than chapter ({{ getActiveSceneDuration() }}s). It will loop continuously to fill the chapter duration.</span>
           </div>
           }
-
-          <!-- Video Audio Volume Slider -->
-          <div class="trimmer-volume-wrapper">
-            <div class="slider-labels-row">
-              <span>🔊 Video Background Audio Volume:</span>
-              <span class="slider-pos-pill volume-pill">{{ Math.round(videoVolume() * 100) }}%</span>
-            </div>
-
-            <input type="range" class="timeline-scrubber video-range-slider volume-range-slider" min="0" max="1"
-              step="0.05" [value]="videoVolume()" (input)="onVideoVolumeSlider($event)" />
-
-            <div class="slider-bounds-row">
-              <span>0% (Mute)</span>
-              <span>Default (30%)</span>
-              <span>100% (Max)</span>
-            </div>
-          </div>
 
           <div class="video-actions-row">
             @if (isCurrentSceneVideo()) {

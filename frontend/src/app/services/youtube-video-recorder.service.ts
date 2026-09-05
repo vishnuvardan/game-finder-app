@@ -16,7 +16,7 @@ export class YoutubeVideoRecorderService {
     proxyUrlFn: (url: string) => string
   ): Promise<Map<string, HTMLImageElement>> {
     const imageMap = new Map<string, HTMLImageElement>();
-    const uniqueUrls = Array.from(new Set(scenes.map(s => s.imageUrl).filter(Boolean)));
+    const uniqueUrls = Array.from(new Set(scenes.map(s => s.imageUrl).filter((u): u is string => !!u)));
 
     const promises = uniqueUrls.map(async (url) => {
       try {
@@ -221,23 +221,37 @@ export class YoutubeVideoRecorderService {
     ctx.fillRect(0, 0, width, height);
 
     // 3. Draw Full Canvas Background Media (Local Video or Image with Ken Burns)
-    if (currentScene?.mediaType === 'video' && currentScene.videoElement && currentScene.videoElement.readyState >= 2) {
+    if (currentScene?.mediaType === 'video') {
       const vid = currentScene.videoElement;
-      const vidDur = vid.duration || currentScene.videoDuration || 0;
-      const elapsedInScene = Math.max(0, currentTime - currentScene.startTime);
-      let targetTime = (currentScene.videoStartOffset || 0) + elapsedInScene;
+      if (vid && (vid.readyState >= 2 || (vid.videoWidth > 0 && !vid.seeking))) {
+        const vidDur = vid.duration || currentScene.videoDuration || 0;
+        const elapsedInScene = Math.max(0, currentTime - currentScene.startTime);
+        let targetTime = (currentScene.videoStartOffset || 0) + elapsedInScene;
 
-      // When video is shorter than chapter duration, loop seamlessly
-      if (vidDur > 0) {
-        targetTime = targetTime % vidDur;
+        // When video is shorter than chapter duration, loop seamlessly
+        if (vidDur > 0) {
+          targetTime = targetTime % vidDur;
+        }
+
+        // Keep video frame synchronized with audio preview/render timeline
+        if (Math.abs(vid.currentTime - targetTime) > 0.15) {
+          vid.currentTime = targetTime;
+        }
+
+        this.drawMediaAspectFill(ctx, vid, width, height, 1.0, 0, 0);
+      } else if (vid && vid.videoWidth > 0) {
+        // Video is decoding or seeking, but has decoded frame - draw it to avoid black flash
+        this.drawMediaAspectFill(ctx, vid, width, height, 1.0, 0, 0);
+      } else if (prevScene?.mediaType === 'video' && prevScene.videoElement && prevScene.videoElement.videoWidth > 0) {
+        // Hold previous video frame seamlessly until new chapter video decodes
+        this.drawMediaAspectFill(ctx, prevScene.videoElement, width, height, 1.0, 0, 0);
+      } else if (prevScene && prevScene.imageUrl && preloadedImages.has(prevScene.imageUrl)) {
+        // Hold previous image scene seamlessly until video decodes
+        const prevImg = preloadedImages.get(prevScene.imageUrl)!;
+        if (prevImg.complete && prevImg.naturalWidth > 0) {
+          this.drawMediaAspectFill(ctx, prevImg, width, height, 1.15, 25, 15);
+        }
       }
-
-      // Keep video frame synchronized with audio preview/render timeline
-      if (Math.abs(vid.currentTime - targetTime) > 0.08) {
-        vid.currentTime = targetTime;
-      }
-
-      this.drawMediaAspectFill(ctx, vid, width, height, 1.0, 0, 0);
     } else {
       let img: HTMLImageElement | null = null;
       if (currentScene && currentScene.imageUrl && preloadedImages.has(currentScene.imageUrl)) {

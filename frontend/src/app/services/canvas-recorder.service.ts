@@ -10,7 +10,17 @@ export interface SubtitleSegment {
   providedIn: 'root'
 })
 export class CanvasRecorderService {
+  private sharedAudioCtx: AudioContext | null = null;
+
   constructor() {}
+
+  private getAudioContext(): AudioContext {
+    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+    if (!this.sharedAudioCtx || this.sharedAudioCtx.state === 'closed') {
+      this.sharedAudioCtx = new AudioContextClass();
+    }
+    return this.sharedAudioCtx;
+  }
 
   /**
    * Helper to draw text with word wrap.
@@ -64,11 +74,14 @@ export class CanvasRecorderService {
     duration: number,
     gameVolume: number,
     videoZoom: number = 0,
-    fps: number = 60,
+    quality: 'standard' | 'high' = 'standard',
     onProgress: (progress: number) => void
   ): Promise<Blob> {
     return new Promise(async (resolve, reject) => {
       try {
+        const isHighQuality = quality === 'high';
+        const targetFps = isHighQuality ? 60 : 30;
+
         // 1. Create offscreen canvas
         const canvas = document.createElement('canvas');
         canvas.width = 1080;
@@ -78,29 +91,37 @@ export class CanvasRecorderService {
           throw new Error('Could not get 2D context for export canvas');
         }
         ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = 'high';
+        ctx.imageSmoothingQuality = isHighQuality ? 'high' : 'medium';
 
         // 2. Initialize AudioContext for mixing
-        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-        const audioCtx = new AudioContextClass();
+        const audioCtx = this.getAudioContext();
         if (audioCtx.state === 'suspended') {
           await audioCtx.resume();
         }
         const dest = audioCtx.createMediaStreamDestination();
 
         // 3. Connect video audio
-        let videoSource: MediaElementAudioSourceNode;
-        try {
-          videoSource = audioCtx.createMediaElementSource(videoEl);
-        } catch (e) {
-          console.warn('Video element audio source already connected', e);
-          throw new Error('Video audio source connection failed. Please reload the video file.');
+        let videoSource: MediaElementAudioSourceNode | null = (videoEl as any)._audioSourceNode || null;
+        if (!videoSource || (videoEl as any)._audioCtx !== audioCtx) {
+          try {
+            videoSource = audioCtx.createMediaElementSource(videoEl);
+            (videoEl as any)._audioSourceNode = videoSource;
+            (videoEl as any)._audioCtx = audioCtx;
+          } catch (e) {
+            console.warn('[CanvasRecorder] createMediaElementSource notice:', e);
+          }
         }
         
         const videoGain = audioCtx.createGain();
         videoGain.gain.value = gameVolume; // Duck background audio to user selected level
-        videoSource.connect(videoGain);
-        videoGain.connect(dest);
+        if (videoSource) {
+          try {
+            videoSource.connect(videoGain);
+            videoGain.connect(dest);
+          } catch (e) {
+            console.warn('[CanvasRecorder] videoSource connect error:', e);
+          }
+        }
 
         // 4. Decode TTS audio blob
         const ttsArrayBuffer = await ttsAudioBlob.arrayBuffer();
@@ -117,7 +138,6 @@ export class CanvasRecorderService {
         ttsGain.connect(dest);
 
         // 5. Combine Canvas Video Track (configured FPS) and Audio Destination Track
-        const targetFps = fps > 0 ? fps : 60;
         const canvasStream = canvas.captureStream(targetFps);
         const audioTracks = dest.stream.getAudioTracks();
         const combinedStream = new MediaStream([
@@ -135,13 +155,14 @@ export class CanvasRecorderService {
           mimeType = 'video/webm';
         }
 
-        // Higher bitrate for 60 FPS (14 Mbps) vs 30 FPS (8.5 Mbps) for crisp high-action gameplay
-        const videoBitrate = targetFps >= 60 ? 14000000 : 8500000;
-        console.log(`Starting export at ${targetFps} FPS using MIME type: ${mimeType} with bitrate: ${videoBitrate / 1000000} Mbps`);
+        // Standard Quality: 4.0 Mbps @ 30 FPS (rock-solid on mobile browsers without OOM/buffer crash)
+        // High Quality: 14.0 Mbps @ 60 FPS (ultra-smooth for desktop GPUs)
+        const videoBitrate = isHighQuality ? 14000000 : 4000000;
+        console.log(`Starting export [${quality.toUpperCase()} QUALITY] at ${targetFps} FPS using MIME type: ${mimeType} with bitrate: ${videoBitrate / 1000000} Mbps`);
         const mediaRecorder = new MediaRecorder(combinedStream, {
           mimeType,
           videoBitsPerSecond: videoBitrate,
-          audioBitsPerSecond: 128000   // 128 kbps for high-quality audio
+          audioBitsPerSecond: 128000
         });
         const chunks: Blob[] = [];
 
@@ -165,31 +186,28 @@ export class CanvasRecorderService {
           try {
             ttsSource.disconnect();
             ttsGain.disconnect();
-            videoSource.disconnect();
+            if (videoSource) {
+              try { videoSource.disconnect(videoGain); } catch (e) {}
+            }
             videoGain.disconnect();
-            audioCtx.close();
           } catch (e) {
             console.error('Clean up error:', e);
+          }
+
+          // Restore video element settings for preview
+          videoEl.volume = gameVolume;
+          videoEl.muted = (gameVolume === 0);
+
+          if (!videoEl.paused) {
+            try { videoEl.pause(); } catch (e) {}
           }
 
           const finalBlob = new Blob(chunks, { type: mimeType });
           resolve(finalBlob);
         };
 
-        // 7. Render Loop
-        const drawFrame = () => {
-          if (!isRecording) return;
-
-          const elapsed = audioCtx.currentTime - audioStartTime;
-          const progress = Math.min(100, Math.max(0, (elapsed / duration) * 100));
-          onProgress(progress);
-
-          // Sync video element time to audio track clock if it drifts by > 0.5s
-          const expectedVideoTime = videoEl.duration ? (startTime + elapsed) % videoEl.duration : (startTime + elapsed);
-          if (Math.abs(videoEl.currentTime - expectedVideoTime) > 0.5) {
-            videoEl.currentTime = expectedVideoTime;
-          }
-
+        // 7. Single-frame renderer
+        const renderSingleFrame = (elapsed: number) => {
           // Render Black Background
           ctx.fillStyle = '#000000';
           ctx.fillRect(0, 0, 1080, 1920);
@@ -243,6 +261,63 @@ export class CanvasRecorderService {
             const subCenterY = 1480;
             this.wrapAndDrawText(ctx, activeSub.text.toUpperCase(), 540, subCenterY, 980, 78);
           }
+        };
+
+        // 8. Start Playback and Recording in lockstep
+        videoEl.loop = true; // Ensure video looping is enabled during export
+        // Keep video unmuted so createMediaElementSource receives audio signal
+        videoEl.muted = (gameVolume === 0);
+        videoEl.volume = 1.0;
+
+        // Ensure video is at startTime and has loaded frame data before starting recording
+        await new Promise<void>((res) => {
+          if (Math.abs(videoEl.currentTime - startTime) < 0.05 && videoEl.readyState >= 2) {
+            res();
+            return;
+          }
+          let resolved = false;
+          const done = () => {
+            if (resolved) return;
+            resolved = true;
+            videoEl.removeEventListener('seeked', done);
+            res();
+          };
+          videoEl.addEventListener('seeked', done);
+          videoEl.currentTime = startTime;
+          setTimeout(done, 1500); // Safety fallback in case seeked already completed
+        });
+
+        // Pre-paint initial frame to canvas so MediaRecorder has a valid frame from millisecond 0
+        renderSingleFrame(0);
+
+        // Start video playback and confirm decoder is running
+        try {
+          await videoEl.play();
+        } catch (e: any) {
+          throw new Error('Failed to start video playback during export: ' + e.message);
+        }
+
+        // Brief warm-up (60ms) to allow GPU video decoder to begin frame delivery smoothly
+        await new Promise((r) => setTimeout(r, 60));
+
+        // Start synchronized recording and audio
+        audioStartTime = audioCtx.currentTime;
+        mediaRecorder.start();
+        ttsSource.start(0);
+
+        const drawFrame = () => {
+          if (!isRecording) return;
+
+          const elapsed = audioCtx.currentTime - audioStartTime;
+          const progress = Math.min(100, Math.max(0, (elapsed / duration) * 100));
+          onProgress(progress);
+
+          // If video element somehow paused during export, keep it playing
+          if (videoEl.paused) {
+            videoEl.play().catch(() => {});
+          }
+
+          renderSingleFrame(elapsed);
 
           // Check if finished
           if (elapsed >= duration) {
@@ -253,30 +328,7 @@ export class CanvasRecorderService {
           animationFrameId = requestAnimationFrame(drawFrame);
         };
 
-        // 8. Start Playback in sync
-        videoEl.loop = true; // Ensure video looping is enabled during export
-        videoEl.muted = true;
-        videoEl.currentTime = startTime;
-        
-        const onSeeked = () => {
-          videoEl.removeEventListener('seeked', onSeeked);
-          
-          mediaRecorder.start();
-          videoEl.play().then(() => {
-            audioStartTime = audioCtx.currentTime;
-            ttsSource.start(0);
-            drawFrame();
-          }).catch(err => {
-            mediaRecorder.stop();
-            reject(new Error('Failed to start video playback during export: ' + err.message));
-          });
-        };
-
-        videoEl.addEventListener('seeked', onSeeked);
-        
-        if (Math.abs(videoEl.currentTime - startTime) < 0.05) {
-          onSeeked();
-        }
+        drawFrame();
 
       } catch (error: any) {
         reject(error);

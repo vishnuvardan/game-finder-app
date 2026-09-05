@@ -525,67 +525,80 @@
   font-weight: 600;
 }
 
-.timeline-scrubber {
-  height: 24px;
-  background: rgba(15, 23, 42, 0.8);
-  border-radius: 6px;
-  position: relative;
-  cursor: pointer;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  overflow: hidden;
+.timeline-slider-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.timeline-window {
-  position: absolute;
+.timeline-range-slider {
+  width: 100%;
+  height: 8px;
+  accent-color: #00f2fe;
+  background: rgba(15, 23, 42, 0.8);
+  border-radius: 6px;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.timeline-range-slider:hover {
+  filter: brightness(1.15);
+}
+
+.timeline-bounds-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.76rem;
+  color: #64748b;
+  font-family: monospace;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.active-slice-pill {
+  color: #00f2fe;
+  font-weight: 700;
+  background: rgba(0, 242, 254, 0.12);
+  border: 1px solid rgba(0, 242, 254, 0.3);
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+}
+
+/* Export loading screen overlay (floats on top while studio-step remains actively decoding underneath) */
+.step-card.render-step {
+  position: fixed;
   top: 0;
-  bottom: 0;
-  background: rgba(0, 242, 254, 0.25);
-  border: 1.5px solid #00f2fe;
-  border-radius: 4px;
-  cursor: grab;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 9999;
+  background: rgba(10, 15, 30, 0.92);
+  backdrop-filter: blur(14px);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: inset 0 0 10px rgba(0, 242, 254, 0.2);
+  margin: 0 !important;
+  border-radius: 0 !important;
+  border: none !important;
+  max-width: none !important;
 }
 
-.timeline-window:active {
-  cursor: grabbing;
-}
-
-.window-label {
-  font-size: 0.72rem;
-  color: #00f2fe;
-  font-weight: 700;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
-  pointer-events: none;
-  user-select: none;
-}
-
-.drag-handle {
-  width: 4px;
-  height: 12px;
-  background: #00f2fe;
-  border-radius: 2px;
-  position: absolute;
-}
-
-.drag-handle.left {
-  left: 3px;
-}
-
-.drag-handle.right {
-  right: 3px;
-}
-
-/* Export loading screen */
-.loading-container {
+.render-step .loading-container {
+  width: 90%;
+  max-width: 540px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(0, 242, 254, 0.25);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 30px rgba(0, 242, 254, 0.15);
+  border-radius: 20px;
+  padding: 40px 24px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: 40px 0;
 }
 
 .spinner-ring {
@@ -637,33 +650,137 @@
   border-radius: 8px;
 }
 
-/* Completed/Success Screen */
-.success-container {
-  text-align: center;
-  padding: 40px 0;
-}
-
-.success-icon {
-  font-size: 4.5rem;
-  margin-bottom: 20px;
-  display: block;
-}
-
-.completed-step h3 {
-  font-size: 1.8rem;
-  font-weight: 800;
-  color: #10b981;
-  margin: 0 0 10px 0;
-}
-
-.completed-step p {
-  color: #94a3b8;
-  margin-bottom: 28px;
-}
-
-.completed-actions {
+/* Export Success Notification Banner */
+.export-success-banner {
   display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.16) 0%, rgba(6, 182, 212, 0.12) 100%);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45), 0 0 20px rgba(16, 185, 129, 0.2);
+  border-radius: 14px;
+  padding: 14px 20px;
+  margin-bottom: 20px;
+  gap: 16px;
+  animation: slideDownFade 0.3s ease-out;
+}
+
+@keyframes slideDownFade {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.banner-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: 1;
+}
+
+.banner-icon {
+  font-size: 1.8rem;
+  line-height: 1;
+  filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.4));
+}
+
+.banner-info h4 {
+  margin: 0 0 4px 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #34d399;
+  letter-spacing: -0.01em;
+}
+
+.banner-info p {
+  margin: 0;
+  font-size: 0.86rem;
+  color: #cbd5e1;
+  line-height: 1.4;
+}
+
+.file-tag {
+  color: #00f2fe;
+  font-family: monospace;
+  font-weight: 700;
+  background: rgba(0, 242, 254, 0.12);
+  padding: 1px 6px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 242, 254, 0.25);
+}
+
+.banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-publish-banner {
+  background: linear-gradient(135deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+  color: #fff;
+  border: none;
+  font-weight: 700;
+  font-size: 0.86rem;
+  padding: 8px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  box-shadow: 0 4px 15px rgba(220, 39, 67, 0.35);
+}
+
+.btn-publish-banner:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(220, 39, 67, 0.5);
+  filter: brightness(1.1);
+}
+
+.btn-dismiss-banner {
+  background: rgba(255, 255, 255, 0.08);
+  color: #94a3b8;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
   justify-content: center;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-dismiss-banner:hover {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+}
+
+.btn-instagram-action {
+  background: linear-gradient(135deg, rgba(220, 39, 67, 0.2), rgba(188, 24, 136, 0.2)) !important;
+  color: #f43f5e !important;
+  border: 1px solid rgba(244, 63, 94, 0.4) !important;
+}
+
+.btn-instagram-action:hover {
+  background: linear-gradient(135deg, rgba(220, 39, 67, 0.35), rgba(188, 24, 136, 0.35)) !important;
+  color: #fff !important;
+  border-color: #f43f5e !important;
+}
+
+@media (max-width: 768px) {
+  .export-success-banner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .banner-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
 }
 
 .volume-slider {

@@ -25,7 +25,9 @@ export class ShortsCreatorComponent implements OnInit, OnDestroy {
   protected scriptTone = signal('controversial'); // Tone of the narration script
   protected gameVolume = signal(0.15); // Default game volume is 15%
   protected videoZoom = signal(0); // 0% = default contain, 100% = full screen vertical fill
-  protected targetFps = signal<30 | 60>(60); // 30 FPS or 60 FPS output framerate
+  protected exportQuality = signal<'standard' | 'high'>((typeof window !== 'undefined' && window.innerWidth > 768) ? 'high' : 'standard'); // 'standard' = 30 FPS / 4Mbps (Mobile safe), 'high' = 60 FPS / 14Mbps (Desktop)
+  protected exportSuccessMessage = signal<string | null>(null);
+  protected lastExportedFileName = signal<string>('');
 
   // Voice catalogue definition (2 voices per language: Deep Bass Male & Natural Female)
   protected englishVoices = [
@@ -74,7 +76,7 @@ export class ShortsCreatorComponent implements OnInit, OnDestroy {
   protected publishProgressText = signal('');
   protected publishSuccess = signal<string | null>(null);
   protected errorMessage = signal<string | null>(null);
-  private exportedVideoBlob: Blob | null = null;
+  protected exportedVideoBlob: Blob | null = null;
 
   // Audio preview reference
   private previewAudio: HTMLAudioElement | null = null;
@@ -93,6 +95,10 @@ export class ShortsCreatorComponent implements OnInit, OnDestroy {
     const start = this.selectedStartTime();
     if (total <= 0) return 0;
     return Math.min(100 - this.windowWidthPercent(), (start / total) * 100);
+  });
+
+  protected maxStartTime = computed(() => {
+    return Math.max(0, this.videoDuration() - this.ttsDuration());
   });
 
   // Calculate live preview CSS scale based on video aspect ratio and zoom percentage
@@ -305,8 +311,8 @@ export class ShortsCreatorComponent implements OnInit, OnDestroy {
     this.videoZoom.set(Math.max(0, Math.min(100, Math.round(zoom))));
   }
 
-  protected setFps(fps: 30 | 60) {
-    this.targetFps.set(fps);
+  protected setQuality(quality: 'standard' | 'high') {
+    this.exportQuality.set(quality);
   }
 
   private startSyncLoop() {
@@ -372,71 +378,17 @@ export class ShortsCreatorComponent implements OnInit, OnDestroy {
     this.stopSyncLoop();
   }
 
-  // Range Slider Dragger
-  private isDragging = false;
-  private startDragX = 0;
-  private startStartTime = 0;
+  /**
+   * Native Timeline Scrubber change handler (works smoothly on mobile touchscreens and desktop mice)
+   */
+  protected onTimelineSliderChange(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const val = Math.max(0, Math.min(this.maxStartTime(), Number(input.value) || 0));
+    this.selectedStartTime.set(val);
 
-  protected onWindowMouseDown(event: MouseEvent) {
-    event.stopPropagation();
-    event.preventDefault();
-    
-    this.isDragging = true;
-    this.startDragX = event.clientX;
-    this.startStartTime = this.selectedStartTime();
-    
-    document.addEventListener('mousemove', this.onGlobalMouseMove);
-    document.addEventListener('mouseup', this.onGlobalMouseUp);
-  }
-
-  private onGlobalMouseMove = (event: MouseEvent) => {
-    if (!this.isDragging || !this.timelineTrack) return;
-    
-    const trackWidth = this.timelineTrack.nativeElement.clientWidth;
-    const deltaX = event.clientX - this.startDragX;
-    const deltaTime = (deltaX / trackWidth) * this.videoDuration();
-    
-    let newStart = this.startStartTime + deltaTime;
-    const maxStart = Math.max(0, this.videoDuration() - this.ttsDuration());
-    newStart = Math.min(maxStart, Math.max(0, newStart));
-    
-    this.selectedStartTime.set(newStart);
-    
-    // Scrub video preview frame
-    const video = this.previewVideo.nativeElement;
-    video.currentTime = newStart;
-    
-    if (this.previewAudio) {
-      this.previewAudio.currentTime = 0;
+    if (this.previewVideo) {
+      this.previewVideo.nativeElement.currentTime = val;
     }
-  };
-
-  private onGlobalMouseUp = () => {
-    this.isDragging = false;
-    document.removeEventListener('mousemove', this.onGlobalMouseMove);
-    document.removeEventListener('mouseup', this.onGlobalMouseUp);
-  };
-
-  protected onTimelineClick(event: MouseEvent) {
-    if (!this.timelineTrack || !this.previewVideo) return;
-    
-    const target = event.target as HTMLElement;
-    if (target.classList.contains('timeline-window')) {
-      return;
-    }
-    
-    const trackRect = this.timelineTrack.nativeElement.getBoundingClientRect();
-    const clickX = event.clientX - trackRect.left;
-    const clickRatio = clickX / trackRect.width;
-    const clickTime = clickRatio * this.videoDuration();
-    
-    let newStart = clickTime - (this.ttsDuration() / 2);
-    const maxStart = Math.max(0, this.videoDuration() - this.ttsDuration());
-    newStart = Math.min(maxStart, Math.max(0, newStart));
-    
-    this.selectedStartTime.set(newStart);
-    this.previewVideo.nativeElement.currentTime = newStart;
-    
     if (this.previewAudio) {
       this.previewAudio.currentTime = 0;
     }
@@ -457,6 +409,7 @@ export class ShortsCreatorComponent implements OnInit, OnDestroy {
     this.isExporting.set(true);
     this.exportProgress.set(0);
     this.exportError.set('');
+    this.exportSuccessMessage.set(null);
 
     try {
       const video = this.previewVideo.nativeElement;
@@ -476,7 +429,7 @@ export class ShortsCreatorComponent implements OnInit, OnDestroy {
         this.ttsDuration(),
         this.gameVolume(),
         this.videoZoom(),
-        this.targetFps(),
+        this.exportQuality(),
         (progress) => {
           this.exportProgress.set(Math.round(progress));
         }
@@ -485,7 +438,6 @@ export class ShortsCreatorComponent implements OnInit, OnDestroy {
       this.exportedVideoBlob = finalVideoBlob;
       const videoUrl = URL.createObjectURL(finalVideoBlob);
       this.generatedVideoUrl.set(videoUrl);
-      this.step.set('completed');
 
       // Auto trigger browser download using sanitized title as filename
       const extension = finalVideoBlob.type.includes('mp4') ? 'mp4' : 'webm';
@@ -497,6 +449,11 @@ export class ShortsCreatorComponent implements OnInit, OnDestroy {
       a.download = `${fileName}.${extension}`;
       a.click();
 
+      // Stay on studio page and notify user so they can preview, re-render, or edit
+      this.step.set('studio');
+      this.lastExportedFileName.set(`${fileName}.${extension}`);
+      this.exportSuccessMessage.set(`Reel successfully exported! Downloaded as ${fileName}.${extension}`);
+
     } catch (err: any) {
       console.error(err);
       this.exportError.set(err.message || 'Export rendering failed. Try refreshing the video file.');
@@ -504,6 +461,10 @@ export class ShortsCreatorComponent implements OnInit, OnDestroy {
     } finally {
       this.isExporting.set(false);
     }
+  }
+
+  protected dismissExportSuccess() {
+    this.exportSuccessMessage.set(null);
   }
 
   protected openPublishModal() {
@@ -604,7 +565,9 @@ export class ShortsCreatorComponent implements OnInit, OnDestroy {
     this.publishSuccess.set(null);
     this.errorMessage.set(null);
     this.videoZoom.set(0);
-    this.targetFps.set(60);
+    this.exportSuccessMessage.set(null);
+    this.lastExportedFileName.set('');
+    this.exportQuality.set((typeof window !== 'undefined' && window.innerWidth > 768) ? 'high' : 'standard');
     this.step.set('upload');
   }
 

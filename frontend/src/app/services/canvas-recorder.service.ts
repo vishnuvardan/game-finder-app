@@ -66,7 +66,7 @@ export class CanvasRecorderService {
    * Render offscreen and capture stream using MediaRecorder.
    */
   async exportReel(
-    videoEl: HTMLVideoElement,
+    mediaEl: HTMLVideoElement | HTMLImageElement,
     ttsAudioBlob: Blob,
     title: string,
     subtitles: SubtitleSegment[],
@@ -79,6 +79,9 @@ export class CanvasRecorderService {
   ): Promise<Blob> {
     return new Promise(async (resolve, reject) => {
       try {
+        const isImage = (mediaEl instanceof HTMLImageElement) || (mediaEl.tagName === 'IMG');
+        const videoEl = isImage ? null : (mediaEl as HTMLVideoElement);
+
         const isHighQuality = quality === 'high';
         const targetFps = isHighQuality ? 60 : 30;
 
@@ -100,26 +103,31 @@ export class CanvasRecorderService {
         }
         const dest = audioCtx.createMediaStreamDestination();
 
-        // 3. Connect video audio
-        let videoSource: MediaElementAudioSourceNode | null = (videoEl as any)._audioSourceNode || null;
-        if (!videoSource || (videoEl as any)._audioCtx !== audioCtx) {
-          try {
-            videoSource = audioCtx.createMediaElementSource(videoEl);
-            (videoEl as any)._audioSourceNode = videoSource;
-            (videoEl as any)._audioCtx = audioCtx;
-          } catch (e) {
-            console.warn('[CanvasRecorder] createMediaElementSource notice:', e);
+        // 3. Connect video audio (only if video element is present)
+        let videoSource: MediaElementAudioSourceNode | null = null;
+        let videoGain: GainNode | null = null;
+
+        if (videoEl) {
+          videoSource = (videoEl as any)._audioSourceNode || null;
+          if (!videoSource || (videoEl as any)._audioCtx !== audioCtx) {
+            try {
+              videoSource = audioCtx.createMediaElementSource(videoEl);
+              (videoEl as any)._audioSourceNode = videoSource;
+              (videoEl as any)._audioCtx = audioCtx;
+            } catch (e) {
+              console.warn('[CanvasRecorder] createMediaElementSource notice:', e);
+            }
           }
-        }
-        
-        const videoGain = audioCtx.createGain();
-        videoGain.gain.value = gameVolume; // Duck background audio to user selected level
-        if (videoSource) {
-          try {
-            videoSource.connect(videoGain);
-            videoGain.connect(dest);
-          } catch (e) {
-            console.warn('[CanvasRecorder] videoSource connect error:', e);
+          
+          videoGain = audioCtx.createGain();
+          videoGain.gain.value = gameVolume; // Duck background audio to user selected level
+          if (videoSource) {
+            try {
+              videoSource.connect(videoGain);
+              videoGain.connect(dest);
+            } catch (e) {
+              console.warn('[CanvasRecorder] videoSource connect error:', e);
+            }
           }
         }
 
@@ -186,20 +194,24 @@ export class CanvasRecorderService {
           try {
             ttsSource.disconnect();
             ttsGain.disconnect();
-            if (videoSource) {
+            if (videoSource && videoGain) {
               try { videoSource.disconnect(videoGain); } catch (e) {}
             }
-            videoGain.disconnect();
+            if (videoGain) {
+              videoGain.disconnect();
+            }
           } catch (e) {
             console.error('Clean up error:', e);
           }
 
-          // Restore video element settings for preview
-          videoEl.volume = gameVolume;
-          videoEl.muted = (gameVolume === 0);
+          // Restore video element settings for preview if video
+          if (videoEl) {
+            videoEl.volume = gameVolume;
+            videoEl.muted = (gameVolume === 0);
 
-          if (!videoEl.paused) {
-            try { videoEl.pause(); } catch (e) {}
+            if (!videoEl.paused) {
+              try { videoEl.pause(); } catch (e) {}
+            }
           }
 
           const finalBlob = new Blob(chunks, { type: mimeType });
@@ -212,32 +224,51 @@ export class CanvasRecorderService {
           ctx.fillStyle = '#000000';
           ctx.fillRect(0, 0, 1080, 1920);
 
-          // Calculate centered contain video dimensions inside 1080x1920 canvas
-          let baseWidth = 1080;
-          let baseHeight = 607.5;
-          if (videoEl.videoWidth > 0) {
-            const aspect = videoEl.videoHeight / videoEl.videoWidth;
-            baseHeight = aspect * 1080;
-          }
-          if (baseHeight > 1920) {
-            baseHeight = 1920;
+          // Get dimensions for video or image
+          const mediaWidth = isImage
+            ? (mediaEl as HTMLImageElement).naturalWidth
+            : (videoEl ? videoEl.videoWidth : 0);
+          const mediaHeight = isImage
+            ? (mediaEl as HTMLImageElement).naturalHeight
+            : (videoEl ? videoEl.videoHeight : 0);
+
+          // Calculate centered contain media dimensions inside 1080x1920 canvas
+          const canvasW = 1080;
+          const canvasH = 1920;
+          let baseWidth = canvasW;
+          let baseHeight = canvasH;
+
+          if (mediaWidth > 0 && mediaHeight > 0) {
+            const mediaAspect = mediaWidth / mediaHeight;
+            const canvasAspect = canvasW / canvasH; // 0.5625 (9:16)
+            if (mediaAspect > canvasAspect) {
+              baseWidth = canvasW;
+              baseHeight = canvasW / mediaAspect;
+            } else {
+              baseHeight = canvasH;
+              baseWidth = canvasH * mediaAspect;
+            }
+          } else {
+            baseWidth = canvasW;
+            baseHeight = 607.5;
           }
 
-          // Calculate scale factor: zoom 0 = default contain, zoom 100 = full 9:16 vertical fill
-          const maxScale = (videoEl.videoWidth > 0 && videoEl.videoHeight > 0)
-            ? Math.max(1, (1920 * videoEl.videoWidth) / (1080 * videoEl.videoHeight))
+          const fillScale = (baseWidth > 0 && baseHeight > 0)
+            ? Math.max(canvasW / baseWidth, canvasH / baseHeight)
             : (1920 / 607.5);
+
+          const maxScale = Math.max(fillScale, 2.5);
           const clampedZoom = Math.max(0, Math.min(100, videoZoom));
           const currentScale = 1 + (clampedZoom / 100) * (maxScale - 1);
 
           const vWidth = baseWidth * currentScale;
           const vHeight = baseHeight * currentScale;
-          const vX = (1080 - vWidth) / 2;
-          const vY = (1920 - vHeight) / 2;
+          const vX = (canvasW - vWidth) / 2;
+          const vY = (canvasH - vHeight) / 2;
 
-          // Render Video (centered with zoom applied)
-          if (videoEl.videoWidth > 0) {
-            ctx.drawImage(videoEl, vX, vY, vWidth, vHeight);
+          // Render Media (centered with zoom applied)
+          if (mediaWidth > 0) {
+            ctx.drawImage(mediaEl, vX, vY, vWidth, vHeight);
           }
 
           // Render Top Title (Impact / Tamil bold style - fixed top safe zone at y=380)
@@ -264,41 +295,46 @@ export class CanvasRecorderService {
         };
 
         // 8. Start Playback and Recording in lockstep
-        videoEl.loop = true; // Ensure video looping is enabled during export
-        // Keep video unmuted so createMediaElementSource receives audio signal
-        videoEl.muted = (gameVolume === 0);
-        videoEl.volume = 1.0;
+        if (videoEl) {
+          videoEl.loop = true; // Ensure video looping is enabled during export
+          // Keep video unmuted so createMediaElementSource receives audio signal
+          videoEl.muted = (gameVolume === 0);
+          videoEl.volume = 1.0;
 
-        // Ensure video is at startTime and has loaded frame data before starting recording
-        await new Promise<void>((res) => {
-          if (Math.abs(videoEl.currentTime - startTime) < 0.05 && videoEl.readyState >= 2) {
-            res();
-            return;
+          // Ensure video is at startTime and has loaded frame data before starting recording
+          await new Promise<void>((res) => {
+            if (Math.abs(videoEl.currentTime - startTime) < 0.05 && videoEl.readyState >= 2) {
+              res();
+              return;
+            }
+            let resolved = false;
+            const done = () => {
+              if (resolved) return;
+              resolved = true;
+              videoEl.removeEventListener('seeked', done);
+              res();
+            };
+            videoEl.addEventListener('seeked', done);
+            videoEl.currentTime = startTime;
+            setTimeout(done, 1500); // Safety fallback in case seeked already completed
+          });
+
+          // Pre-paint initial frame to canvas so MediaRecorder has a valid frame from millisecond 0
+          renderSingleFrame(0);
+
+          // Start video playback and confirm decoder is running
+          try {
+            await videoEl.play();
+          } catch (e: any) {
+            throw new Error('Failed to start video playback during export: ' + e.message);
           }
-          let resolved = false;
-          const done = () => {
-            if (resolved) return;
-            resolved = true;
-            videoEl.removeEventListener('seeked', done);
-            res();
-          };
-          videoEl.addEventListener('seeked', done);
-          videoEl.currentTime = startTime;
-          setTimeout(done, 1500); // Safety fallback in case seeked already completed
-        });
 
-        // Pre-paint initial frame to canvas so MediaRecorder has a valid frame from millisecond 0
-        renderSingleFrame(0);
-
-        // Start video playback and confirm decoder is running
-        try {
-          await videoEl.play();
-        } catch (e: any) {
-          throw new Error('Failed to start video playback during export: ' + e.message);
+          // Brief warm-up (60ms) to allow GPU video decoder to begin frame delivery smoothly
+          await new Promise((r) => setTimeout(r, 60));
+        } else {
+          // Pre-paint initial frame for image
+          renderSingleFrame(0);
         }
-
-        // Brief warm-up (60ms) to allow GPU video decoder to begin frame delivery smoothly
-        await new Promise((r) => setTimeout(r, 60));
 
         // Start synchronized recording and audio
         audioStartTime = audioCtx.currentTime;
@@ -313,7 +349,7 @@ export class CanvasRecorderService {
           onProgress(progress);
 
           // If video element somehow paused during export, keep it playing
-          if (videoEl.paused) {
+          if (videoEl && videoEl.paused) {
             videoEl.play().catch(() => {});
           }
 

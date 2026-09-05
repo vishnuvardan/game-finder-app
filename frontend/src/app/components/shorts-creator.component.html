@@ -3,7 +3,7 @@
   <!-- Main Header -->
   <div class="shorts-header">
     <h2>🎬 AI Shorts & Reels Creator</h2>
-    <p>Upload a gameplay video, enter a topic, and compile a controversial meme short completely in your browser.</p>
+    <p>Upload a gameplay video or image, enter a topic, and compile a controversial meme short completely in your browser.</p>
   </div>
 
   <div class="error-banner" *ngIf="exportError()">
@@ -29,14 +29,17 @@
       <!-- Left side: File selection -->
       <div class="grid-section file-section">
         <label class="drop-zone" [class.has-file]="videoFile() !== null">
-          <input type="file" (change)="onVideoSelected($event)" accept="video/mp4,video/webm,video/quicktime" class="file-input">
+          <input type="file" (change)="onVideoSelected($event)" accept="video/mp4,video/webm,video/quicktime,image/png,image/jpeg,image/webp,image/jpg,image/*" class="file-input">
           <div class="drop-content">
-            <span class="icon">📁</span>
-            <h4 *ngIf="!videoFile()">Upload Video File</h4>
+            <span class="icon">{{ mediaType() === 'image' && videoFile() ? '🖼️' : '📁' }}</span>
+            <h4 *ngIf="!videoFile()">Upload Video or Image File</h4>
             <h4 *ngIf="videoFile()">{{ videoFile()?.name }}</h4>
-            <p *ngIf="!videoFile()">Drag & drop or click to choose MP4/WebM</p>
-            <p *ngIf="videoFile()" class="meta">
-              Duration: {{ videoDuration() | number:'1.1-1' }}s | Resolution: {{ videoWidth() }}x{{ videoHeight() }}
+            <p *ngIf="!videoFile()">Drag & drop or click to choose Video (MP4/WebM) or Image (PNG/JPG/WebP)</p>
+            <p *ngIf="videoFile() && mediaType() === 'video'" class="meta">
+              📹 Video • Duration: {{ videoDuration() | number:'1.1-1' }}s • Resolution: {{ videoWidth() }}x{{ videoHeight() }}
+            </p>
+            <p *ngIf="videoFile() && mediaType() === 'image'" class="meta">
+              🖼️ Image • Static Background • Resolution: {{ videoWidth() }}x{{ videoHeight() }}
             </p>
           </div>
         </label>
@@ -151,9 +154,10 @@
           <!-- Top Title overlay (snug above centered video) -->
           <div class="title-overlay-text">{{ shortsTitle().toUpperCase() }}</div>
 
-          <!-- Video viewport container -->
+          <!-- Video / Image viewport container -->
           <div class="sim-viewport">
-            <video #previewVideo [src]="uploadedVideoUrl()" loop [muted]="gameVolume() === 0" playsinline class="bg-video" [style.transform]="'scale(' + previewScale() + ')'"></video>
+            <video *ngIf="mediaType() === 'video'" #previewVideo [src]="uploadedVideoUrl()" loop [muted]="gameVolume() === 0" playsinline class="bg-video" [style.transform]="'scale(' + previewScale() + ')'"></video>
+            <img *ngIf="mediaType() === 'image'" #previewImage [src]="uploadedVideoUrl()" (load)="onImageLoaded($event)" class="bg-video bg-image" [style.transform]="'scale(' + previewScale() + ')'" alt="Shorts background" />
             <!-- Floating play button overlay -->
             <button class="play-overlay" (click)="togglePlay()">
               <span *ngIf="!isPlaying()">▶</span>
@@ -177,7 +181,7 @@
 
         <div class="panel-section">
           <div class="slider-header">
-            <h3>🔍 Video Zoom: {{ videoZoom() }}%</h3>
+            <h3>🔍 {{ mediaType() === 'image' ? 'Image Zoom' : 'Video Zoom' }}: {{ videoZoom() }}%</h3>
             <span class="zoom-badge" *ngIf="videoZoom() === 0">Default Fit</span>
             <span class="zoom-badge fill-badge" *ngIf="videoZoom() === 100">Full 9:16 Fill</span>
             <span class="zoom-badge custom-badge" *ngIf="videoZoom() > 0 && videoZoom() < 100">Custom Zoom</span>
@@ -224,7 +228,7 @@
           </div>
         </div>
 
-        <div class="panel-section">
+        <div class="panel-section" *ngIf="mediaType() === 'video'">
           <h3>🔊 Game Video Volume: {{ getRoundedVolume() }}%</h3>
           <input 
             type="range" 
@@ -255,7 +259,7 @@
     </div>
 
     <!-- Timeline Scrubber Area (Native HTML5 range slider for 100% mobile & touch support) -->
-    <div class="timeline-container">
+    <div class="timeline-container" *ngIf="mediaType() === 'video'">
       <div class="timeline-info">
         <span>🕒 <b>Select Video Slice</b> (Narration duration: <b>{{ ttsDuration() | number:'1.1-1' }}s</b>)</span>
         <span class="range-display">
@@ -279,6 +283,19 @@
           <span>Max Start: {{ maxStartTime() | number:'1.1-1' }}s</span>
         </div>
       </div>
+    </div>
+
+    <!-- Static Image Info Banner when image is chosen -->
+    <div class="timeline-container image-timeline-banner" *ngIf="mediaType() === 'image'">
+      <div class="timeline-info">
+        <span>🖼️ <b>Static Image Background</b> (Narration duration: <b>{{ ttsDuration() | number:'1.1-1' }}s</b>)</span>
+        <span class="range-display">
+          Full Duration: 0.0s – {{ ttsDuration() | number:'1.1-1' }}s
+        </span>
+      </div>
+      <p class="image-timeline-desc">
+        Your static image is displayed across the entire short with dynamic synchronized subtitles and narration.
+      </p>
     </div>
 
   </div>

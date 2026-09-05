@@ -13,6 +13,7 @@ import { CanvasRecorderService } from '../services/canvas-recorder.service';
 })
 export class ShortsCreatorComponent implements OnInit, OnDestroy {
   @ViewChild('previewVideo') previewVideo!: ElementRef<HTMLVideoElement>;
+  @ViewChild('previewImage') previewImage?: ElementRef<HTMLImageElement>;
   @ViewChild('timelineTrack') timelineTrack!: ElementRef<HTMLDivElement>;
 
   // Wizard state: upload -> studio -> exporting -> completed
@@ -40,7 +41,8 @@ export class ShortsCreatorComponent implements OnInit, OnDestroy {
     { id: 'ta-IN-PallaviNeural', label: '🌸 பல்லவி / Pallavi (Clear Female)' }
   ];
   
-  // File uploads
+  // File uploads (Video or Image)
+  protected mediaType: WritableSignal<'video' | 'image'> = signal('video');
   protected videoFile: WritableSignal<File | null> = signal(null);
   protected uploadedVideoUrl: WritableSignal<string | null> = signal(null);
   protected videoDuration = signal(0);
@@ -101,11 +103,36 @@ export class ShortsCreatorComponent implements OnInit, OnDestroy {
     return Math.max(0, this.videoDuration() - this.ttsDuration());
   });
 
-  // Calculate live preview CSS scale based on video aspect ratio and zoom percentage
+  // Calculate live preview CSS scale based on video/image aspect ratio and zoom percentage
   protected previewScale = computed(() => {
     const w = this.videoWidth();
     const h = this.videoHeight();
-    const maxScale = (w > 0 && h > 0) ? Math.max(1, (1920 * w) / (1080 * h)) : (1920 / 607.5);
+    const canvasW = 1080;
+    const canvasH = 1920;
+    let baseW = canvasW;
+    let baseH = canvasH;
+
+    if (w > 0 && h > 0) {
+      const mediaAspect = w / h;
+      const canvasAspect = canvasW / canvasH; // 0.5625 (9:16)
+      if (mediaAspect > canvasAspect) {
+        baseW = canvasW;
+        baseH = canvasW / mediaAspect;
+      } else {
+        baseH = canvasH;
+        baseW = canvasH * mediaAspect;
+      }
+    } else {
+      baseW = canvasW;
+      baseH = 607.5;
+    }
+
+    const fillScale = (baseW > 0 && baseH > 0)
+      ? Math.max(canvasW / baseW, canvasH / baseH)
+      : (1920 / 607.5);
+
+    // Ensure all media can zoom in up to at least 2.5x even if already 9:16
+    const maxScale = Math.max(fillScale, 2.5);
     const zoom = Math.max(0, Math.min(100, this.videoZoom()));
     return 1 + (zoom / 100) * (maxScale - 1);
   });
@@ -133,11 +160,25 @@ export class ShortsCreatorComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Handle local video selection
+  // Handle local video or image selection
   protected onVideoSelected(event: Event) {
+    this.onMediaSelected(event);
+  }
+
+  protected onImageLoaded(event: Event) {
+    const img = event.target as HTMLImageElement;
+    if (img && img.naturalWidth > 0 && img.naturalHeight > 0) {
+      this.videoWidth.set(img.naturalWidth);
+      this.videoHeight.set(img.naturalHeight);
+    }
+  }
+
+  protected onMediaSelected(event: Event) {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0]) {
       const file = input.files[0];
+      const isImage = file.type.startsWith('image/');
+      this.mediaType.set(isImage ? 'image' : 'video');
       this.videoFile.set(file);
       
       // Cleanup previous object URLs
@@ -146,24 +187,41 @@ export class ShortsCreatorComponent implements OnInit, OnDestroy {
       const url = URL.createObjectURL(file);
       this.uploadedVideoUrl.set(url);
 
-      // Create a temporary video element to read metadata
-      const tempVideo = document.createElement('video');
-      tempVideo.src = url;
-      tempVideo.addEventListener('loadedmetadata', () => {
-        this.videoDuration.set(tempVideo.duration);
-        this.videoWidth.set(tempVideo.videoWidth);
-        this.videoHeight.set(tempVideo.videoHeight);
-        
-        // Default start time is 0
-        this.selectedStartTime.set(0);
-      });
+      if (isImage) {
+        const img = new Image();
+        img.onload = () => {
+          if (img.naturalWidth > 0 && img.naturalHeight > 0) {
+            this.videoWidth.set(img.naturalWidth);
+            this.videoHeight.set(img.naturalHeight);
+          }
+          this.videoDuration.set(0);
+          this.selectedStartTime.set(0);
+        };
+        img.src = url;
+        if (img.complete && img.naturalWidth > 0) {
+          this.videoWidth.set(img.naturalWidth);
+          this.videoHeight.set(img.naturalHeight);
+        }
+      } else {
+        // Create a temporary video element to read metadata
+        const tempVideo = document.createElement('video');
+        tempVideo.src = url;
+        tempVideo.addEventListener('loadedmetadata', () => {
+          this.videoDuration.set(tempVideo.duration);
+          this.videoWidth.set(tempVideo.videoWidth);
+          this.videoHeight.set(tempVideo.videoHeight);
+          
+          // Default start time is 0
+          this.selectedStartTime.set(0);
+        });
+      }
     }
   }
 
   // Orchestrate Gemini Script + TTS synthesis
   protected async generateScriptAndNarration() {
     if (!this.uploadedVideoUrl()) {
-      alert('Please upload a background video file first.');
+      alert('Please upload a background video or image file first.');
       return;
     }
     if (!this.promptTopic().trim()) {
@@ -241,9 +299,9 @@ export class ShortsCreatorComponent implements OnInit, OnDestroy {
       // Transition to Studio view
       this.step.set('studio');
 
-      // Pause and load video preview
+      // Pause and load video preview if video mode
       setTimeout(() => {
-        if (this.previewVideo) {
+        if (this.mediaType() === 'video' && this.previewVideo) {
           const video = this.previewVideo.nativeElement;
           video.currentTime = 0;
         }
@@ -259,29 +317,32 @@ export class ShortsCreatorComponent implements OnInit, OnDestroy {
 
 
 
-  // Audio/Video lockstep controls
+  // Audio/Video/Image preview playback controls
   protected togglePlay() {
-    if (!this.previewVideo) return;
-    const video = this.previewVideo.nativeElement;
+    const isVideo = this.mediaType() === 'video';
+    const video = isVideo && this.previewVideo ? this.previewVideo.nativeElement : null;
     
     if (this.isPlaying()) {
-      video.pause();
+      if (video) {
+        video.pause();
+      }
       if (this.previewAudio) {
         this.previewAudio.pause();
       }
       this.isPlaying.set(false);
       this.stopSyncLoop();
     } else {
-      // Seek back to start if finished, or play from current position relative to selectedStartTime
       const currentOffset = this.previewAudio ? this.previewAudio.currentTime : 0;
-      video.currentTime = video.duration ? (this.selectedStartTime() + currentOffset) % video.duration : (this.selectedStartTime() + currentOffset);
-      video.muted = false; // Enable preview volume
-      video.volume = this.gameVolume(); // Apply chosen game volume
+      if (video) {
+        video.currentTime = video.duration ? (this.selectedStartTime() + currentOffset) % video.duration : (this.selectedStartTime() + currentOffset);
+        video.muted = false; // Enable preview volume
+        video.volume = this.gameVolume(); // Apply chosen game volume
+        video.play().catch(e => console.error(e));
+      }
       
       if (this.previewAudio) {
         this.previewAudio.play().catch(e => console.error(e));
       }
-      video.play().catch(e => console.error(e));
       
       this.isPlaying.set(true);
       this.startSyncLoop();
@@ -319,8 +380,9 @@ export class ShortsCreatorComponent implements OnInit, OnDestroy {
     this.stopSyncLoop();
     
     const sync = () => {
-      if (!this.isPlaying() || !this.previewVideo) return;
-      const video = this.previewVideo.nativeElement;
+      if (!this.isPlaying()) return;
+      const isVideo = this.mediaType() === 'video';
+      const video = isVideo && this.previewVideo ? this.previewVideo.nativeElement : null;
       
       if (this.previewAudio) {
         const audioTime = this.previewAudio.currentTime;
@@ -337,11 +399,13 @@ export class ShortsCreatorComponent implements OnInit, OnDestroy {
         this.activeSubtitleText.set(activeSub ? activeSub.text : '');
 
         // Re-align video stream position if they drift apart by more than 0.3s
-        const expectedVideoTime = video.duration ? (this.selectedStartTime() + audioTime) % video.duration : (this.selectedStartTime() + audioTime);
-        if (Math.abs(video.currentTime - expectedVideoTime) > 0.3) {
-          video.currentTime = expectedVideoTime;
+        if (video) {
+          const expectedVideoTime = video.duration ? (this.selectedStartTime() + audioTime) % video.duration : (this.selectedStartTime() + audioTime);
+          if (Math.abs(video.currentTime - expectedVideoTime) > 0.3) {
+            video.currentTime = expectedVideoTime;
+          }
         }
-      } else {
+      } else if (video) {
         const elapsed = video.currentTime - this.selectedStartTime();
         if (elapsed >= this.ttsDuration() || video.currentTime >= video.duration) {
           this.resetPlayback();
@@ -363,10 +427,11 @@ export class ShortsCreatorComponent implements OnInit, OnDestroy {
   }
 
   private resetPlayback() {
-    if (!this.previewVideo) return;
-    const video = this.previewVideo.nativeElement;
-    video.pause();
-    video.currentTime = this.selectedStartTime();
+    if (this.mediaType() === 'video' && this.previewVideo) {
+      const video = this.previewVideo.nativeElement;
+      video.pause();
+      video.currentTime = this.selectedStartTime();
+    }
     
     if (this.previewAudio) {
       this.previewAudio.pause();
@@ -412,7 +477,19 @@ export class ShortsCreatorComponent implements OnInit, OnDestroy {
     this.exportSuccessMessage.set(null);
 
     try {
-      const video = this.previewVideo.nativeElement;
+      let mediaElement: HTMLVideoElement | HTMLImageElement;
+      if (this.mediaType() === 'image') {
+        if (!this.previewImage) {
+          throw new Error('Preview image element is missing');
+        }
+        mediaElement = this.previewImage.nativeElement;
+      } else {
+        if (!this.previewVideo) {
+          throw new Error('Preview video element is missing');
+        }
+        mediaElement = this.previewVideo.nativeElement;
+      }
+
       const audioBlob = this.ttsAudioBlob();
       
       if (!audioBlob) {
@@ -421,7 +498,7 @@ export class ShortsCreatorComponent implements OnInit, OnDestroy {
 
       // Execute in-browser recording pipeline
       const finalVideoBlob = await this.canvasRecorder.exportReel(
-        video,
+        mediaElement,
         audioBlob,
         this.shortsTitle(),
         this.subtitles(),
@@ -553,6 +630,7 @@ export class ShortsCreatorComponent implements OnInit, OnDestroy {
   // Reset wizard to upload
   protected resetCreator() {
     this.cleanupObjectURLs();
+    this.mediaType.set('video');
     this.videoFile.set(null);
     this.uploadedVideoUrl.set(null);
     this.videoDuration.set(0);

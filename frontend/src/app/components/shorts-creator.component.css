@@ -567,6 +567,24 @@
   font-size: 0.78rem;
 }
 
+.image-timeline-banner {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.4) 0%, rgba(15, 23, 42, 0.6) 100%);
+  border: 1px solid rgba(0, 242, 254, 0.15);
+}
+
+.image-timeline-desc {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #94a3b8;
+  line-height: 1.4;
+}
+
+.bg-image {
+  display: block;
+  user-select: none;
+  pointer-events: none;
+}
+
 /* Export loading screen overlay (floats on top while studio-step remains actively decoding underneath) */
 .step-card.render-step {
   position: fixed;
